@@ -851,6 +851,24 @@ def get_finedge_peers(symbol: str, client: FinEdgeClient, group: str = "sector",
     return [p for p in peers if p != symbol][:max_peers]
 
 
+def filter_valid_peers(symbols: list[str], client: FinEdgeClient) -> tuple[list[str], list[str]]:
+    """Split typed peer symbols into (recognised by FinEdge, ignored).
+
+    Guards against free text such as "sector peers" being treated as tickers.
+    """
+    valid, ignored = [], []
+    for raw in symbols:
+        sym = normalize_symbol(raw)
+        try:
+            known = bool(client.profile(sym))
+        except FinEdgePlanError:
+            known = True  # a real symbol that the plan doesn't cover; reported later as skipped
+        except FinEdgeError:
+            known = False
+        (valid if known else ignored).append(sym)
+    return valid, ignored
+
+
 def combine_peer_financial_data_finedge(tickers: list[str], client: FinEdgeClient,
                                         years_limit: int = 5) -> tuple[pd.DataFrame, pd.DataFrame, list[str]]:
     """Peer EBITDA and EV/EBITDA pivots (index = fiscal year, columns = ticker).

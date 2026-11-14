@@ -673,6 +673,20 @@ def compute_technical_indicators(df: pd.DataFrame, ticker: str = "") -> dict:
     return result
 
 
+def get_fmp_peers(ticker: str, api_key: str, max_peers: int = 5) -> list[str]:
+    """Peer tickers for ``ticker`` from FMP's stock-peers endpoint (empty list on any problem)."""
+    try:
+        resp = requests.get("https://financialmodelingprep.com/api/v4/stock_peers",
+                            params={"symbol": ticker, "apikey": api_key}, timeout=15)
+        resp.raise_for_status()
+        data = resp.json()
+        peers = (data[0].get("peersList") if data and isinstance(data, list) else None) or []
+        return [p for p in peers if p and p.upper() != ticker.upper()][:max_peers]
+    except Exception as e:
+        print(f"Warning: could not auto-discover FMP peers for {ticker}: {e}")
+        return []
+
+
 def get_company_news(ticker: str, api_key: str, days_back: int = 5, limit: int = 50) -> list[dict] | None:
     """
     Fetches recent company news from FMP API.

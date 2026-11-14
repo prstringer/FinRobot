@@ -13,7 +13,8 @@ from modules.market_data_api import (
     get_comprehensive_financial_data,
     combine_peer_financial_data,
     project_ebitda_for_peers,
-    get_company_news
+    get_company_news,
+    get_fmp_peers,
 )
 from modules.text_generator_agents import generate_text_section
 from modules.llm_providers import PROVIDERS, resolve_llm_settings
@@ -32,6 +33,7 @@ from modules.finedge_api import (
     get_finedge_comprehensive_financial_data,
     get_finedge_company_news,
     get_finedge_peers,
+    filter_valid_peers,
     get_finedge_price_history,
     combine_peer_financial_data_finedge,
     combine_peer_bank_data_finedge,
@@ -56,8 +58,8 @@ def main():
                         help="FinEdge only: consolidated (c) or standalone (s) statements. 'auto' uses "
                              "consolidated for companies and standalone for banks.")
     parser.add_argument("--no-auto-peers", action="store_true",
-                        help="FinEdge only: do not look up sector peers when --peer-tickers is not given.")
-    parser.add_argument("--max-peers", type=int, default=5, help="FinEdge only: maximum auto-discovered peers.")
+                        help="Do not look up sector peers automatically when --peer-tickers is not given.")
+    parser.add_argument("--max-peers", type=int, default=5, help="Maximum auto-discovered peers.")
     
     # Output Configuration
     parser.add_argument("--output-dir", type=str, help="Directory to save all outputs. Default: ./output/[TICKER]/analysis/")
@@ -279,11 +281,19 @@ def main():
     df_bank_peers = None
     if use_finedge:
         peer_list = [normalize_symbol(t) for t in args.peer_tickers]
+        if peer_list:
+            peer_list, ignored = filter_valid_peers(peer_list, finedge_client)
+            if ignored:
+                print(f"⚠️  Ignoring unrecognised peer symbol(s): {ignored} - using automatic sector peers instead.")
         if not peer_list and not args.no_auto_peers:
             peer_list = get_finedge_peers(args.company_ticker, finedge_client, max_peers=args.max_peers)
             if peer_list:
                 print(f"\nAuto-discovered FinEdge sector peers: {peer_list}")
         args.peer_tickers = peer_list
+    elif fmp_api_key and not args.peer_tickers and not args.no_auto_peers:
+        args.peer_tickers = get_fmp_peers(args.company_ticker, fmp_api_key, max_peers=args.max_peers)
+        if args.peer_tickers:
+            print(f"\nAuto-discovered FMP peers: {args.peer_tickers}")
     if use_finedge and args.peer_tickers:
         print(f"\nFetching FinEdge data for peer comparison: {args.peer_tickers}")
         all_tickers = [args.company_ticker] + [t for t in args.peer_tickers if t != args.company_ticker]

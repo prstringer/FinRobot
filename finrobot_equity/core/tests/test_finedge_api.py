@@ -320,3 +320,19 @@ def test_pdf_symbol_override_and_safe_paragraph():
         assert currency.fmt_price(1) == "₹1.00"
     finally:
         currency.set_currency("USD")
+
+
+def test_filter_valid_peers_drops_free_text():
+    from modules.finedge_api import FinEdgePlanError, filter_valid_peers
+
+    class FakeClient:
+        def profile(self, sym):
+            if sym == "TCS":
+                return {"name": "Tata Consultancy Services Ltd"}
+            if sym == "WIPRO":
+                raise FinEdgePlanError("not on plan")
+            return {}
+
+    valid, ignored = filter_valid_peers(["tcs", "SECTOR", "PEERS", "wipro"], FakeClient())
+    assert valid == ["TCS", "WIPRO"]
+    assert ignored == ["SECTOR", "PEERS"]

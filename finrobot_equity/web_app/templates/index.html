@@ -219,7 +219,7 @@
                         <span class="text-[9px] text-slate-600 uppercase tracking-wider">Optional</span>
                     </div>
                     <div class="halo-input-wrapper">
-                        <input type="text" v-model="form.peers_str" :placeholder="form.data_provider === 'finedge' ? 'Optional: auto sector peers (e.g. IOC BPCL)' : 'Space separated (e.g. MSFT GOOG)'" class="halo-input w-full rounded-lg px-3 py-2 text-xs font-medium placeholder-slate-600" @input="form.peers_str = form.peers_str.toUpperCase()">
+                        <input type="text" v-model="form.peers_str" :placeholder="form.data_provider === 'finedge' ? 'Leave blank - sector peers are chosen automatically' : 'Leave blank - peers are chosen automatically'" class="halo-input w-full rounded-lg px-3 py-2 text-xs font-medium placeholder-slate-600" @input="form.peers_str = form.peers_str.toUpperCase()">
                     </div>
                 </div>
 
