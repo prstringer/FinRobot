@@ -295,6 +295,14 @@ def extract_historical_metrics_from_pdf_data(dataframes, table_config):
         
     return df_combined
 
+def _row_value(df: pd.DataFrame, metric: str, col: str):
+    """Value of a metric row in a column, or None when the row/column is missing."""
+    if col not in df.columns:
+        return None
+    vals = df.loc[df['metrics'] == metric, col].values
+    return vals[0] if len(vals) else None
+
+
 def calculate_growth_and_forecasts(df_historical: pd.DataFrame, forecast_config: dict) -> pd.DataFrame:
     """Appends growth rates and forecasts to the historical metrics DataFrame."""
     df_final = df_historical.copy().astype('object')  # Ensure object dtype for mixed types
@@ -355,7 +363,7 @@ def calculate_growth_and_forecasts(df_historical: pd.DataFrame, forecast_config:
     
     # Forecast Margins and back-calculate values
     for metric, improvement in forecast_config.get("margin_improvement", {}).items():
-        base_margin_str = str(df_final.loc[df_final['metrics'] == metric, last_actual_revenue_year].values[0])
+        base_margin_str = str(_row_value(df_final, metric, last_actual_revenue_year))
         if '%' in base_margin_str:
             current_margin = float(base_margin_str.replace('%','')) / 100
             for f_year in forecast_years:
@@ -364,7 +372,7 @@ def calculate_growth_and_forecasts(df_historical: pd.DataFrame, forecast_config:
 
     # Forecast SG&A margin
     sga_margin_change = forecast_config.get("sga_margin_change", 0)
-    base_sga_margin_str = str(df_final.loc[df_final['metrics'] == 'SG&A Margin', last_actual_revenue_year].values[0])
+    base_sga_margin_str = str(_row_value(df_final, 'SG&A Margin', last_actual_revenue_year))
     if '%' in base_sga_margin_str:
         current_sga_margin = float(base_sga_margin_str.replace('%','')) / 100
         for f_year in forecast_years:
@@ -377,8 +385,8 @@ def calculate_growth_and_forecasts(df_historical: pd.DataFrame, forecast_config:
     
     # Forecast EPS and PE Ratio for future years
     # For EPS, assume it grows proportionally with net income/revenue improvement
-    base_eps = df_final.loc[df_final['metrics'] == 'EPS', last_actual_revenue_year].values[0]
-    base_pe = df_final.loc[df_final['metrics'] == 'PE Ratio', last_actual_revenue_year].values[0]
+    base_eps = _row_value(df_final, 'EPS', last_actual_revenue_year)
+    base_pe = _row_value(df_final, 'PE Ratio', last_actual_revenue_year)
     
     if pd.notna(base_eps):
         current_eps = base_eps
@@ -402,10 +410,10 @@ def calculate_growth_and_forecasts(df_historical: pd.DataFrame, forecast_config:
     # Recalculate other metrics based on forecasted margins/values
     for f_year in forecast_years:
         rev = df_final.loc[df_final['metrics'] == 'Revenue', f_year].values[0]
-        sga = df_final.loc[df_final['metrics'] == 'SG&A', f_year].values[0]
+        sga = _row_value(df_final, 'SG&A', f_year)
         
         # Calculate based on Contribution Margin
-        contrib_margin_str = str(df_final.loc[df_final['metrics'] == 'Contribution Margin', f_year].values[0])
+        contrib_margin_str = str(_row_value(df_final, 'Contribution Margin', f_year))
         if pd.notna(rev) and '%' in contrib_margin_str:
             contrib_margin = float(contrib_margin_str.replace('%','')) / 100
             contrib_profit = rev * contrib_margin

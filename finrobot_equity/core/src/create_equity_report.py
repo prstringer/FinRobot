@@ -28,6 +28,26 @@ from modules.chart_generator import (
     generate_cash_flow_chart
 )
 from modules.market_data_api import get_comprehensive_company_metrics, get_technical_indicators
+from modules import currency
+from modules.bank_template import (
+    BANK_SUMMARY_METRICS,
+    BANK_QUALITY_METRICS,
+    BANK_REPORT_LABELS,
+    is_bank_analysis,
+    bank_balance_table,
+    format_bank_peer_table,
+    _latest_numeric,
+    _history_numeric,
+)
+from modules.finedge_api import (
+    FinEdgeClient,
+    FinEdgeError,
+    resolve_finedge_token,
+    normalize_symbol,
+    get_finedge_comprehensive_financial_data,
+    get_finedge_company_metrics,
+    get_finedge_technical_indicators,
+)
 
 # Import the single, unified text generation function
 from modules.text_generator_agents import generate_text_section
@@ -331,7 +351,7 @@ def main():
     parser.add_argument("--analyst-names", type=str, nargs="*", default=["Analyst Name"], help="List of analyst names.")
     parser.add_argument("--analyst-emails", type=str, nargs="*", default=["analyst@example.com"], help="List of analyst emails.")
     parser.add_argument("--research-source", type=str, default="AI4Finance Foundation FinRobot Equity Research", help="Source of the research.")
-    parser.add_argument("--data-source-text", type=str, default="Company Filings, FMP, Yahoo Finance, AI4Finance Estimates", help="Text for data sources.")
+    parser.add_argument("--data-source-text", type=str, default=None, help="Text for data sources (default depends on the data provider).")
     parser.add_argument("--disclaimer-text", type=str, default="Disclaimer: The information contained in this document is intended only for use by the person to whom it has been delivered and should not be disseminated or distributed to third parties without our prior written consent. Our firm accepts no liability whatsoever with respect to the use of this document or its contents.", help="Disclaimer text.")
     parser.add_argument("--closing-price-date", type=str, default=datetime.now(EASTERN_TZ).strftime("%B %d, %Y"), help="Date of the share price (Eastern Time).")
 
@@ -356,6 +376,9 @@ def main():
     parser.add_argument("--ev-ebitda-chart-path", type=str, default=None, help="Path to a pre-generated EV/EBITDA peer comparison chart.")
     parser.add_argument("--peer-ebitda-csv", type=str, help="Path to peer_ebitda_comparison.csv.")
     parser.add_argument("--peer-ev-ebitda-csv", type=str, help="Path to peer_ev_ebitda_comparison.csv.")
+    parser.add_argument("--peer-bank-csv", type=str, default=None, help="Path to peer_bank_comparison.csv (banks; auto-detected next to the analysis CSV).")
+    parser.add_argument("--data-provider", type=str, default="auto", choices=["auto", "fmp", "finedge"],
+                        help="Market data source. 'auto' reads analysis_summary.json next to the analysis CSV (default).")
 
     # Auto-fetch control
     parser.add_argument("--skip-auto-fetch", action="store_true", help="Skip automatic fetching of market data from FMP API.")
@@ -378,12 +401,53 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
     print(f"HTML reports will be saved to: {output_dir}")
 
+    # --- Read the step-1 summary (provider, currency, bank template, data notes) ---
+    import json
+    analysis_dir = os.path.dirname(os.path.abspath(args.analysis_csv))
+    analysis_summary = {}
+    summary_path = os.path.join(analysis_dir, "analysis_summary.json")
+    if os.path.exists(summary_path):
+        try:
+            with open(summary_path, "r", encoding="utf-8") as f:
+                analysis_summary = json.load(f)
+        except Exception as e:
+            print(f"Warning: could not read {summary_path}: {e}")
+    provider = args.data_provider
+    if provider == "auto":
+        provider = analysis_summary.get("data_provider") or (
+            "finedge" if "FinEdge" in str(analysis_summary.get("data_source", "")) else "fmp")
+    use_finedge = provider == "finedge"
+    if use_finedge:
+        args.company_ticker = normalize_symbol(args.company_ticker)
+        currency.set_currency("INR")
+    else:
+        currency.set_currency(analysis_summary.get("currency", "USD"))
+    data_warnings = analysis_summary.get("data_warnings", [])
+    if args.data_source_text is None:
+        args.data_source_text = ("Company filings via FinEdge API (NSE/BSE), AI4Finance Estimates" if use_finedge
+                                 else "Company Filings, FMP, Yahoo Finance, AI4Finance Estimates")
+    print(f"Data provider: {provider} | currency: {currency.get_currency()}")
+
     # --- Load configuration and API key ---
     openai_api_key = None
+    finedge_client = None
+    config = None
     try:
-        config = load_config(args.config_file)
-        fmp_api_key = get_api_key(config, "API_KEYS", "fmp_api_key")
-        if args.enable_text_regeneration:
+        try:
+            config = load_config(args.config_file)
+        except FileNotFoundError:
+            if not use_finedge:
+                raise
+            print("No config.ini found; using FINEDGE_API_TOKEN from the environment.")
+        if use_finedge:
+            fmp_api_key = None
+            try:
+                finedge_client = FinEdgeClient(resolve_finedge_token(config))
+            except FinEdgeError as e:
+                print(f"Warning: {e}")
+        else:
+            fmp_api_key = get_api_key(config, "API_KEYS", "fmp_api_key")
+        if args.enable_text_regeneration and config is not None:
             try:
                 openai_api_key = get_api_key(config, "API_KEYS", "openai_api_key")
                 print("✅ OpenAI API key loaded for text regeneration")
@@ -396,7 +460,18 @@ def main():
 
     # --- Auto-fetch market data if not provided and API key available ---
     auto_fetched_metrics = {}
-    if not args.skip_auto_fetch and fmp_api_key:
+    if not args.skip_auto_fetch and use_finedge and finedge_client:
+        print(f"Auto-fetching FinEdge market data for {args.company_ticker}...")
+        try:
+            st = "s" if analysis_summary.get("statement_type") == "standalone" else (
+                "c" if analysis_summary.get("statement_type") == "consolidated" else "auto")
+            fe_data = get_finedge_comprehensive_financial_data(args.company_ticker, finedge_client, limit=1,
+                                                               statement_type=st)
+            auto_fetched_metrics = get_finedge_company_metrics(args.company_ticker, finedge_client, fe_data)
+            print("✅ Successfully auto-fetched FinEdge market data")
+        except FinEdgeError as e:
+            print(f"⚠️  Warning: FinEdge auto-fetch failed: {e}")
+    elif not args.skip_auto_fetch and fmp_api_key:
         print(f"Auto-fetching market data for {args.company_ticker}...")
         try:
             auto_fetched_metrics = get_comprehensive_company_metrics(args.company_ticker, fmp_api_key)
@@ -419,7 +494,7 @@ def main():
     elif args.skip_auto_fetch:
         print("Skipping auto-fetch as requested")
     else:
-        print("⚠️  No FMP API key found, skipping auto-fetch")
+        print("⚠️  No API key found, skipping auto-fetch")
 
     # --- Determine final values (command line args override auto-fetched) ---
     def get_value(arg_value, auto_key, default_value, format_func=None):
@@ -433,10 +508,10 @@ def main():
             return default_value
 
     # Apply the logic for each metric
-    share_price = get_value(args.share_price, 'share_price', 0.0, lambda x: f"${x:.2f}")
-    target_price = get_value(args.target_price, 'target_price', 0.0, lambda x: f"${x:.2f}")
+    share_price = get_value(args.share_price, 'share_price', 0.0, currency.fmt_price)
+    target_price = get_value(args.target_price, 'target_price', "N/A" if use_finedge else 0.0, currency.fmt_price)
     rating = get_value(args.rating, 'rating', "N/A")
-    market_cap = get_value(args.market_cap, 'market_cap', 0.0, lambda x: f"${x:,.2f}B")
+    market_cap = get_value(args.market_cap, 'market_cap', 0.0, currency.fmt_market_cap)
     volume = get_value(args.volume, 'volume', 0.0, lambda x: f"{x:.2f}M")
     fwd_pe = get_value(args.fwd_pe, 'fwd_pe', 0.0, lambda x: f"{x:.1f}x")
     pb_ratio = get_value(args.pb_ratio, 'pb_ratio', 0.0, lambda x: f"{x:.2f}x")
@@ -445,7 +520,8 @@ def main():
     roe = get_value(args.roe, 'roe', "N/A", lambda x: f"{x:.1f}%" if isinstance(x, (int, float)) else str(x))
     net_debt_to_equity = get_value(args.net_debt_to_equity, 'net_debt_to_equity', "N/A", lambda x: f"{x:.2f}%" if isinstance(x, (int, float)) else str(x))
     sector = get_value(args.sector, 'sector', "Industrials")
-    week_52_range = get_value(None, '52w_range', 'N/A')
+    week_52_range = get_value(None, '52w_range', 'N/A',
+                              lambda x: f"{currency.fmt_price(x[0])} - {currency.fmt_price(x[1])}" if isinstance(x, (tuple, list)) else x)
 
     # Print summary of what was auto-fetched vs. provided
     print(f"\n📊 Market Data Summary for {args.company_ticker}:")
@@ -495,7 +571,9 @@ def main():
 
     # --- Compute technical indicators ---
     technical_indicators = {}
-    if fmp_api_key:
+    if use_finedge and finedge_client:
+        technical_indicators = get_finedge_technical_indicators(args.company_ticker, finedge_client)
+    elif fmp_api_key:
         try:
             technical_indicators = get_technical_indicators(args.company_ticker, fmp_api_key)
         except Exception as e:
@@ -539,13 +617,32 @@ def main():
         "retail_sentiment": {},
     }
 
+    is_bank_report = is_bank_analysis(analysis_df, analysis_summary)
+    if use_finedge:
+        report_data["pe_label"] = "P/E (TTM)"
+    if data_warnings:
+        report_data["data_source_text"] = f"{args.data_source_text}. Data notes: " + " ".join(data_warnings)
+    if is_bank_report:
+        print("🏦 Using bank report template")
+        report_data.update(BANK_REPORT_LABELS)
+
+    peer_bank_df = pd.DataFrame()
+    peer_bank_csv = args.peer_bank_csv or os.path.join(analysis_dir, "peer_bank_comparison.csv")
+    if is_bank_report and os.path.exists(peer_bank_csv):
+        peer_bank_df = pd.read_csv(peer_bank_csv)
+
     # --- Generate or load charts ---
     print("Handling charts...")
     if args.revenue_chart_path and os.path.exists(args.revenue_chart_path):
         report_data['revenue_chart_path'] = args.revenue_chart_path
     else:
         chart_path = os.path.join(output_dir, f"{args.company_ticker}_revenue_ebitda_chart.png")
-        chart_result = generate_revenue_ebitda_chart(analysis_df, chart_path, args.company_ticker)
+        if is_bank_report:
+            chart_result = generate_revenue_ebitda_chart(analysis_df, chart_path, args.company_ticker,
+                                                         revenue_label="Total Income",
+                                                         ebitda_label="Pre-Provision Profit")
+        else:
+            chart_result = generate_revenue_ebitda_chart(analysis_df, chart_path, args.company_ticker)
         report_data['revenue_chart_path'] = chart_result or ""
 
     # Generate EPS × PE chart
@@ -555,6 +652,12 @@ def main():
 
     if args.ev_ebitda_chart_path and os.path.exists(args.ev_ebitda_chart_path):
         report_data['ev_ebitda_chart_path'] = args.ev_ebitda_chart_path
+    elif is_bank_report and len(peer_bank_df) > 1:
+        pb = peer_bank_df.set_index("ticker")[["P/B"]].T
+        pb.index = [int(peer_bank_df["year"].max())]
+        chart_path = os.path.join(output_dir, f"{args.company_ticker}_peer_pb_chart.png")
+        report_data['ev_ebitda_chart_path'] = generate_ev_ebitda_peer_chart(
+            pb, chart_path, args.company_ticker, metric_label="P/B") or ""
     elif peer_ev_ebitda_df is not None and not peer_ev_ebitda_df.empty:
         if 'year' in peer_ev_ebitda_df.columns:
             peer_ev_ebitda_df.set_index('year', inplace=True)
@@ -717,7 +820,10 @@ def main():
                         print(f"✅ Generated Valuation Waterfall chart")
             
             # 6. 现金流分析图（如果有现金流数据）
-            cashflow_csv_path = os.path.join(os.path.dirname(args.analysis_csv), "cash_flow_statement_raw_data.csv")
+            # step 1 saves cash_flow_raw_data.csv; keep the old name as a fallback
+            cashflow_csv_path = os.path.join(os.path.dirname(args.analysis_csv), "cash_flow_raw_data.csv")
+            if not os.path.exists(cashflow_csv_path):
+                cashflow_csv_path = os.path.join(os.path.dirname(args.analysis_csv), "cash_flow_statement_raw_data.csv")
             if os.path.exists(cashflow_csv_path):
                 try:
                     cashflow_df = pd.read_csv(cashflow_csv_path)
@@ -756,9 +862,13 @@ def main():
             # Prepare financial data for valuation engine
             financial_data_for_valuation = {
                 'analysis': analysis_df,
-                'current_price': float(share_price.replace('$', '').replace(',', '')) if isinstance(share_price, str) else share_price,
+                'current_price': currency.parse_money(share_price) or 0.0,
                 'shares_outstanding': auto_fetched_metrics.get('shares_outstanding', 1e9)
             }
+            km_csv = os.path.join(analysis_dir, "key_metrics_raw_data.csv")
+            if use_finedge and os.path.exists(km_csv):
+                # Historical EV/EBITDA multiples from FinEdge (instead of the 12x default)
+                financial_data_for_valuation['key_metrics'] = pd.read_csv(km_csv)
 
             # Prepare peer data if available
             peer_data_for_valuation = {}
@@ -767,10 +877,20 @@ def main():
 
             valuation_engine = ValuationEngine(financial_data_for_valuation, peer_data_for_valuation)
 
-            # Run all three valuation methods
-            valuation_engine.calculate_ev_ebitda_valuation()
-            valuation_engine.calculate_dcf_valuation()
-            valuation_engine.calculate_peer_comparison_valuation()
+            if is_bank_report:
+                # EBITDA-based methods do not apply to banks: use P/B and P/E multiples
+                valuation_engine.calculate_multiple_valuation(
+                    "P/B Multiple", _latest_numeric(analysis_df, "Book Value per Share"),
+                    _history_numeric(analysis_df, "PB Ratio"), confidence=0.7,
+                    value_label="Book value per share")
+                valuation_engine.calculate_multiple_valuation(
+                    "P/E Multiple", _latest_numeric(analysis_df, "EPS"),
+                    _history_numeric(analysis_df, "PE Ratio"), confidence=0.5, value_label="EPS")
+            else:
+                # Run all three valuation methods
+                valuation_engine.calculate_ev_ebitda_valuation()
+                valuation_engine.calculate_dcf_valuation()
+                valuation_engine.calculate_peer_comparison_valuation()
 
             # Synthesize weighted average
             synthesis = valuation_engine.synthesize_valuation()
@@ -795,8 +915,8 @@ def main():
             report_data['valuation_analysis'] = valuation_results
             print(f"✅ Valuation analysis completed with {len(valuation_results['methods'])} methods")
             if synthesis.get('target_price') and synthesis['target_price'] > 0:
-                print(f"  Synthesized target: ${synthesis['target_price']:.2f} "
-                      f"(range ${synthesis['range'][0]:.2f}-${synthesis['range'][1]:.2f}, "
+                print(f"  Synthesized target: {currency.fmt_price(synthesis['target_price'])} "
+                      f"(range {currency.fmt_price(synthesis['range'][0])}-{currency.fmt_price(synthesis['range'][1])}, "
                       f"upside {synthesis['upside']:.1f}%)")
         except Exception as e:
             print(f"⚠️ Error performing valuation analysis: {e}")
@@ -897,17 +1017,22 @@ def main():
     # For Page 3 tables, filter to only include actual years (no estimates)
     analysis_actual_only = filter_actual_years_only(analysis_df)
 
-    summary_metrics = ["Revenue", "Revenue Growth", "EBITDA", "EBITDA Margin", "Contribution Profit", "Contribution Margin", "SG&A", "SG&A Margin"]
+    summary_metrics = (BANK_SUMMARY_METRICS if is_bank_report else
+                       ["Revenue", "Revenue Growth", "EBITDA", "EBITDA Margin", "Contribution Profit", "Contribution Margin", "SG&A", "SG&A Margin"])
     financial_summary_df = analysis_actual_only[analysis_actual_only["metrics"].isin(summary_metrics)].set_index("metrics")
     report_data["financial_summary_table_html"] = format_dataframe_to_html_table(financial_summary_df, table_id="financial-summary")
 
-    valuation_metrics = ["EBITDA Margin", "Contribution Margin", "SG&A Margin", "Revenue Growth"]
+    valuation_metrics = (BANK_QUALITY_METRICS if is_bank_report else
+                         ["EBITDA Margin", "Contribution Margin", "SG&A Margin", "Revenue Growth"])
     valuation_metrics_df = analysis_actual_only[analysis_actual_only["metrics"].isin(valuation_metrics)].set_index("metrics")
     report_data["valuation_metrics_table_html"] = format_dataframe_to_html_table(valuation_metrics_df, table_id="valuation-metrics")
 
     # Load and format Credit & Cashflow metrics from the provided CSV
     print("Loading Credit & Cashflow metrics from CSV...")
-    credit_cashflow_df = load_credit_cashflow_metrics_from_csv(args.ratios_csv)
+    if is_bank_report:
+        credit_cashflow_df = bank_balance_table(analysis_df)
+    else:
+        credit_cashflow_df = load_credit_cashflow_metrics_from_csv(args.ratios_csv)
     if not credit_cashflow_df.empty:
         credit_cashflow_actual = filter_actual_years_only(credit_cashflow_df)
         credit_cashflow_formatted = credit_cashflow_actual.set_index("metrics")
@@ -919,7 +1044,13 @@ def main():
 
 
     # Handle peer data for tables - fix the filtering issue
-    if peer_ebitda_df is not None and not peer_ebitda_df.empty:
+    if is_bank_report:
+        report_data["peer_ebitda_table_html"] = "<p>EBITDA and EV/EBITDA are not meaningful for banks; see the peer bank table.</p>"
+        bank_display = format_bank_peer_table(peer_bank_df) if len(peer_bank_df) > 1 else pd.DataFrame()
+        report_data["peer_ev_ebitda_table_html"] = (
+            format_dataframe_to_html_table(bank_display, table_id="peer-bank-summary") if not bank_display.empty
+            else "<p>Peer bank data not available (peers may not be included in the current FinEdge plan).</p>")
+    elif peer_ebitda_df is not None and not peer_ebitda_df.empty:
         print(f"Processing peer EBITDA data with shape: {peer_ebitda_df.shape}")
         print(f"Peer EBITDA columns: {peer_ebitda_df.columns.tolist()}")
 
@@ -939,7 +1070,9 @@ def main():
         report_data["peer_ebitda_table_html"] = "<p>Peer EBITDA data not available.</p>"
         print("❌ No peer EBITDA data provided")
 
-    if peer_ev_ebitda_df is not None and not peer_ev_ebitda_df.empty:
+    if is_bank_report:
+        pass
+    elif peer_ev_ebitda_df is not None and not peer_ev_ebitda_df.empty:
         print(f"Processing peer EV/EBITDA data with shape: {peer_ev_ebitda_df.shape}")
         print(f"Peer EV/EBITDA columns: {peer_ev_ebitda_df.columns.tolist()}")
 
@@ -967,7 +1100,10 @@ def main():
     print("Generating professional HTML report (matching PDF structure)...")
     
     # Add additional data needed for professional template
-    report_data['revenue_analysis_text'] = f"{report_data.get('company_name_full', 'The company')} has demonstrated consistent revenue performance over the analysis period. Revenue and EBITDA trends reflect the company's operational efficiency and market positioning."
+    if is_bank_report:
+        report_data['revenue_analysis_text'] = f"{report_data.get('company_name_full', 'The bank')}'s total income (net interest income plus other income) and pre-provision operating profit over the analysis period. Figures are from standalone statements."
+    else:
+        report_data['revenue_analysis_text'] = f"{report_data.get('company_name_full', 'The company')} has demonstrated consistent revenue performance over the analysis period. Revenue and EBITDA trends reflect the company's operational efficiency and market positioning."
     report_data['eps_analysis_text'] = f"{report_data.get('company_name_full', 'The company')}'s earnings trajectory reflects the company's profitability trends, while valuation multiples indicate market expectations for future growth."
     
     # Extract key figures from analysis_df
@@ -979,7 +1115,9 @@ def main():
         eps_figures = {}
         
         if latest_year:
-            for metric in ['Revenue', 'EBITDA', 'Revenue Growth']:
+            figure_metrics = (['Net Interest Income', 'Pre-Provision Profit', 'Net Profit', 'NIM', 'Gross NPA']
+                              if is_bank_report else ['Revenue', 'EBITDA', 'Revenue Growth'])
+            for metric in figure_metrics:
                 row = analysis_df[analysis_df['metrics'] == metric]
                 if not row.empty:
                     val = row[latest_year].values[0]
@@ -1041,7 +1179,7 @@ def main():
     print(f"\n✅ Equity report generation complete!")
     print(f"📁 Reports saved to: {output_dir}")
     if auto_fetched_metrics:
-        print(f"🤖 Market data automatically fetched from FMP API")
+        print(f"🤖 Market data automatically fetched from {'FinEdge API' if use_finedge else 'FMP API'}")
 
 
 if __name__ == "__main__":

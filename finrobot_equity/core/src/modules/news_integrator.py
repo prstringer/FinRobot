@@ -430,6 +430,51 @@ class NewsIntegrator:
 
 
 # 增强版新闻获取函数
+def build_enhanced_news(ticker: str, raw_news: List[Dict], days_back: int = 5,
+                        api_key: str = None) -> Dict[str, Any]:
+    """Categorise and summarise a list of FMP-format news items (title, text, publishedDate, ...).
+
+    Used for FMP news and for FinEdge exchange announcements.
+    """
+    if not raw_news:
+        logger.warning(f"No news found for {ticker}")
+        return {
+            'ticker': ticker,
+            'articles': [],
+            'summary': f"No recent news found for {ticker}.",
+            'categorized': {},
+            'sentiment_overview': {'positive': 0, 'negative': 0, 'neutral': 0}
+        }
+
+    # 使用NewsIntegrator处理
+    integrator = NewsIntegrator(ticker, api_key)
+    integrator.set_news_data(raw_news)
+    integrator.process_news(days_back)
+
+    # 生成结果
+    categorized = integrator.get_news_by_category()
+    summary = integrator.generate_news_summary()
+
+    sentiments = [a.sentiment for a in integrator.articles]
+
+    return {
+        'ticker': ticker,
+        'articles': integrator.get_news_for_catalyst_analysis(),
+        'summary': summary,
+        'categorized': {k: [{'title': a.title, 'sentiment': a.sentiment, 
+                            'importance': a.importance} for a in v] 
+                      for k, v in categorized.items()},
+        'sentiment_overview': {
+            'positive': sentiments.count('positive'),
+            'negative': sentiments.count('negative'),
+            'neutral': sentiments.count('neutral')
+        },
+        'high_impact': [{'title': a.title, 'category': a.category, 
+                       'sentiment': a.sentiment} 
+                      for a in integrator.get_high_impact_news()]
+    }
+
+
 def get_enhanced_company_news(ticker: str, api_key: str, days_back: int = 5, 
                               limit: int = 50) -> Dict[str, Any]:
     """
@@ -470,43 +515,7 @@ def get_enhanced_company_news(ticker: str, api_key: str, days_back: int = 5,
         response.raise_for_status()
         raw_news = response.json()
         
-        if not raw_news:
-            logger.warning(f"No news found for {ticker}")
-            return {
-                'ticker': ticker,
-                'articles': [],
-                'summary': f"No recent news found for {ticker}.",
-                'categorized': {},
-                'sentiment_overview': {'positive': 0, 'negative': 0, 'neutral': 0}
-            }
-        
-        # 使用NewsIntegrator处理
-        integrator = NewsIntegrator(ticker, api_key)
-        integrator.set_news_data(raw_news)
-        integrator.process_news(days_back)
-        
-        # 生成结果
-        categorized = integrator.get_news_by_category()
-        summary = integrator.generate_news_summary()
-        
-        sentiments = [a.sentiment for a in integrator.articles]
-        
-        return {
-            'ticker': ticker,
-            'articles': integrator.get_news_for_catalyst_analysis(),
-            'summary': summary,
-            'categorized': {k: [{'title': a.title, 'sentiment': a.sentiment, 
-                                'importance': a.importance} for a in v] 
-                          for k, v in categorized.items()},
-            'sentiment_overview': {
-                'positive': sentiments.count('positive'),
-                'negative': sentiments.count('negative'),
-                'neutral': sentiments.count('neutral')
-            },
-            'high_impact': [{'title': a.title, 'category': a.category, 
-                           'sentiment': a.sentiment} 
-                          for a in integrator.get_high_impact_news()]
-        }
+        return build_enhanced_news(ticker, raw_news, days_back, api_key)
         
     except Exception as e:
         logger.error(f"Error fetching enhanced news: {e}")

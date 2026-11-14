@@ -9,7 +9,7 @@ import hashlib
 import secrets
 import httpx
 from datetime import datetime, timedelta
-from typing import List, Optional, Dict
+from typing import List, Literal, Optional, Dict
 from fastapi import FastAPI, Request, BackgroundTasks, Depends, HTTPException, Response
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -342,6 +342,10 @@ tasks = {}
 class AnalysisRequest(BaseModel):
     ticker: str
     company_name: str
+    # 'fmp' = US stocks via Financial Modeling Prep (USD);
+    # 'finedge' = Indian NSE/BSE stocks via FinEdge (INR, needs FINEDGE_API_TOKEN or finedge_api_token)
+    data_provider: Literal["fmp", "finedge"] = "fmp"
+    statement_type: Literal["auto", "c", "s"] = "auto"
     peers: List[str] = []
     years_limit: int = 5
     revenue_growth_2025: float = 0.05
@@ -426,8 +430,11 @@ def execute_analysis_pipeline(task_id: str, req: AnalysisRequest):
         "--revenue-growth-2026", str(req.revenue_growth_2026),
         "--revenue-growth-2027", str(req.revenue_growth_2027),
         "--margin-improvement", str(req.margin_improvement),
-        "--output-dir", analysis_output_dir
+        "--output-dir", analysis_output_dir,
+        "--data-provider", req.data_provider,
     ]
+    if req.data_provider == "finedge":
+        cmd_analysis.extend(["--statement-type", req.statement_type])
     
     if req.peers:
         cmd_analysis.append("--peer-tickers")
@@ -475,7 +482,8 @@ def execute_analysis_pipeline(task_id: str, req: AnalysisRequest):
         "--major-takeaways-file", os.path.join(base_output_dir, "major_takeaways.txt"),
         "--output-dir", report_output_dir,
         "--config-file", config_file,
-        "--enable-text-regeneration"
+        "--enable-text-regeneration",
+        "--data-provider", req.data_provider,
     ]
     
     # 新增增强功能选项
@@ -500,11 +508,12 @@ def execute_analysis_pipeline(task_id: str, req: AnalysisRequest):
         if os.path.exists(enhanced_news_file):
             cmd_report.extend(["--enhanced-news-file", enhanced_news_file])
     
-    if req.peers:
-        cmd_report.extend([
-            "--peer-ebitda-csv", os.path.join(base_output_dir, "peer_ebitda_comparison.csv"),
-            "--peer-ev-ebitda-csv", os.path.join(base_output_dir, "peer_ev_ebitda_comparison.csv")
-        ])
+    # Peer files exist only when step 1 found peer data (FinEdge also auto-discovers peers)
+    for flag, name in (("--peer-ebitda-csv", "peer_ebitda_comparison.csv"),
+                       ("--peer-ev-ebitda-csv", "peer_ev_ebitda_comparison.csv")):
+        peer_csv = os.path.join(base_output_dir, name)
+        if os.path.exists(peer_csv):
+            cmd_report.extend([flag, peer_csv])
 
     if not run_process(cmd_report, task_id, cwd=SRC_ROOT):
         # Update report status to failed
@@ -526,7 +535,8 @@ def execute_analysis_pipeline(task_id: str, req: AnalysisRequest):
             "--company-name", req.company_name,
             "--analysis-dir", base_output_dir,
             "--output-dir", report_output_dir,
-            "--config-file", config_file
+            "--config-file", config_file,
+            "--data-provider", req.data_provider,
         ]
         
         if not run_process(cmd_pdf, task_id, cwd=SRC_ROOT):
@@ -575,12 +585,20 @@ async def run_analysis(req: AnalysisRequest, request: Request, background_tasks:
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
     
+    # FinEdge symbols are bare NSE codes; accept ITC.NS / ITC.BO too
+    req.ticker = req.ticker.strip().upper()
+    if req.data_provider == "finedge":
+        for suffix in (".NS", ".BO"):
+            if req.ticker.endswith(suffix):
+                req.ticker = req.ticker[: -len(suffix)]
+        req.peers = [p.strip().upper().removesuffix(".NS").removesuffix(".BO") for p in req.peers if p.strip()]
+
     task_id = str(uuid.uuid4())
     tasks[task_id] = {"status": "pending", "logs": [], "result": None, "user": user["email"]}
     
     # 初始化日志文件
     write_log_to_file(task_id, f"Task created by user: {user['email']}")
-    write_log_to_file(task_id, f"Ticker: {req.ticker}, Company: {req.company_name}")
+    write_log_to_file(task_id, f"Ticker: {req.ticker}, Company: {req.company_name}, Data provider: {req.data_provider}")
     
     # Record report request in database
     try:

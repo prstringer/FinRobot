@@ -189,9 +189,17 @@
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Core Data</span>
                 </div>
                 <div>
+                    <label class="block text-[10px] font-medium text-slate-400 mb-1.5 ml-1">Market</label>
+                    <div class="flex gap-2">
+                        <button type="button" @click="form.data_provider = 'fmp'" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-medium border transition-all duration-200" :class="form.data_provider === 'fmp' ? 'bg-blue-500/20 text-blue-300 border-blue-500/50' : 'bg-white/5 text-slate-500 border-transparent hover:bg-white/10'" title="US stocks via Financial Modeling Prep (USD)">US · FMP</button>
+                        <button type="button" @click="form.data_provider = 'finedge'" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-medium border transition-all duration-200" :class="form.data_provider === 'finedge' ? 'bg-orange-500/20 text-orange-300 border-orange-500/50' : 'bg-white/5 text-slate-500 border-transparent hover:bg-white/10'" title="Indian NSE/BSE stocks via FinEdge (INR)">India · FinEdge</button>
+                    </div>
+                    <p v-if="form.data_provider === 'finedge'" class="text-[9px] text-slate-500 mt-1.5 ml-1 leading-snug">NSE symbol, e.g. RELIANCE. Peers are found automatically; the free FinEdge plan covers ITC, RELIANCE, HDFCBANK and ICICIPRULI only.</p>
+                </div>
+                <div>
                     <label class="block text-[10px] font-medium text-slate-400 mb-1.5 ml-1">Ticker Symbol</label>
                     <div class="halo-input-wrapper">
-                        <input type="text" ref="tickerInput" v-model="form.ticker" placeholder="e.g. AAPL" class="halo-input w-full rounded-lg px-3 py-2.5 text-sm font-bold tracking-wide placeholder-slate-600" @input="form.ticker = form.ticker.toUpperCase()">
+                        <input type="text" ref="tickerInput" v-model="form.ticker" :placeholder="form.data_provider === 'finedge' ? 'e.g. RELIANCE' : 'e.g. AAPL'" class="halo-input w-full rounded-lg px-3 py-2.5 text-sm font-bold tracking-wide placeholder-slate-600" @input="form.ticker = form.ticker.toUpperCase()">
                     </div>
                 </div>
                 <div>
@@ -210,7 +218,7 @@
                         <span class="text-[9px] text-slate-600 uppercase tracking-wider">Optional</span>
                     </div>
                     <div class="halo-input-wrapper">
-                        <input type="text" v-model="form.peers_str" placeholder="Space separated (e.g. MSFT GOOG)" class="halo-input w-full rounded-lg px-3 py-2 text-xs font-medium placeholder-slate-600" @input="form.peers_str = form.peers_str.toUpperCase()">
+                        <input type="text" v-model="form.peers_str" :placeholder="form.data_provider === 'finedge' ? 'Optional: auto sector peers (e.g. IOC BPCL)' : 'Space separated (e.g. MSFT GOOG)'" class="halo-input w-full rounded-lg px-3 py-2 text-xs font-medium placeholder-slate-600" @input="form.peers_str = form.peers_str.toUpperCase()">
                     </div>
                 </div>
 
@@ -487,6 +495,7 @@
                     passwordLoading: false,
                     status: 'idle',
                     form: {
+                        data_provider: 'fmp',
                         ticker: '',
                         company_name: '',
                         peers_str: '',

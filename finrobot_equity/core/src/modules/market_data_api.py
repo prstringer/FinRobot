@@ -548,6 +548,22 @@ def get_comprehensive_company_metrics(ticker: str, api_key: str) -> dict:
 
 def get_technical_indicators(ticker: str, api_key: str) -> dict:
     """从 FMP 获取历史价格并计算 SMA50/200、RSI14、MACD、成交量信号。"""
+    try:
+        url = f"https://financialmodelingprep.com/api/v3/historical-price-full/{ticker}?timeseries=250&apikey={api_key}"
+        resp = requests.get(url, timeout=15)
+        data = resp.json()
+        df = pd.DataFrame(data.get('historical', []))
+    except Exception as e:
+        print(f"⚠️ Could not compute technical indicators: {e}")
+        df = pd.DataFrame()
+    return compute_technical_indicators(df, ticker)
+
+
+def compute_technical_indicators(df: pd.DataFrame, ticker: str = "") -> dict:
+    """Compute SMA50/200, RSI14, MACD and volume signals from a price DataFrame.
+
+    ``df`` needs 'date', 'close' and 'volume' columns (any order of dates).
+    """
     result = {
         'sma50': None, 'sma200': None, 'rsi14': None,
         'macd': None, 'macd_signal': None, 'macd_histogram': None,
@@ -559,14 +575,10 @@ def get_technical_indicators(ticker: str, api_key: str) -> dict:
     }
     try:
         import numpy as np
-        url = f"https://financialmodelingprep.com/api/v3/historical-price-full/{ticker}?timeseries=250&apikey={api_key}"
-        resp = requests.get(url, timeout=15)
-        data = resp.json()
-        prices = data.get('historical', [])
-        if len(prices) < 50:
+        if df is None or len(df) < 50:
             return result
 
-        df = pd.DataFrame(prices).sort_values('date').reset_index(drop=True)
+        df = df.sort_values('date').reset_index(drop=True)
         close = df['close'].astype(float)
         volume = df['volume'].astype(float)
 

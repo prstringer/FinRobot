@@ -36,6 +36,20 @@ SYSTEM_PROMPTS = {
 }
 
 
+BANK_SYSTEM_PROMPTS = {
+    "major_takeaways": "You are a bank analyst. Provide 4 major takeaways covering: Net Interest Income Growth, Net Interest Margin, Asset Quality (GNPA/NNPA and credit cost), and Profitability (ROA/ROE and cost-to-income). Format each with a header followed by 1-2 sentences.",
+}
+
+BANK_TAKEAWAY_HEADERS = ["Net Interest Income Growth:", "Net Interest Margin:", "Asset Quality:", "Profitability:"]
+
+
+def get_system_prompt(prompt_type: str, is_bank: bool = False) -> str:
+    """System prompt for a section, with bank-specific variants where they differ."""
+    if is_bank and prompt_type in BANK_SYSTEM_PROMPTS:
+        return BANK_SYSTEM_PROMPTS[prompt_type]
+    return SYSTEM_PROMPTS.get(prompt_type, f"You are a financial analyst. Provide {prompt_type.replace('_', ' ')} analysis.")
+
+
 def _df_to_string(df: Optional[pd.DataFrame], name: str) -> str:
     """Converts a DataFrame to a markdown string for use in a prompt."""
     if df is None or df.empty:
@@ -74,6 +88,10 @@ def _prepare_user_prompt(data: Dict, prompt_type: str, company_name: str, compan
 
     if prompt_type == "news_summary" and retail_sentiment:
         prompt += "\n" + format_retail_sentiment_for_prompt(retail_sentiment) + "\n"
+
+    data_notes = data.get('data_notes')
+    if data_notes:
+        prompt += "\nData notes (read before interpreting the numbers):\n" + "\n".join(f"- {n}" for n in data_notes) + "\n"
 
     prompt += f"\nPlease provide the {prompt_type.replace('_', ' ')} based on the above data."
     return prompt
@@ -119,7 +137,7 @@ def generate_text_section(data: Dict, prompt_type: str, api_key: str, company_na
         return _get_fallback_text(prompt_type, company_name)
     
     # Get system prompt
-    system_prompt = SYSTEM_PROMPTS.get(prompt_type, f"You are a financial analyst. Provide {prompt_type.replace('_', ' ')} analysis.")
+    system_prompt = get_system_prompt(prompt_type, bool(data.get('is_bank')))
     
     # Prepare user prompt with data
     user_prompt = _prepare_user_prompt(data, prompt_type, company_name, company_ticker)

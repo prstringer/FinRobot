@@ -5,6 +5,8 @@ import os
 import re as _re
 import pandas as pd
 
+from . import currency as _cur
+
 
 def _auto_bold_key_data(text: str) -> str:
     """自动加粗关键金融数据。"""
@@ -12,7 +14,7 @@ def _auto_bold_key_data(text: str) -> str:
         return text
     # $金额+单位
     text = _re.sub(
-        r'(\$[\d,.]+\s*(?:billion|million|trillion|bn|mn|trn|B|M|K|T))',
+        _cur.amount_regex(),
         r'<strong>\1</strong>', text, flags=_re.IGNORECASE)
     # 百分比
     text = _re.sub(r'(?<!\d)([\-+]?\d+\.?\d*%)', r'<strong>\1</strong>', text)
@@ -234,7 +236,7 @@ HTML_TEMPLATE_PAGE_1 = """
           <td class="text-right" style="color: #1a1a1a; font-weight: 500;">{sector}</td>
         </tr>
         <tr>
-          <td style="color: #555555;">Share Price (USD)</td>
+          <td style="color: #555555;">Share Price ({price_label})</td>
           <td class="text-right" style="color: #1a1a1a; font-weight: 500;">{share_price}</td>
         </tr>
         <tr>
@@ -242,11 +244,11 @@ HTML_TEMPLATE_PAGE_1 = """
           <td class="text-right" style="color: #1a1a1a; font-weight: 600;">{rating}</td>
         </tr>
         <tr>
-          <td style="color: #555555;">12-mth Target Price (USD)</td>
+          <td style="color: #555555;">12-mth Target Price ({price_label})</td>
           <td class="text-right" style="color: #1a1a1a; font-weight: 500;">{target_price}</td>
         </tr>
         <tr>
-          <td style="color: #555555;">Market Cap (USDb)</td>
+          <td style="color: #555555;">Market Cap ({large_label})</td>
           <td class="text-right" style="color: #1a1a1a; font-weight: 500;">{market_cap}</td>
         </tr>
         <tr>
@@ -266,7 +268,7 @@ HTML_TEMPLATE_PAGE_1 = """
           <td class="text-right" style="color: #1a1a1a; font-weight: 500;">{net_debt_to_equity}</td>
         </tr>
         <tr>
-          <td style="color: #555555;">Fwd. P/E (x)</td>
+          <td style="color: #555555;">{pe_label} (x)</td>
           <td class="text-right" style="color: #1a1a1a; font-weight: 500;">{fwd_pe}</td>
         </tr>
         <tr>
@@ -347,7 +349,7 @@ HTML_TEMPLATE_PAGE_2_FINANCIAL_SUMMARY = """
           <h2 style="color: #002855; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid #d1d5db; padding-bottom: 4px;" class="mb-3">Financial Metrics and Peer Comparison Charts</h2>
           <div class="grid grid-cols-3 gap-3">
               <div>
-                  <h3 style="font-size: 10px; color: #555555; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600;" class="mb-2">Revenue & EBITDA Trend</h3>
+                  <h3 style="font-size: 10px; color: #555555; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600;" class="mb-2">{revenue_chart_title}</h3>
                   <img src="{revenue_chart_path}" alt="Revenue and EBITDA Trend" class="w-full"/>
               </div>
               <div>
@@ -355,7 +357,7 @@ HTML_TEMPLATE_PAGE_2_FINANCIAL_SUMMARY = """
                   <img src="{eps_pe_chart_path}" alt="EPS x PE Trend Analysis" class="w-full"/>
               </div>
               <div>
-                  <h3 style="font-size: 10px; color: #555555; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600;" class="mb-2">EV/EBITDA Peer Comparison</h3>
+                  <h3 style="font-size: 10px; color: #555555; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600;" class="mb-2">{peer_chart_title}</h3>
                   <img src="{ev_ebitda_chart_path}" alt="EV/EBITDA Peer Comparison" class="w-full"/>
               </div>
           </div>
@@ -409,17 +411,17 @@ HTML_TEMPLATE_PAGE_3_PEER_COMPARISON = """
     <main>
       <div class="w-full">
         <div class="mb-6">
-          <h2 style="color: #002855; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid #d1d5db; padding-bottom: 4px;" class="mb-3">Financial Summary (USD, unless otherwise stated)</h2>
+          <h2 style="color: #002855; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid #d1d5db; padding-bottom: 4px;" class="mb-3">Financial Summary ({currency_code}, unless otherwise stated)</h2>
           {financial_summary_table_html}
         </div>
 
         <div class="mb-4">
-          <h2 style="color: #002855; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid #d1d5db; padding-bottom: 4px;" class="mb-3">Credit & Cashflow Metrics</h2>
+          <h2 style="color: #002855; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid #d1d5db; padding-bottom: 4px;" class="mb-3">{credit_section_title}</h2>
           {credit_cashflow_table_html}
         </div>
 
         <div class="mb-4">
-          <h2 style="color: #002855; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid #d1d5db; padding-bottom: 4px;" class="mb-3">Peer Valuation Metrics (EV/EBITDA, x)</h2>
+          <h2 style="color: #002855; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid #d1d5db; padding-bottom: 4px;" class="mb-3">{peer_valuation_title}</h2>
           {peer_ev_ebitda_table_html}
         </div>
 
@@ -445,10 +447,8 @@ def _format_value(val):
         # Try to parse as number
         try:
             num_val = float(val)
-            if abs(num_val) >= 1_000_000_000:
-                return f"${num_val/1_000_000_000:,.1f}B"
-            elif abs(num_val) >= 1_000_000:
-                return f"${num_val/1_000_000:,.1f}M"
+            if _cur.is_large_amount(num_val):
+                return _cur.fmt_amount(num_val)
             elif abs(num_val) >= 1_000:
                 return f"{num_val:,.0f}"
             else:
@@ -459,10 +459,8 @@ def _format_value(val):
     if isinstance(val, (int, float)):
         if pd.isna(val):
             return "-"
-        if abs(val) >= 1_000_000_000:
-            return f"${val/1_000_000_000:,.1f}B"
-        if abs(val) >= 1_000_000:
-            return f"${val/1_000_000:,.1f}M"
+        if _cur.is_large_amount(val):
+            return _cur.fmt_amount(val)
         if abs(val) >= 1_000:
             return f"{val:,.0f}"
         # For ratios or multipliers, format to appropriate decimal places
@@ -607,8 +605,10 @@ HTML_TEMPLATE_PAGE_4_ENHANCED_ANALYSIS = HTML_TEMPLATE_PAGE_4_SENSITIVITY_CATALY
 def _derive_rating(share_price, target_price, api_rating: str) -> str:
     """根据 target_price vs share_price 推导评级。"""
     try:
-        price = float(str(share_price).replace('$', '').replace(',', ''))
-        target = float(str(target_price).replace('$', '').replace(',', ''))
+        price = _cur.parse_money(share_price)
+        target = _cur.parse_money(target_price)
+        if price is None or target is None:
+            return api_rating or 'N/A'
         if price <= 0:
             return api_rating or 'N/A'
         upside = (target - price) / price
@@ -640,9 +640,9 @@ def format_valuation_breakdown_html(valuation_data: dict) -> str:
     html += '<thead><tr><th style="text-align:left;">Method</th><th>Target Price</th><th>Low</th><th>High</th><th>Weight</th><th style="text-align:left;">Key Assumptions</th></tr></thead><tbody>'
 
     for m in methods:
-        target = f"${m['target_price']:.2f}"
-        low = f"${m['low_estimate']:.2f}"
-        high = f"${m['high_estimate']:.2f}"
+        target = _cur.fmt_price(m['target_price'])
+        low = _cur.fmt_price(m['low_estimate'])
+        high = _cur.fmt_price(m['high_estimate'])
         weight = f"{m['confidence'] * 100:.0f}%"
         parts = []
         for k, v in list(m.get('assumptions', {}).items())[:3]:
@@ -670,11 +670,11 @@ def format_valuation_breakdown_html(valuation_data: dict) -> str:
         <div style="background:#f5f7fa; border-top:2px solid #002855; padding:10px 16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
             <div>
                 <p style="color:#555555; font-size:9px; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:2px;">Weighted Target Price</p>
-                <p style="color:#002855; font-size:18px; font-weight:700;">${synth_target:.2f}</p>
+                <p style="color:#002855; font-size:18px; font-weight:700;">{_cur.fmt_price(synth_target)}</p>
             </div>
             <div>
                 <p style="color:#555555; font-size:9px; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:2px;">Valuation Range</p>
-                <p style="color:#1a1a1a; font-size:13px; font-weight:600;">${synth_range[0]:.2f} - ${synth_range[1]:.2f}</p>
+                <p style="color:#1a1a1a; font-size:13px; font-weight:600;">{_cur.fmt_price(synth_range[0])} - {_cur.fmt_price(synth_range[1])}</p>
             </div>
             <div>
                 <p style="color:#555555; font-size:9px; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:2px;">Implied {upside_label}</p>
@@ -703,9 +703,9 @@ def format_sensitivity_analysis_html(sensitivity_data):
                 high_val = ci.get('high') or ci.get('upper', 'N/A')
                 # Format large numbers
                 if isinstance(low_val, (int, float)):
-                    low_val = f"${low_val/1e9:.1f}B" if low_val > 1e9 else f"${low_val/1e6:.1f}M"
+                    low_val = _cur.fmt_amount(low_val)
                 if isinstance(high_val, (int, float)):
-                    high_val = f"${high_val/1e9:.1f}B" if high_val > 1e9 else f"${high_val/1e6:.1f}M"
+                    high_val = _cur.fmt_amount(high_val)
                 html += f"<li>{metric}: {low_val} - {high_val} (95% CI)</li>"
         html += "</ul></div>"
     
@@ -846,9 +846,9 @@ def format_enhanced_charts_html(charts_data, report_data=None):
 
     sma50 = ti.get('sma50')
     sma200 = ti.get('sma200')
-    ma_val = f'SMA 50: ${sma50:.2f}' if sma50 else ''
+    ma_val = f'SMA 50: {_cur.fmt_price(sma50)}' if sma50 else ''
     if sma200:
-        ma_val += f' | SMA 200: ${sma200:.2f}'
+        ma_val += f' | SMA 200: {_cur.fmt_price(sma200)}'
     ma_val = ma_val or 'Data not available'
     fallback += f'<div style="{card_style}"><strong style="font-size:10px; color:#002855;">Moving Averages{_sig_label(ti.get("ma_signal"))}</strong><p style="font-size:10px; color:#555555; margin:2px 0 0 0;">{ma_val}</p></div>'
 
@@ -934,9 +934,30 @@ def format_retail_sentiment_html(sentiment_data: dict) -> str:
         "</div>"
     )
 
+REPORT_LABEL_DEFAULTS = {
+    "revenue_chart_title": "Revenue & EBITDA Trend",
+    "revenue_section_title": "Revenue & EBITDA Performance",
+    "peer_chart_title": "EV/EBITDA Peer Comparison",
+    "credit_section_title": "Credit & Cashflow Metrics",
+    "peer_valuation_title": "Peer Valuation Metrics (EV/EBITDA, x)",
+    "peer_ebitda_title": "Peer EBITDA Comparison",
+    "peer_ev_ebitda_title": "Peer EV/EBITDA Comparison",
+}
+
+
+def _set_currency_labels(data: dict) -> None:
+    for key, value in REPORT_LABEL_DEFAULTS.items():
+        data.setdefault(key, value)
+    data.setdefault("price_label", _cur.price_label())
+    data.setdefault("large_label", _cur.large_label())
+    data.setdefault("currency_code", _cur.get_currency())
+    data.setdefault("pe_label", "Fwd. P/E")
+
+
 def render_html_report(template_str: str, data: dict) -> str:
     """Renders an HTML report from a template string and data dictionary."""
     try:
+        _set_currency_labels(data)
         # Prepare analyst contacts
         if "analyst_names" in data or "analyst_emails" in data:
             data["analyst_contacts_html"] = format_analyst_contacts(data.get("analyst_names"), data.get("analyst_emails"))
@@ -1146,16 +1167,16 @@ HTML_TEMPLATE_COMBINED = """
             <table class="w-full text-xs financial-table">
               <tr><td style="color: #555555;">Bloomberg Ticker</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{company_ticker} US</td></tr>
               <tr><td style="color: #555555;">Sector</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{sector}</td></tr>
-              <tr><td style="color: #555555;">Share Price (USD)</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{share_price}</td></tr>
+              <tr><td style="color: #555555;">Share Price ({price_label})</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{share_price}</td></tr>
               <tr><td style="color: #555555;">Rating</td><td class="text-right" style="color: #1a1a1a; font-weight: 600;">{rating}</td></tr>
-              <tr><td style="color: #555555;">12-mth Target Price (USD)</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{target_price}</td></tr>
-              <tr><td style="color: #555555;">Market Cap (USDb)</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{market_cap}</td></tr>
+              <tr><td style="color: #555555;">12-mth Target Price ({price_label})</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{target_price}</td></tr>
+              <tr><td style="color: #555555;">Market Cap ({large_label})</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{market_cap}</td></tr>
               <tr><td style="color: #555555;">52-Week Range</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{week_52_range}</td></tr>
               <tr><td style="color: #555555;">Volume (m shares)</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{volume}</td></tr>
               <tr><td style="color: #555555;">Free float (%)</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{free_float}</td></tr>
               <tr><td style="color: #555555;">Dividend yield (%)</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{dividend_yield}</td></tr>
               <tr><td style="color: #555555;">Net Debt to Equity (%)</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{net_debt_to_equity}</td></tr>
-              <tr><td style="color: #555555;">Fwd. P/E (x)</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{fwd_pe}</td></tr>
+              <tr><td style="color: #555555;">{pe_label} (x)</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{fwd_pe}</td></tr>
               <tr><td style="color: #555555;">P/Book (x)</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{pb_ratio}</td></tr>
               <tr><td style="color: #555555;">ROE (%)</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{roe}</td></tr>
             </table>
@@ -1170,9 +1191,9 @@ HTML_TEMPLATE_COMBINED = """
     <section id="competitor" class="section page-break">
       <h2 class="section-label mb-3">Competitor Analysis</h2>
 
-      <h3 style="font-size:11px; font-weight:600; color:#002855; text-transform:uppercase; letter-spacing:0.03em; margin-bottom:8px;">Peer EBITDA Comparison</h3>
+      <h3 style="font-size:11px; font-weight:600; color:#002855; text-transform:uppercase; letter-spacing:0.03em; margin-bottom:8px;">{peer_ebitda_title}</h3>
       {peer_ebitda_table_html}
-      <h3 style="font-size:11px; font-weight:600; color:#002855; text-transform:uppercase; letter-spacing:0.03em; margin:12px 0 8px 0;">Peer EV/EBITDA Comparison</h3>
+      <h3 style="font-size:11px; font-weight:600; color:#002855; text-transform:uppercase; letter-spacing:0.03em; margin:12px 0 8px 0;">{peer_ev_ebitda_title}</h3>
       {peer_ev_ebitda_table_html_comp}
 
       <div class="text-xs leading-tight mb-4" style="color: #1a1a1a; margin-top:12px;">{competitor_analysis}</div>
@@ -1185,7 +1206,7 @@ HTML_TEMPLATE_COMBINED = """
       <h2 class="section-label mb-3">Financial Metrics and Peer Comparison Charts</h2>
       <div class="grid grid-cols-3 gap-3">
         <div>
-          <h3 style="font-size: 10px; color: #555555; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600;" class="mb-2">Revenue & EBITDA Trend</h3>
+          <h3 style="font-size: 10px; color: #555555; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600;" class="mb-2">{revenue_chart_title}</h3>
           <img src="{revenue_chart_path}" alt="Revenue and EBITDA Trend" class="w-full"/>
         </div>
         <div>
@@ -1193,7 +1214,7 @@ HTML_TEMPLATE_COMBINED = """
           <img src="{eps_pe_chart_path}" alt="EPS x PE Trend Analysis" class="w-full"/>
         </div>
         <div>
-          <h3 style="font-size: 10px; color: #555555; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600;" class="mb-2">EV/EBITDA Peer Comparison</h3>
+          <h3 style="font-size: 10px; color: #555555; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600;" class="mb-2">{peer_chart_title}</h3>
           <img src="{ev_ebitda_chart_path}" alt="EV/EBITDA Peer Comparison" class="w-full"/>
         </div>
       </div>
@@ -1201,13 +1222,13 @@ HTML_TEMPLATE_COMBINED = """
 
     <!-- Section 3: Financial Summary -->
     <section id="financials" class="section page-break">
-      <h2 class="section-label mb-3">Financial Summary (USD, unless otherwise stated)</h2>
+      <h2 class="section-label mb-3">Financial Summary ({currency_code}, unless otherwise stated)</h2>
       {financial_summary_table_html}
 
-      <h2 class="section-label mb-3 mt-6">Credit & Cashflow Metrics</h2>
+      <h2 class="section-label mb-3 mt-6">{credit_section_title}</h2>
       {credit_cashflow_table_html}
 
-      <h2 class="section-label mb-3 mt-6">Peer Valuation Metrics (EV/EBITDA, x)</h2>
+      <h2 class="section-label mb-3 mt-6">{peer_valuation_title}</h2>
       {peer_ev_ebitda_table_html}
     </section>
 
@@ -1262,6 +1283,7 @@ def render_combined_html_report(data: dict) -> str:
     Renders a combined HTML report with all sections in a single file.
     """
     try:
+        _set_currency_labels(data)
         # Prepare analyst contacts
         if "analyst_names" in data or "analyst_emails" in data:
             data["analyst_contacts_html"] = format_analyst_contacts(data.get("analyst_names"), data.get("analyst_emails"))

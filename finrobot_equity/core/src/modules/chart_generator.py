@@ -17,6 +17,8 @@ import io
 import base64
 from typing import Optional, List, Tuple
 
+from . import currency as _cur
+
 
 # =============================================================================
 # 颜色规范 (与 pdf_generator.py 保持一致)
@@ -106,7 +108,8 @@ def save_chart_to_base64(fig, output_path: str) -> str:
 # =============================================================================
 # 图表生成函数
 # =============================================================================
-def generate_revenue_ebitda_chart(analysis_df: pd.DataFrame, output_path: str, company_ticker: str) -> Optional[str]:
+def generate_revenue_ebitda_chart(analysis_df: pd.DataFrame, output_path: str, company_ticker: str,
+                                  revenue_label: str = "Revenue", ebitda_label: str = "EBITDA") -> Optional[str]:
     """
     生成 Revenue & EBITDA 组合图表（柱状图 + 折线图）
     
@@ -145,9 +148,10 @@ def generate_revenue_ebitda_chart(analysis_df: pd.DataFrame, output_path: str, c
             print("Warning: Revenue or EBITDA data is non-numeric.")
             return None
 
-        # 转换为十亿美元
-        revenue_billions = revenue_data / 1e9
-        ebitda_billions = ebitda_data / 1e9
+        # 转换为十亿美元 (or rupee crore for INR)
+        _div, _unit = _cur.chart_scale()
+        revenue_billions = revenue_data / _div
+        ebitda_billions = ebitda_data / _div
 
         fig, ax1 = plt.subplots(figsize=(7, 4))
         
@@ -156,10 +160,10 @@ def generate_revenue_ebitda_chart(analysis_df: pd.DataFrame, output_path: str, c
         
         # 柱状图 - Revenue (深蓝色)
         bars = ax1.bar(x, revenue_billions, width, color=ChartColors.PRIMARY, 
-                       alpha=0.85, label='Revenue', edgecolor='white', linewidth=0.5)
+                       alpha=0.85, label=revenue_label, edgecolor='white', linewidth=0.5)
         
         ax1.set_xlabel('Year', fontsize=9, color=ChartColors.TEXT)
-        ax1.set_ylabel('Revenue ($B)', fontsize=9, color=ChartColors.PRIMARY)
+        ax1.set_ylabel(f'{revenue_label} ({_unit})', fontsize=9, color=ChartColors.PRIMARY)
         ax1.tick_params(axis='y', labelcolor=ChartColors.PRIMARY)
         ax1.set_xticks(x)
         ax1.set_xticklabels(years, rotation=45, ha='right')
@@ -167,17 +171,17 @@ def generate_revenue_ebitda_chart(analysis_df: pd.DataFrame, output_path: str, c
         # 折线图 - EBITDA (金色)
         ax2 = ax1.twinx()
         line = ax2.plot(x, ebitda_billions, color=ChartColors.ACCENT, marker='o', 
-                        markersize=6, linewidth=2.5, label='EBITDA')
-        ax2.set_ylabel('EBITDA ($B)', fontsize=9, color=ChartColors.ACCENT)
+                        markersize=6, linewidth=2.5, label=ebitda_label)
+        ax2.set_ylabel(f'{ebitda_label} ({_unit})', fontsize=9, color=ChartColors.ACCENT)
         ax2.tick_params(axis='y', labelcolor=ChartColors.ACCENT)
         
         # 标题
-        ax1.set_title(f"{company_ticker} - Revenue & EBITDA Trend", 
+        ax1.set_title(f"{company_ticker} - {revenue_label} & {ebitda_label} Trend", 
                      fontsize=11, fontweight='bold', color=ChartColors.TEXT, pad=15)
         
         # 图例
-        bar_patch = mpatches.Patch(color=ChartColors.PRIMARY, label='Revenue')
-        line_patch = mpatches.Patch(color=ChartColors.ACCENT, label='EBITDA')
+        bar_patch = mpatches.Patch(color=ChartColors.PRIMARY, label=revenue_label)
+        line_patch = mpatches.Patch(color=ChartColors.ACCENT, label=ebitda_label)
         ax1.legend(handles=[bar_patch, line_patch], loc='upper left', 
                    framealpha=0.9, fontsize=8)
         
@@ -199,7 +203,7 @@ def generate_revenue_ebitda_chart(analysis_df: pd.DataFrame, output_path: str, c
 
 
 def generate_ev_ebitda_peer_chart(peer_ev_ebitda_df: pd.DataFrame, output_path: str, 
-                                  target_ticker: str) -> Optional[str]:
+                                  target_ticker: str, metric_label: str = "EV/EBITDA") -> Optional[str]:
     """
     生成 EV/EBITDA 同行对比图表（分组柱状图或折线图）
     
@@ -251,8 +255,8 @@ def generate_ev_ebitda_peer_chart(peer_ev_ebitda_df: pd.DataFrame, output_path: 
             ax.set_xticklabels(companies, rotation=45, ha='right')
         
         ax.set_xlabel('', fontsize=9)
-        ax.set_ylabel('EV/EBITDA (x)', fontsize=9, color=ChartColors.TEXT)
-        ax.set_title(f"EV/EBITDA Peer Comparison", 
+        ax.set_ylabel(f'{metric_label} (x)', fontsize=9, color=ChartColors.TEXT)
+        ax.set_title(f"{metric_label} Peer Comparison", 
                     fontsize=11, fontweight='bold', color=ChartColors.TEXT, pad=15)
         
         if len(peer_ev_ebitda_df) > 1:
@@ -321,9 +325,9 @@ def generate_eps_pe_chart(analysis_df: pd.DataFrame, output_path: str,
         
         # EPS 折线 (深蓝色，左轴)
         line1 = ax1.plot(x, eps_data, color=ChartColors.PRIMARY, marker='o', 
-                        markersize=6, linewidth=2.5, label='EPS ($)')
+                        markersize=6, linewidth=2.5, label=f'EPS ({_cur.symbol()})')
         ax1.set_xlabel('Year', fontsize=9, color=ChartColors.TEXT)
-        ax1.set_ylabel('EPS ($)', fontsize=9, color=ChartColors.PRIMARY)
+        ax1.set_ylabel(f'EPS ({_cur.symbol()})', fontsize=9, color=ChartColors.PRIMARY)
         ax1.tick_params(axis='y', labelcolor=ChartColors.PRIMARY)
         ax1.set_xticks(x)
         ax1.set_xticklabels(years, rotation=45, ha='right')
@@ -560,7 +564,7 @@ def generate_stock_price_chart(price_data: pd.DataFrame, output_path: str,
             ax1.plot(df['date'], df['MA200'], color='#4A7C59', 
                     linewidth=1.2, label='MA200', linestyle=':')
         
-        ax1.set_ylabel('Price ($)', fontsize=10, color=ChartColors.TEXT)
+        ax1.set_ylabel(f'Price ({_cur.symbol()})', fontsize=10, color=ChartColors.TEXT)
         ax1.set_title(f"{company_ticker} Stock Price ({period})", 
                      fontsize=12, fontweight='bold', color=ChartColors.TEXT, pad=15)
         ax1.legend(loc='upper left', framealpha=0.9, fontsize=8)
@@ -854,7 +858,7 @@ def generate_technical_indicators_chart(price_data: pd.DataFrame, output_path: s
         # 上图：股价
         ax1.plot(df['date'], df['close'], color=ChartColors.PRIMARY, 
                 linewidth=1.5, label='Price')
-        ax1.set_ylabel('Price ($)', fontsize=10)
+        ax1.set_ylabel(f'Price ({_cur.symbol()})', fontsize=10)
         ax1.set_title(f"{company_ticker} Technical Analysis", 
                      fontsize=12, fontweight='bold', pad=15)
         ax1.legend(loc='upper left', fontsize=8)
@@ -957,12 +961,12 @@ def generate_valuation_waterfall_chart(valuation_components: dict, output_path: 
         # 添加数值标签
         for i, (label, value) in enumerate(zip(labels, values)):
             y_pos = value / 2 if i == 0 or i == len(labels) - 1 else cumulative[i] + value / 2
-            ax.text(i, y_pos, f'${value:.0f}', ha='center', va='center', 
+            ax.text(i, y_pos, f'{_cur.symbol()}{value:.0f}', ha='center', va='center', 
                    fontsize=9, fontweight='bold', color='white')
         
         ax.set_xticks(range(len(labels)))
         ax.set_xticklabels(labels, rotation=45, ha='right', fontsize=9)
-        ax.set_ylabel('Value ($)', fontsize=10)
+        ax.set_ylabel(f'Value ({_cur.symbol()})', fontsize=10)
         ax.set_title(f"{company_ticker} - Valuation Bridge", 
                     fontsize=12, fontweight='bold', pad=15)
         ax.grid(True, axis='y', linestyle='--', alpha=0.5)
@@ -1089,9 +1093,10 @@ def generate_cash_flow_chart(cash_flow_data: dict, output_path: str,
         financing = cash_flow_data.get('Financing', [0] * len(periods))
         
         # 转换为十亿
-        operating = [v / 1e9 if v else 0 for v in operating]
-        investing = [v / 1e9 if v else 0 for v in investing]
-        financing = [v / 1e9 if v else 0 for v in financing]
+        _div, _unit = _cur.chart_scale()
+        operating = [v / _div if v else 0 for v in operating]
+        investing = [v / _div if v else 0 for v in investing]
+        financing = [v / _div if v else 0 for v in financing]
         
         ax.bar(x - width, operating, width, label='Operating CF', 
               color=ChartColors.PRIMARY, edgecolor='white')
@@ -1107,7 +1112,7 @@ def generate_cash_flow_chart(cash_flow_data: dict, output_path: str,
         
         ax.axhline(y=0, color='black', linestyle='-', linewidth=0.5)
         ax.set_xlabel('Period', fontsize=10)
-        ax.set_ylabel('Cash Flow ($B)', fontsize=10)
+        ax.set_ylabel(f'Cash Flow ({_unit})', fontsize=10)
         ax.set_title(f"{company_ticker} - Cash Flow Analysis", 
                     fontsize=12, fontweight='bold', pad=15)
         ax.set_xticks(x)
