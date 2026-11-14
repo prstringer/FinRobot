@@ -726,6 +726,54 @@ async def list_all_logs(request: Request):
         "files": log_files
     }
 
+@app.get("/api/company-name")
+def lookup_company_name(request: Request, ticker: str, provider: str = "fmp"):
+    """Look up a company's name for a ticker so the form can auto-fill it.
+
+    Always returns 200 with ``{"name": str | None, "message": str | None}`` so the UI can
+    show a hint instead of an error (unknown ticker, plan limits, missing API key...).
+    """
+    require_auth(request)
+    ticker = (ticker or "").strip()
+    if not ticker or len(ticker) > 20:
+        return {"name": None, "message": None}
+    core_src = os.path.join(CORE_ROOT, "src")
+    if core_src not in sys.path:
+        sys.path.insert(0, core_src)
+    try:
+        from modules.common_utils import load_config
+        try:
+            config = load_config(os.path.join(CONFIG_DIR, "config.ini"))
+        except FileNotFoundError:
+            config = None
+        if provider == "finedge":
+            from modules.finedge_api import (FinEdgeClient, FinEdgeError, FinEdgePlanError,
+                                             resolve_finedge_token, normalize_symbol)
+            token = resolve_finedge_token(config)
+            if not token:
+                return {"name": None, "message": "FinEdge token not configured - type the name."}
+            try:
+                profile = FinEdgeClient(token).profile(normalize_symbol(ticker))
+            except FinEdgePlanError:
+                return {"name": None, "message": "Symbol not covered by your FinEdge plan."}
+            except FinEdgeError as e:
+                return {"name": None, "message": f"FinEdge lookup failed: {str(e)[:80]}"}
+            name = (profile or {}).get("name")
+        else:
+            from modules.market_data_api import get_fmp_company_profile
+            key = config.get("API_KEYS", "fmp_api_key", fallback=None) if config else None
+            if not key or key.startswith("YOUR_"):
+                return {"name": None, "message": "FMP key not configured - type the name."}
+            profile = get_fmp_company_profile(ticker.upper(), key)
+            name = (profile or {}).get("companyName")
+    except Exception as e:  # never break the form over a convenience lookup
+        logger.warning(f"Company name lookup failed for {ticker}: {e}")
+        return {"name": None, "message": "Lookup failed - type the name."}
+    if name:
+        return {"name": name, "message": None}
+    return {"name": None, "message": "Ticker not found - check the symbol or type the name."}
+
+
 @app.get("/api/history")
 async def get_history(request: Request):
     """返回当前用户的历史报告列表，供前端刷新后恢复。"""

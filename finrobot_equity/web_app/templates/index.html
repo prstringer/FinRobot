@@ -207,6 +207,7 @@
                     <div class="halo-input-wrapper">
                         <input type="text" v-model="form.company_name" placeholder="Auto-filled or type..." class="halo-input w-full rounded-lg px-3 py-2.5 text-sm placeholder-slate-600">
                     </div>
+                    <p v-if="nameLookup" class="text-[9px] text-amber-400/80 mt-1.5 ml-1 leading-snug">{{ nameLookup }}</p>
                 </div>
             </div>
 
@@ -502,6 +503,9 @@
                     passwordSuccess: '',
                     passwordLoading: false,
                     status: 'idle',
+                    nameLookup: '',
+                    nameLookupTimer: null,
+                    autoFilledName: '',
                     form: {
                         data_provider: 'fmp',
                         llm_provider: 'anthropic',
@@ -538,12 +542,40 @@
                 activeTasks() { return this.tasks.filter(t => t.status === 'running' || t.status === 'pending'); },
                 completedTasks() { return this.tasks.filter(t => t.status === 'completed' || t.status === 'failed').reverse(); }
             },
+            watch: {
+                'form.ticker'() { this.scheduleNameLookup(); },
+                'form.data_provider'() { this.scheduleNameLookup(); }
+            },
             mounted() {
                 document.addEventListener('click', () => { this.showUserMenu = false; });
                 this.pollInterval = setInterval(this.pollTasks, 1000);
                 this.loadHistory();
             },
             methods: {
+                scheduleNameLookup() {
+                    clearTimeout(this.nameLookupTimer);
+                    const ticker = (this.form.ticker || '').trim();
+                    this.nameLookup = '';
+                    if (!ticker) return;
+                    this.nameLookupTimer = setTimeout(() => this.lookupCompanyName(ticker), 600);
+                },
+                async lookupCompanyName(ticker) {
+                    try {
+                        const resp = await fetch(`/api/company-name?ticker=${encodeURIComponent(ticker)}&provider=${this.form.data_provider}`);
+                        if (!resp.ok) return;
+                        const data = await resp.json();
+                        if ((this.form.ticker || '').trim() !== ticker) return; // user kept typing
+                        // Only overwrite the name if it is empty or was auto-filled earlier (never a manual edit)
+                        const canFill = !this.form.company_name || this.form.company_name === this.autoFilledName;
+                        if (data.name && canFill) {
+                            this.form.company_name = data.name;
+                            this.autoFilledName = data.name;
+                            this.nameLookup = '';
+                        } else if (!data.name) {
+                            this.nameLookup = data.message || '';
+                        }
+                    } catch (e) { /* convenience only */ }
+                },
                 async loadHistory() {
                     try {
                         const resp = await fetch('/api/history');
