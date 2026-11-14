@@ -206,3 +206,39 @@ def test_generate_text_section_uses_selected_provider(monkeypatch):
     # legacy positional call (OpenAI) still works and falls back on errors
     monkeypatch.setattr(t, "generate_text", lambda *a, **k: (_ for _ in ()).throw(LLMError("boom")))
     assert "Revenue Growth" in t.generate_text_section({}, "major_takeaways", "sk", "X", "X")
+
+
+# ---- usage and cost logging -------------------------------------------------
+
+def test_cost_usd_prices_each_token_category():
+    from modules.llm_providers import cost_usd
+    # Opus 5.5: $4 in / $20 out, cache read 0.05x, 5-minute cache write 1.25x
+    c = cost_usd("claude-opus-5-5", input_tokens=1_000_000, output_tokens=1_000_000,
+                 cache_read_tokens=1_000_000, cache_write_tokens=1_000_000)
+    assert c == pytest.approx(4 + 20 + 4 * 0.05 + 4 * 1.25)
+    assert cost_usd("claude-haiku-5-5", input_tokens=1_000_000) == pytest.approx(0.10)
+    assert cost_usd("some-unknown-model", input_tokens=5) is None
+
+
+def test_anthropic_usage_is_logged_with_section_and_thinking(monkeypatch):
+    import anthropic
+    resp = _claude_response("hello")
+    resp.model = "claude-opus-5-5"
+    resp.usage = SimpleNamespace(
+        input_tokens=2000, output_tokens=5000, cache_read_input_tokens=0,
+        cache_creation_input_tokens=0, output_tokens_details=SimpleNamespace(thinking_tokens=4600))
+    monkeypatch.setattr(anthropic, "Anthropic", lambda api_key: _FakeAnthropicClient(resp, {}))
+    sink = []
+    generate_text(LLMSettings("anthropic", "ak"), "S", "U", usage_sink=sink, section="risks")
+    assert len(sink) == 1
+    rec = sink[0]
+    assert rec["section"] == "risks" and rec["model"] == "claude-opus-5-5"
+    assert rec["thinking_tokens"] == 4600 and rec["output_tokens"] == 5000
+    assert rec["cost_usd"] == pytest.approx((2000 * 4 + 5000 * 20) / 1_000_000)
+
+
+def test_usage_logging_is_optional(monkeypatch):
+    import anthropic
+    monkeypatch.setattr(anthropic, "Anthropic",
+                        lambda api_key: _FakeAnthropicClient(_claude_response("ok"), {}))
+    assert generate_text(LLMSettings("anthropic", "ak"), "S", "U") == "ok"  # response has no usage; must not matter

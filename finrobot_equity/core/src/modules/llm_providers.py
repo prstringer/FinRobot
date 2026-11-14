@@ -29,6 +29,48 @@ DEFAULT_MODELS = {
     "gemini": "gemini-3.8-flash",
 }
 
+# USD per million tokens: (input, output, cache-read multiplier). Used only for the
+# per-report cost estimate; prompts up to 100K tokens (Haiku is dearer beyond that).
+MODEL_PRICES = {
+    "claude-opus-5-5": (4.00, 20.00, 0.05),
+    "claude-sonnet-5-5": (2.00, 10.00, 0.05),
+    "claude-haiku-5-5": (0.10, 0.50, 0.10),
+}
+
+
+def cost_usd(model: str, input_tokens: int = 0, output_tokens: int = 0,
+             cache_read_tokens: int = 0, cache_write_tokens: int = 0) -> float | None:
+    """Estimated cost of one call in USD (None for a model without a known price).
+
+    ``output_tokens`` includes thinking tokens, which are billed as output.
+    Cache writes are priced at the 5-minute rate (1.25x input).
+    """
+    price = MODEL_PRICES.get(model)
+    if price is None:
+        return None
+    in_rate, out_rate, read_mult = price
+    return (input_tokens * in_rate + cache_write_tokens * in_rate * 1.25
+            + cache_read_tokens * in_rate * read_mult + output_tokens * out_rate) / 1_000_000
+
+
+def _usage_record(settings, response, section: str | None) -> dict:
+    """Flatten an Anthropic response's usage into a loggable dict."""
+    u = response.usage
+    details = getattr(u, "output_tokens_details", None)
+    rec = {
+        "section": section,
+        "model": getattr(response, "model", None) or settings.model_name,
+        "input_tokens": getattr(u, "input_tokens", 0) or 0,
+        "cache_read_tokens": getattr(u, "cache_read_input_tokens", 0) or 0,
+        "cache_write_tokens": getattr(u, "cache_creation_input_tokens", 0) or 0,
+        "output_tokens": getattr(u, "output_tokens", 0) or 0,
+        "thinking_tokens": getattr(details, "thinking_tokens", None),
+    }
+    rec["cost_usd"] = cost_usd(rec["model"], rec["input_tokens"], rec["output_tokens"],
+                               rec["cache_read_tokens"], rec["cache_write_tokens"])
+    return rec
+
+
 PROVIDER_LABELS = {"openai": "OpenAI", "anthropic": "Anthropic Claude", "gemini": "Google Gemini"}
 
 _KEY_CONFIG = {"openai": "openai_api_key", "anthropic": "anthropic_api_key", "gemini": "gemini_api_key"}
@@ -106,14 +148,19 @@ def resolve_llm_settings(config=None, provider: str | None = None, model: str | 
 
 
 def generate_text(settings: LLMSettings, system_prompt: str, user_prompt: str,
-                  max_tokens: int = 1000, temperature: float = 0.7) -> str:
-    """Send one system + user prompt to the configured provider and return the text reply."""
+                  max_tokens: int = 1000, temperature: float = 0.7,
+                  usage_sink: list | None = None, section: str | None = None) -> str:
+    """Send one system + user prompt to the configured provider and return the text reply.
+
+    If ``usage_sink`` is given, token usage and estimated cost of the call are appended to it
+    (Anthropic only).
+    """
     if not settings.api_key:
         raise LLMError(f"No API key for {PROVIDER_LABELS[settings.provider]}")
     if settings.provider == "openai":
         return _generate_openai(settings, system_prompt, user_prompt, max_tokens, temperature)
     if settings.provider == "anthropic":
-        return _generate_anthropic(settings, system_prompt, user_prompt, max_tokens)
+        return _generate_anthropic(settings, system_prompt, user_prompt, max_tokens, usage_sink, section)
     return _generate_gemini(settings, system_prompt, user_prompt, max_tokens, temperature)
 
 
@@ -137,7 +184,8 @@ def _generate_openai(settings, system_prompt, user_prompt, max_tokens, temperatu
     return text
 
 
-def _generate_anthropic(settings, system_prompt, user_prompt, max_tokens) -> str:
+def _generate_anthropic(settings, system_prompt, user_prompt, max_tokens,
+                        usage_sink=None, section=None) -> str:
     import anthropic
 
     client = anthropic.Anthropic(api_key=settings.api_key)
@@ -160,6 +208,8 @@ def _generate_anthropic(settings, system_prompt, user_prompt, max_tokens) -> str
         if "fallback" not in str(e).lower():
             raise
         response = client.messages.create(**request)
+    if usage_sink is not None:
+        usage_sink.append(_usage_record(settings, response, section))
     if response.stop_reason == "refusal":
         category = getattr(getattr(response, "stop_details", None), "category", None)
         raise LLMError(f"Claude declined the request (category: {category})")

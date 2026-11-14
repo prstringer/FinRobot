@@ -100,7 +100,8 @@ def _prepare_user_prompt(data: Dict, prompt_type: str, company_name: str, compan
 def generate_text_section(data: Dict, prompt_type: str, api_key: str, company_name: str, company_ticker: str,
                           base_url: str = None, model: str = None, provider: str = "openai",
                           settings: Optional[LLMSettings] = None,
-                          failures: Optional[list] = None) -> str:
+                          failures: Optional[list] = None,
+                          usage_sink: Optional[list] = None) -> str:
     """
     Generates a specific text section for the equity report with the chosen LLM provider.
     
@@ -116,6 +117,7 @@ def generate_text_section(data: Dict, prompt_type: str, api_key: str, company_na
         settings: Ready-made LLMSettings (overrides api_key/base_url/model/provider)
         failures: Optional list; ``prompt_type`` is appended whenever placeholder fallback
             text is returned instead of real LLM output, so callers can detect it.
+        usage_sink: Optional list; token usage and estimated cost of the call are appended to it.
     """
     
     print(f"🤖 Generating '{prompt_type}' text section...")
@@ -141,7 +143,8 @@ def generate_text_section(data: Dict, prompt_type: str, api_key: str, company_na
     user_prompt = _prepare_user_prompt(data, prompt_type, company_name, company_ticker)
     
     try:
-        generated_text = generate_text(settings, system_prompt, user_prompt, max_tokens=1000, temperature=0.7)
+        generated_text = generate_text(settings, system_prompt, user_prompt, max_tokens=1000, temperature=0.7,
+                                      usage_sink=usage_sink, section=prompt_type)
         print(f"✅ Successfully generated '{prompt_type}' ({len(generated_text)} chars)")
         return generated_text
     except Exception as e:

@@ -103,6 +103,7 @@ def main():
 
     args = parser.parse_args()
     failed_text_sections = []  # AI sections that fell back to placeholder text
+    llm_usage = []  # per-call token usage and estimated cost of the AI text sections
 
     # Setup output directory
     if args.output_dir:
@@ -605,6 +606,7 @@ def main():
                         args.company_ticker,
                         settings=llm_settings,
                         failures=failed_text_sections,
+                        usage_sink=llm_usage,
                     )
                     
                     # Fallback validation can remain here as a safety net
@@ -641,6 +643,15 @@ def main():
                     with open(file_path, "w", encoding="utf-8") as f:
                         f.write(fallback_text)
                     print(f"Created fallback text for '{text_type}' at {file_path}")
+        if llm_usage:
+            print("\nAI cost per section (estimated from API usage):")
+            for u in llm_usage:
+                c = u["cost_usd"]
+                think = u["thinking_tokens"]
+                print(f"  {u['section']:<20} {u['model']:<18} in {u['input_tokens']:>6}  out {u['output_tokens']:>6}"
+                      f"{'' if think is None else f' (thinking {think})'}  "
+                      f"{'n/a' if c is None else f'${c:.4f}'}")
+            print(f"  {'TOTAL':<20} {'':<18} ${sum(u['cost_usd'] or 0 for u in llm_usage):.4f}")
     else:
         print("Skipping text generation (not enabled)")
 
@@ -691,6 +702,8 @@ def main():
         "catalyst_analysis_enabled": args.enable_catalyst_analysis,
         "forecast_config": forecast_config,
         "llm_failed_sections": failed_text_sections,
+        "llm_usage": llm_usage,
+        "llm_cost_usd": round(sum(u["cost_usd"] or 0 for u in llm_usage), 4),
         "files_generated": {
             "main_analysis": args.output_csv_name,
             "peer_ebitda": "peer_ebitda_comparison.csv" if projected_peer_ebitda is not None else None,
