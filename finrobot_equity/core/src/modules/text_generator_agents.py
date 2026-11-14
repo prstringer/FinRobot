@@ -6,6 +6,7 @@ from typing import Dict, Optional
 from modules.llm_providers import LLMSettings, generate_text, normalize_provider
 
 from modules.retail_sentiment_client import format_retail_sentiment_for_prompt
+from modules import currency
 
 
 def _get_fallback_text(prompt_type: str, company_name: str) -> str:
@@ -31,13 +32,13 @@ SYSTEM_PROMPTS = {
     "valuation_overview": "You are a valuation analyst. Write a valuation analysis (200-300 words) covering current valuation metrics, peer comparison, and fair value assessment. Use plain text, no markdown.",
     "risks": "You are a risk analyst. List 5 key investment risks in bullet point format. Be specific and concise.",
     "competitor_analysis": "You are a competitive analyst. Write a competitor analysis (200-300 words) comparing the company to its peers. Use plain text, no markdown.",
-    "major_takeaways": "You are a financial analyst. Provide 4 major takeaways covering: Revenue Growth, Gross Profit Margin, SG&A Expense Margin, and EBITDA Margin. Format each with a header followed by 1-2 sentences.",
+    "major_takeaways": "You are a financial analyst. Provide 4 major takeaways covering: Revenue Growth, Gross Profit Margin, SG&A Expense Margin, and EBITDA Margin. Write each as one paragraph that starts with its label and a colon, then 1-2 sentences, exactly like 'Revenue Growth: ...'. Use the labels 'Revenue Growth:', 'Gross Profit Margin:', 'SG&A Expense Margin:' and 'EBITDA Margin:'. Plain text only: no title, no markdown, no bold, no bullets.",
     "news_summary": "You are a financial news analyst. Summarize the recent news (200-300 words) highlighting key developments and their investment implications. Use plain text, no markdown."
 }
 
 
 BANK_SYSTEM_PROMPTS = {
-    "major_takeaways": "You are a bank analyst. Provide 4 major takeaways covering: Net Interest Income Growth, Net Interest Margin, Asset Quality (GNPA/NNPA and credit cost), and Profitability (ROA/ROE and cost-to-income). Format each with a header followed by 1-2 sentences.",
+    "major_takeaways": "You are a bank analyst. Provide 4 major takeaways covering: Net Interest Income Growth, Net Interest Margin, Asset Quality (GNPA/NNPA and credit cost), and Profitability (ROA/ROE and cost-to-income). Write each as one paragraph that starts with its label and a colon, then 1-2 sentences, exactly like 'Net Interest Margin: ...'. Use the labels 'Net Interest Income Growth:', 'Net Interest Margin:', 'Asset Quality:' and 'Profitability:'. Plain text only: no title, no markdown, no bold, no bullets.",
 }
 
 BANK_TAKEAWAY_HEADERS = ["Net Interest Income Growth:", "Net Interest Margin:", "Asset Quality:", "Profitability:"]
@@ -92,6 +93,10 @@ def _prepare_user_prompt(data: Dict, prompt_type: str, company_name: str, compan
     data_notes = data.get('data_notes')
     if data_notes:
         prompt += "\nData notes (read before interpreting the numbers):\n" + "\n".join(f"- {n}" for n in data_notes) + "\n"
+
+    if currency.get_currency() == "INR":
+        prompt += ("\nUnits: write rupee amounts in crore or lakh crore (1 crore = 10 million), "
+                   "never in millions, billions or trillions.\n")
 
     prompt += f"\nPlease provide the {prompt_type.replace('_', ' ')} based on the above data."
     return prompt

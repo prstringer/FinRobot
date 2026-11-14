@@ -242,3 +242,46 @@ def test_usage_logging_is_optional(monkeypatch):
     monkeypatch.setattr(anthropic, "Anthropic",
                         lambda api_key: _FakeAnthropicClient(_claude_response("ok"), {}))
     assert generate_text(LLMSettings("anthropic", "ak"), "S", "U") == "ok"  # response has no usage; must not matter
+
+
+# ---- model tiers ------------------------------------------------------------
+
+def test_anthropic_without_forced_model_is_tiered_per_section():
+    s = LLMSettings("anthropic", "ak")
+    assert s.tiered
+    assert s.route("investment_overview") == ("claude-opus-5-5", "medium")
+    assert s.route("risks") == ("claude-sonnet-5-5", "low")
+    assert s.route("tagline") == ("claude-haiku-5-5", "low")
+    assert s.route("some_new_section") == ("claude-opus-5-5", "medium")  # unknown sections get the strong tier
+
+
+def test_forced_model_or_other_provider_is_not_tiered():
+    forced = LLMSettings("anthropic", "ak", model="claude-sonnet-5-5")
+    assert not forced.tiered and forced.route("tagline") == ("claude-sonnet-5-5", None)
+    assert not LLMSettings("openai", "k").tiered
+    assert not LLMSettings("gemini", "k").tiered
+
+
+def test_tiered_request_sets_model_and_effort_and_skips_fallback_for_haiku(monkeypatch):
+    import anthropic
+    calls = {}
+    monkeypatch.setattr(anthropic, "Anthropic",
+                        lambda api_key: _FakeAnthropicClient(_claude_response("ok"), calls))
+    generate_text(LLMSettings("anthropic", "ak"), "S", "U", section="tagline")
+    assert "beta" not in calls                      # Haiku: no fallback beta
+    assert calls["plain"]["model"] == "claude-haiku-5-5"
+    assert calls["plain"]["output_config"] == {"effort": "low"}
+    calls.clear()
+    generate_text(LLMSettings("anthropic", "ak"), "S", "U", section="valuation_overview")
+    assert calls["beta"]["model"] == "claude-opus-5-5"
+    assert calls["beta"]["output_config"] == {"effort": "medium"}
+    assert calls["beta"]["fallbacks"] == "default"
+
+
+def test_forced_model_sends_no_effort(monkeypatch):
+    import anthropic
+    calls = {}
+    monkeypatch.setattr(anthropic, "Anthropic",
+                        lambda api_key: _FakeAnthropicClient(_claude_response("ok"), calls))
+    generate_text(LLMSettings("anthropic", "ak", model="claude-opus-4-8"), "S", "U", section="risks")
+    assert calls["beta"]["model"] == "claude-opus-4-8" and "output_config" not in calls["beta"]

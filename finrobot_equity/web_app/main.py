@@ -488,7 +488,6 @@ def execute_analysis_pipeline(task_id: str, req: AnalysisRequest):
         "--major-takeaways-file", os.path.join(base_output_dir, "major_takeaways.txt"),
         "--output-dir", report_output_dir,
         "--config-file", config_file,
-        "--enable-text-regeneration",
         "--data-provider", req.data_provider,
         "--llm-provider", req.llm_provider,
     ]

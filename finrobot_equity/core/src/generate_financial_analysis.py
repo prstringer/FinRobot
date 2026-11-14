@@ -612,10 +612,12 @@ def main():
                     # Fallback validation can remain here as a safety net
                     if text_type == "competitor_analysis" and (not generated_text or len(generated_text.split('.')) < 3):
                          print(f"⚠️ Warning: Competitor analysis seems too short, using fallback.")
+                         failed_text_sections.append(text_type)  # shipping placeholder text: report it
                          generated_text = f"{args.company_name} demonstrates competitive positioning within its industry sector through consistent financial performance and strategic market positioning relative to key competitors."
                     
                     elif text_type == "major_takeaways" and is_bank and "Net Interest" not in generated_text:
                          print(f"⚠️ Warning: Major takeaways missing bank sections, using fallback.")
+                         failed_text_sections.append(text_type)  # shipping placeholder text: report it
                          generated_text = (f"Net Interest Income Growth: {args.company_name}'s net interest income trend is shown in the financial summary.\n\n"
                                            f"Net Interest Margin: {args.company_name}'s NIM history is shown in the bank metrics table.\n\n"
                                            f"Asset Quality: {args.company_name}'s gross and net NPA ratios and credit cost are shown in the bank metrics table.\n\n"
@@ -623,10 +625,12 @@ def main():
 
                     elif text_type == "major_takeaways" and not is_bank and "Revenue Growth:" not in generated_text:
                          print(f"⚠️ Warning: Major takeaways missing required sections, using fallback.")
+                         failed_text_sections.append(text_type)  # shipping placeholder text: report it
                          generated_text = f"Revenue Growth: {args.company_name}'s revenue growth shows consistent performance trends.\n\nGross Profit Margin: {args.company_name}'s gross profit margins demonstrate operational effectiveness.\n\nSG&A Expense Margin: {args.company_name}'s SG&A expense management shows disciplined cost control.\n\nEBITDA Margin Stability: {args.company_name}'s EBITDA margin stability reflects strong underlying fundamentals."
 
                     elif text_type == "news_summary" and (not generated_text or len(generated_text.split()) < 50):
                         print(f"⚠️ Warning: News summary seems too short, using fallback.")
+                        failed_text_sections.append(text_type)  # shipping placeholder text: report it
                         generated_text = f"Recent news coverage for {args.company_name} reflects ongoing market interest and developments in the company's operations and strategic initiatives."
 
                     file_path = os.path.join(text_output_dir, f"{text_type}.txt")
@@ -687,7 +691,8 @@ def main():
         "statement_type": data_meta.get("statement_type"),
         "template": "bank" if is_bank else "company",
         "llm_provider": llm_settings.provider if llm_settings else None,
-        "llm_model": llm_settings.model_name if llm_settings else None,
+        "llm_model": (None if llm_settings.tiered else llm_settings.model_name) if llm_settings else None,  # None = tiered; the report step re-resolves it
+        "llm_tiered": bool(llm_settings and llm_settings.tiered),
         "data_warnings": data_meta.get("warnings", []),
         "data_period": args.period,
         "years_analyzed": len(actual_years),

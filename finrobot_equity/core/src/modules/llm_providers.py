@@ -31,6 +31,23 @@ DEFAULT_MODELS = {
 
 # USD per million tokens: (input, output, cache-read multiplier). Used only for the
 # per-report cost estimate; prompts up to 100K tokens (Haiku is dearer beyond that).
+# Which Claude model (and effort) writes each report section when provider is Anthropic and no
+# model is forced (--llm-model / llm_model in config.ini). Judgment-heavy sections get the
+# strongest model; descriptive prose gets a mid tier; short summaries get the small one.
+STRONG = ("claude-opus-5-5", "medium")
+MID = ("claude-sonnet-5-5", "low")
+SMALL = ("claude-haiku-5-5", "low")
+SECTION_TIERS = {
+    "investment_overview": STRONG,
+    "valuation_overview": STRONG,
+    "company_overview": MID,
+    "competitor_analysis": MID,
+    "risks": MID,
+    "major_takeaways": MID,
+    "tagline": SMALL,
+    "news_summary": SMALL,
+}
+
 MODEL_PRICES = {
     "claude-opus-5-5": (4.00, 20.00, 0.05),
     "claude-sonnet-5-5": (2.00, 10.00, 0.05),
@@ -100,7 +117,20 @@ class LLMSettings:
         return self.model or DEFAULT_MODELS[self.provider]
 
     @property
+    def tiered(self) -> bool:
+        """True when each section picks its own Claude model (Anthropic, no model forced)."""
+        return self.provider == "anthropic" and not self.model
+
+    def route(self, section: str | None) -> tuple[str, str | None]:
+        """(model, effort) to use for a report section; effort is None when not tiered."""
+        if self.tiered:
+            return SECTION_TIERS.get(section, STRONG)
+        return self.model_name, None
+
+    @property
     def label(self) -> str:
+        if self.tiered:
+            return f"{PROVIDER_LABELS[self.provider]} (tiered: Opus / Sonnet / Haiku by section)"
         return f"{PROVIDER_LABELS[self.provider]} ({self.model_name})"
 
 
@@ -192,22 +222,30 @@ def _generate_anthropic(settings, system_prompt, user_prompt, max_tokens,
     # Current Claude models think before answering and that counts toward max_tokens,
     # so allow well beyond the length of a report section. Sampling parameters
     # (temperature) are not sent: current models reject them.
+    model, effort = settings.route(section)
     request = {
-        "model": settings.model_name,
+        "model": model,
         "max_tokens": max(max_tokens, 8000),
         "system": system_prompt,
         "messages": [{"role": "user", "content": user_prompt}],
     }
-    try:
-        # Server-side fallback: if a safety classifier declines, the API retries on a
-        # suitable fallback model within the same call instead of returning nothing.
-        response = client.beta.messages.create(
-            betas=["server-side-fallback-2026-07-01"], fallbacks="default", **request)
-    except anthropic.BadRequestError as e:
-        # Older models (or a gateway) may not accept the fallback beta: retry without it.
-        if "fallback" not in str(e).lower():
-            raise
+    if effort:
+        # Thinking depth is the main cost control on current models (default effort differs by model)
+        request["output_config"] = {"effort": effort}
+    if "haiku" in model:
+        # Haiku has no server-side refusal fallback, so don't send the beta
         response = client.messages.create(**request)
+    else:
+        try:
+            # Server-side fallback: if a safety classifier declines, the API retries on a
+            # suitable fallback model within the same call instead of returning nothing.
+            response = client.beta.messages.create(
+                betas=["server-side-fallback-2026-07-01"], fallbacks="default", **request)
+        except anthropic.BadRequestError as e:
+            # Older models (or a gateway) may not accept the fallback beta: retry without it.
+            if "fallback" not in str(e).lower():
+                raise
+            response = client.messages.create(**request)
     if usage_sink is not None:
         usage_sink.append(_usage_record(settings, response, section))
     if response.stop_reason == "refusal":

@@ -38,3 +38,15 @@ def test_missing_key_is_recorded():
 def test_failures_argument_is_optional(monkeypatch):
     monkeypatch.setattr(tga, "generate_text", lambda *a, **k: "x")
     assert tga.generate_text_section({}, "tagline", "k", "Acme", "ACME", settings=_settings()) == "x"
+
+
+def test_inr_prompts_ask_for_indian_units():
+    from modules import currency
+    data = {}
+    try:
+        currency.set_currency("INR")
+        assert "crore" in tga._prepare_user_prompt(data, "company_overview", "Acme", "ACME")
+        currency.set_currency("USD")
+        assert "crore" not in tga._prepare_user_prompt(data, "company_overview", "Acme", "ACME")
+    finally:
+        currency.set_currency("USD")
