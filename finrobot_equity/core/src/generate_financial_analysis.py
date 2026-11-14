@@ -3,6 +3,7 @@
 
 import argparse
 import os
+import sys
 import pandas as pd
 import json 
 
@@ -66,6 +67,8 @@ def main():
     parser.add_argument("--peer-tickers", type=str, nargs="*", default=[], help="List of peer tickers for comparative analysis (e.g., GOOG MSFT).")
 
     # Text Generation
+    parser.add_argument("--allow-llm-fallback", action="store_true",
+                        help="Do not fail the run when an AI text section falls back to placeholder text (default: fail).")
     parser.add_argument("--generate-text-sections", action="store_true", help="Enable generation of text sections with an LLM.")
     parser.add_argument("--llm-provider", type=str, default=None, choices=list(PROVIDERS),
                         help="LLM for the text sections: openai, anthropic (Claude) or gemini. "
@@ -97,6 +100,7 @@ def main():
     parser.add_argument("--period", type=str, default="annual", choices=["annual", "quarterly"], help="Data period (annual or quarterly)")
 
     args = parser.parse_args()
+    failed_text_sections = []  # AI sections that fell back to placeholder text
 
     # Setup output directory
     if args.output_dir:
@@ -590,6 +594,7 @@ def main():
                         args.company_name, 
                         args.company_ticker,
                         settings=llm_settings,
+                        failures=failed_text_sections,
                     )
                     
                     # Fallback validation can remain here as a safety net
@@ -619,6 +624,7 @@ def main():
                     
                 except Exception as e:
                     print(f"Error generating text for '{text_type}': {e}")
+                    failed_text_sections.append(text_type)
                     # Create a fallback file if generation fails
                     fallback_text = f"{args.company_name} ({args.company_ticker}) {text_type.replace('_', ' ')} analysis not available."
                     file_path = os.path.join(text_output_dir, f"{text_type}.txt")
@@ -674,6 +680,7 @@ def main():
         "sensitivity_analysis_enabled": args.enable_sensitivity_analysis,
         "catalyst_analysis_enabled": args.enable_catalyst_analysis,
         "forecast_config": forecast_config,
+        "llm_failed_sections": failed_text_sections,
         "files_generated": {
             "main_analysis": args.output_csv_name,
             "peer_ebitda": "peer_ebitda_comparison.csv" if projected_peer_ebitda is not None else None,
@@ -723,6 +730,15 @@ def main():
             print(f"  --{param_name}-file {file_path}{continuation}")
     
     print(f"\n🎯 All files ready for report generation!")
+
+    if failed_text_sections:
+        print("\n" + "!"*60)
+        print(f"❌ {len(failed_text_sections)} AI text section(s) FAILED and contain placeholder text: "
+              f"{', '.join(failed_text_sections)}")
+        print("   Check the LLM API key, credit balance and model availability above, then re-run.")
+        print("!"*60)
+        if not args.allow_llm_fallback:
+            sys.exit(2)
 
 
 if __name__ == "__main__":

@@ -99,7 +99,8 @@ def _prepare_user_prompt(data: Dict, prompt_type: str, company_name: str, compan
 
 def generate_text_section(data: Dict, prompt_type: str, api_key: str, company_name: str, company_ticker: str,
                           base_url: str = None, model: str = None, provider: str = "openai",
-                          settings: Optional[LLMSettings] = None) -> str:
+                          settings: Optional[LLMSettings] = None,
+                          failures: Optional[list] = None) -> str:
     """
     Generates a specific text section for the equity report with the chosen LLM provider.
     
@@ -113,6 +114,8 @@ def generate_text_section(data: Dict, prompt_type: str, api_key: str, company_na
         model: Optional model name (default depends on the provider)
         provider: 'openai', 'anthropic' or 'gemini'
         settings: Ready-made LLMSettings (overrides api_key/base_url/model/provider)
+        failures: Optional list; ``prompt_type`` is appended whenever placeholder fallback
+            text is returned instead of real LLM output, so callers can detect it.
     """
     
     print(f"🤖 Generating '{prompt_type}' text section...")
@@ -123,6 +126,8 @@ def generate_text_section(data: Dict, prompt_type: str, api_key: str, company_na
     # Validate API key
     if not settings.api_key:
         print(f"⚠️ Warning: No API key provided. Using fallback text for '{prompt_type}'.")
+        if failures is not None:
+            failures.append(prompt_type)
         return _get_fallback_text(prompt_type, company_name)
     
     if settings.base_url:
@@ -141,6 +146,8 @@ def generate_text_section(data: Dict, prompt_type: str, api_key: str, company_na
         return generated_text
     except Exception as e:
         print(f"❌ Error generating '{prompt_type}': {e}")
+        if failures is not None:
+            failures.append(prompt_type)
         return _get_fallback_text(prompt_type, company_name)
 
 # Backward compatibility - keep old function signature
