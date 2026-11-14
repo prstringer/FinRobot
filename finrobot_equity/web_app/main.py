@@ -347,7 +347,7 @@ class AnalysisRequest(BaseModel):
     data_provider: Literal["fmp", "finedge"] = "fmp"
     statement_type: Literal["auto", "c", "s"] = "auto"
     # LLM for the AI text sections; keys come from config.ini or the provider's environment variable
-    llm_provider: Literal["openai", "anthropic", "gemini"] = "openai"
+    llm_provider: Literal["openai", "anthropic", "gemini"] = "anthropic"
     llm_model: Optional[str] = None
     peers: List[str] = []
     years_limit: int = 5
