@@ -230,8 +230,10 @@ class NewsIntegrator:
             if not self._is_within_time_window(published_date, days_window):
                 continue
 
-            # 过滤无关公司新闻
-            if not self._is_relevant_to_ticker(title, text):
+            # 过滤无关公司新闻 (items the data source already scoped to this symbol are trusted:
+            # filings say "HDFC Bank Limited", never the ticker "HDFCBANK")
+            if (article.get('symbol') or '').upper() != self.ticker.upper() \
+                    and not self._is_relevant_to_ticker(title, text):
                 continue
 
             combined_text = f"{title} {text}"
@@ -430,8 +432,15 @@ class NewsIntegrator:
 
 
 # 增强版新闻获取函数
+def _sentiment_summary(sentiments: List[str]) -> Dict[str, Any]:
+    """Overall label and counts for a list of per-article sentiments."""
+    pos, neg, neu = sentiments.count('positive'), sentiments.count('negative'), sentiments.count('neutral')
+    overall = 'positive' if pos > neg else 'negative' if neg > pos else 'neutral'
+    return {'overall': overall, 'positive': pos, 'negative': neg, 'neutral': neu}
+
+
 def build_enhanced_news(ticker: str, raw_news: List[Dict], days_back: int = 5,
-                        api_key: str = None) -> Dict[str, Any]:
+                        api_key: str = None, company_name: str = None) -> Dict[str, Any]:
     """Categorise and summarise a list of FMP-format news items (title, text, publishedDate, ...).
 
     Used for FMP news and for FinEdge exchange announcements.
@@ -447,7 +456,7 @@ def build_enhanced_news(ticker: str, raw_news: List[Dict], days_back: int = 5,
         }
 
     # 使用NewsIntegrator处理
-    integrator = NewsIntegrator(ticker, api_key)
+    integrator = NewsIntegrator(ticker, api_key, company_name=company_name)
     integrator.set_news_data(raw_news)
     integrator.process_news(days_back)
 
@@ -469,6 +478,8 @@ def build_enhanced_news(ticker: str, raw_news: List[Dict], days_back: int = 5,
             'negative': sentiments.count('negative'),
             'neutral': sentiments.count('neutral')
         },
+        # The report templates read 'sentiment_summary' (overall label plus counts)
+        'sentiment_summary': _sentiment_summary(sentiments),
         'high_impact': [{'title': a.title, 'category': a.category, 
                        'sentiment': a.sentiment} 
                       for a in integrator.get_high_impact_news()]

@@ -6,6 +6,7 @@ import re as _re
 import pandas as pd
 
 from . import currency as _cur
+from .retail_sentiment_client import has_coverage
 
 
 def _auto_bold_key_data(text: str) -> str:
@@ -888,8 +889,8 @@ def format_analyst_contacts(names, emails):
 
 def format_retail_sentiment_html(sentiment_data: dict) -> str:
     """Format retail sentiment insights for legacy and combined HTML templates."""
-    if not sentiment_data or not sentiment_data.get("sources"):
-        return ""
+    if not has_coverage(sentiment_data) or not sentiment_data.get("sources"):
+        return ""  # nothing to show: no source returned data
 
     summary_items = []
     if sentiment_data.get("average_buzz") is not None:

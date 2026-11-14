@@ -23,6 +23,7 @@ from modules.llm_providers import PROVIDERS, resolve_llm_settings
 from modules.sensitivity_analyzer import SensitivityAnalyzer
 from modules.catalyst_analyzer import CatalystAnalyzer
 from modules.news_integrator import NewsIntegrator, get_enhanced_company_news, build_enhanced_news
+from modules.google_news import get_google_news
 from modules.retail_sentiment_client import RetailSentimentClient
 from modules import currency
 from modules.finedge_api import (
@@ -362,23 +363,27 @@ def main():
     company_news = None
     enhanced_news_data = None
     if use_finedge:
-        print(f"\nFetching exchange announcements for {args.company_ticker} (last {args.news_days_back} days)...")
-        company_news = get_finedge_company_news(args.company_ticker, finedge_client,
-                                                days_back=args.news_days_back, limit=args.news_limit)
+        print(f"\nFetching exchange announcements and news headlines for {args.company_ticker} (last {args.news_days_back} days)...")
+        filings = get_finedge_company_news(args.company_ticker, finedge_client,
+                                           days_back=args.news_days_back, limit=args.news_limit) or []
+        headlines = get_google_news(args.company_name, args.company_ticker, days_back=args.news_days_back, limit=15)
+        print(f"Found {len(filings)} exchange announcement(s) and {len(headlines)} news headline(s)")
+        company_news = sorted(filings + headlines, key=lambda a: a.get('publishedDate', ''), reverse=True)[:args.news_limit]
         if company_news:
             if args.enable_enhanced_news:
-                enhanced_news_data = build_enhanced_news(args.company_ticker, company_news, args.news_days_back)
+                enhanced_news_data = build_enhanced_news(args.company_ticker, company_news, args.news_days_back,
+                                                         company_name=args.company_name)
                 with open(os.path.join(output_dir, "enhanced_news.json"), 'w', encoding='utf-8') as f:
                     json.dump(enhanced_news_data, f, indent=2, ensure_ascii=False, default=str)
                 with open(os.path.join(output_dir, "news_summary.md"), 'w', encoding='utf-8') as f:
                     f.write(enhanced_news_data.get('summary', ''))
-                print("Saved enhanced news (from exchange announcements)")
+                print("Saved enhanced news (exchange announcements and headlines)")
             news_output_path = os.path.join(output_dir, "company_news.json")
             with open(news_output_path, 'w', encoding='utf-8') as f:
                 json.dump(company_news, f, indent=2, ensure_ascii=False)
-            print(f"Saved {len(company_news)} exchange announcements to: {news_output_path}")
+            print(f"Saved {len(company_news)} news item(s) to: {news_output_path}")
         else:
-            print("Warning: No exchange announcements found")
+            print("Warning: No exchange announcements or news headlines found")
     elif fmp_api_key:
         print(f"\nFetching company news for {args.company_ticker}...")
         try:

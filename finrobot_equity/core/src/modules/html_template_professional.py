@@ -6,6 +6,7 @@
 import re as _re
 
 from . import currency as _cur
+from .retail_sentiment_client import has_coverage
 
 
 def _auto_bold_key_data(text: str) -> str:
@@ -662,8 +663,8 @@ def format_catalyst_analysis_html_professional(catalyst_data: dict) -> str:
 
 def format_retail_sentiment_html_professional(sentiment_data: dict) -> str:
     """Format retail sentiment insights for the professional HTML report."""
-    if not sentiment_data:
-        return ""
+    if not has_coverage(sentiment_data):
+        return ""  # no source returned data (typical for Indian stocks): omit the empty "N/A" block
 
     avg_buzz = sentiment_data.get("average_buzz")
     bullish_avg = sentiment_data.get("bullish_avg")
@@ -731,7 +732,11 @@ def format_enhanced_news_html_professional(news_data: dict) -> str:
                 bg = '#fee2e2'; color = '#991b1b'
             else:
                 bg = '#f1f5f9'; color = '#475569'
-            html += f'<div class="mt-3" style="display:inline-flex; align-items:center; gap:0.5rem;"><span style="font-size:0.85rem; font-weight:500; color:#64748b;">Sentiment:</span><span style="background:{bg}; color:{color}; padding:0.2rem 0.6rem; border-radius:9999px; font-size:0.8rem; font-weight:600;">{overall.upper()}</span></div>'
+            html += f'<div class="mt-3" style="display:inline-flex; align-items:center; gap:0.5rem;"><span style="font-size:0.85rem; font-weight:500; color:#64748b;">Sentiment:</span><span style="background:{bg}; color:{color}; padding:0.2rem 0.6rem; border-radius:9999px; font-size:0.8rem; font-weight:600;">{overall.upper()}</span>'
+            counts = [f"{sentiment[k]} {k}" for k in ('positive', 'negative', 'neutral') if sentiment.get(k)]
+            if counts:
+                html += f'<span style="font-size:0.8rem; color:#64748b;">{" &middot; ".join(counts)} headlines</span>'
+            html += '</div>'
 
     # Categories
     if news_data.get('categories'):

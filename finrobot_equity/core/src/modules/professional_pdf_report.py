@@ -28,6 +28,7 @@ from reportlab.platypus import (
 )
 
 from . import currency as _cur
+from .retail_sentiment_client import has_coverage
 from reportlab.platypus import Paragraph as _RLParagraph
 
 
@@ -841,6 +842,8 @@ class ProfessionalEquityReport:
         news_summary = self.data.get('news_summary', '')
         enhanced_news = self.data.get('enhanced_news', {})
         retail_sentiment = self.data.get('retail_sentiment', {})
+        if not has_coverage(retail_sentiment):
+            retail_sentiment = {}  # no source returned data: don't print an empty N/A block
         company_news = self.data.get('company_news', [])
         
         # 如果没有新闻数据，跳过

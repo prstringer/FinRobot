@@ -171,6 +171,19 @@ class RetailSentimentClient:
             return 0
 
 
+def has_coverage(snapshot: Optional[Dict[str, Any]]) -> bool:
+    """True if at least one retail-sentiment source returned data (Indian stocks usually have none)."""
+    if not snapshot:
+        return False
+    ratio = snapshot.get("coverage_ratio")
+    if ratio is not None:
+        return ratio > 0
+    covered = str(snapshot.get("coverage", "")).split("/")[0]  # "2/3" -> 2
+    if covered.isdigit():
+        return int(covered) > 0
+    return any(src.get("has_data") for src in snapshot.get("sources", []))
+
+
 def format_retail_sentiment_for_prompt(snapshot: Dict[str, Any]) -> str:
     """Render a compact plain-text summary for the news summary prompt."""
     if not snapshot:

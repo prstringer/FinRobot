@@ -199,8 +199,9 @@ class CatalystAnalyzer:
             date = article.get('publishedDate', '')
             source = article.get('site', '')
             
-            # 过滤无关公司新闻
-            if not self._is_relevant_to_ticker(title, text):
+            # 过滤无关公司新闻 (items already scoped to this symbol by the data source are trusted)
+            if (article.get('symbol') or '').upper() != self.ticker.upper() \
+                    and not self._is_relevant_to_ticker(title, text):
                 continue
 
             combined_text = f"{title} {text}"

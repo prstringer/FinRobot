@@ -5,7 +5,7 @@ import pandas as pd
 from typing import Dict, Optional
 from modules.llm_providers import LLMSettings, generate_text, normalize_provider
 
-from modules.retail_sentiment_client import format_retail_sentiment_for_prompt
+from modules.retail_sentiment_client import format_retail_sentiment_for_prompt, has_coverage
 from modules import currency
 
 
@@ -83,11 +83,13 @@ def _prepare_user_prompt(data: Dict, prompt_type: str, company_name: str, compan
     
     if prompt_type == "news_summary" and company_news:
         prompt += f"\n## Recent News:\n"
-        for i, article in enumerate(company_news[:10], 1):  # Limit to 10 articles
+        # Headlines first, then routine exchange filings (a stable sort keeps newest-first within each group)
+        ordered = sorted(company_news, key=lambda a: a.get('site') == 'NSE/BSE filing')
+        for i, article in enumerate(ordered[:10], 1):  # Limit to 10 articles
             prompt += f"{i}. {article.get('title', 'N/A')} ({article.get('publishedDate', 'N/A')[:10]})\n"
             prompt += f"   {article.get('text', 'N/A')[:200]}...\n\n"
 
-    if prompt_type == "news_summary" and retail_sentiment:
+    if prompt_type == "news_summary" and has_coverage(retail_sentiment):
         prompt += "\n" + format_retail_sentiment_for_prompt(retail_sentiment) + "\n"
 
     data_notes = data.get('data_notes')
