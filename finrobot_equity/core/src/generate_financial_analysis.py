@@ -15,6 +15,7 @@ from modules.market_data_api import (
     get_company_news
 )
 from modules.text_generator_agents import generate_text_section
+from modules.llm_providers import PROVIDERS, resolve_llm_settings
 
 # 新增模块导入
 from modules.sensitivity_analyzer import SensitivityAnalyzer
@@ -65,7 +66,12 @@ def main():
     parser.add_argument("--peer-tickers", type=str, nargs="*", default=[], help="List of peer tickers for comparative analysis (e.g., GOOG MSFT).")
 
     # Text Generation
-    parser.add_argument("--generate-text-sections", action="store_true", help="Enable generation of text sections using OpenAI.")
+    parser.add_argument("--generate-text-sections", action="store_true", help="Enable generation of text sections with an LLM.")
+    parser.add_argument("--llm-provider", type=str, default=None, choices=list(PROVIDERS),
+                        help="LLM for the text sections: openai, anthropic (Claude) or gemini. "
+                             "Default: llm_provider in config.ini, else openai.")
+    parser.add_argument("--llm-model", type=str, default=None,
+                        help="Model name for the chosen provider (default: llm_model in config.ini, else the provider default).")
     parser.add_argument("--text-output-dir", type=str, default=None, help="Directory to save generated text files.")
 
     # NEWS PARAMETERS
@@ -113,8 +119,7 @@ def main():
         currency.set_currency("INR")
     if args.news_days_back is None:
         args.news_days_back = 30 if use_finedge else 5
-    openai_base_url = None
-    openai_model = None
+    llm_settings = None
     fmp_api_key = None
     finedge_client = None
     adanos_api_key = os.getenv("ADANOS_API_KEY")
@@ -123,11 +128,12 @@ def main():
         try:
             config = load_config(args.config_file)
         except FileNotFoundError:
-            # FinEdge can run from the FINEDGE_API_TOKEN env var alone when no AI text is needed
-            if not use_finedge or args.generate_text_sections:
+            # FinEdge can run from environment variables alone (FINEDGE_API_TOKEN, and the
+            # LLM key such as OPENAI_API_KEY / ANTHROPIC_API_KEY / GEMINI_API_KEY)
+            if not use_finedge:
                 raise
             config = None
-            print("No config.ini found; using FINEDGE_API_TOKEN from the environment.")
+            print("No config.ini found; using API keys from the environment.")
         if use_finedge:
             finedge_client = FinEdgeClient(resolve_finedge_token(config))
             if config is not None:
@@ -140,32 +146,24 @@ def main():
         print("[API_KEYS]")
         print("fmp_api_key = YOUR_FMP_API_KEY            # for --data-provider fmp")
         print("finedge_api_token = YOUR_FINEDGE_TOKEN   # for --data-provider finedge (or set FINEDGE_API_TOKEN)")
-        print("openai_api_key = YOUR_OPENAI_API_KEY")
+        print("llm_provider = openai                   # openai | anthropic | gemini")
+        print("openai_api_key / anthropic_api_key / gemini_api_key = YOUR_KEY")
         return
     try:
         if config is not None:
             adanos_api_key = config.get("API_KEYS", "adanos_api_key", fallback=adanos_api_key)
             adanos_base_url = config.get("API_KEYS", "adanos_base_url", fallback=adanos_base_url)
-            if args.generate_text_sections:
-                openai_api_key = get_api_key(config, section="API_KEYS", key="openai_api_key")
-                # Try to get base_url for proxy services (like SiliconFlow)
-                try:
-                    openai_base_url = get_api_key(config, section="API_KEYS", key="openai_base_url")
-                    print(f"Using OpenAI base URL: {openai_base_url}")
-                except:
-                    pass  # base_url is optional
-                # Try to get model name for proxy services
-                try:
-                    openai_model = get_api_key(config, section="API_KEYS", key="openai_model")
-                    print(f"Using model: {openai_model}")
-                except:
-                    openai_model = None  # model is optional
+        if args.generate_text_sections:
+            llm_settings = resolve_llm_settings(config, args.llm_provider, args.llm_model)
+            print(f"Text sections will use {llm_settings.label}")
+            if llm_settings.base_url:
+                print(f"Using OpenAI-compatible base URL: {llm_settings.base_url}")
     except Exception as e:
         print(f"Error loading configuration: {e}")
         print("Please ensure config.ini exists with valid API keys:")
         print("[API_KEYS]")
-        print("openai_api_key = YOUR_OPENAI_API_KEY")
-        print("openai_base_url = https://api.xxx.com/v1  # optional, for proxy services")
+        print("llm_provider = openai   # openai | anthropic | gemini")
+        print("openai_api_key / anthropic_api_key / gemini_api_key = YOUR_KEY")
         return
 
     provider_name = "FinEdge API" if use_finedge else "FMP API"
@@ -539,8 +537,11 @@ def main():
     if args.generate_text_sections:
         print("\nGenerating AI-powered text sections...")
         
-        if 'openai_api_key' not in locals() or not openai_api_key:
-            print("Error: OpenAI API key not loaded. Skipping text generation.")
+        if llm_settings is None or not llm_settings.api_key:
+            provider = llm_settings.provider if llm_settings else (args.llm_provider or "openai")
+            print(f"Error: no API key for the '{provider}' LLM provider "
+                  f"(set {provider}_api_key in config.ini or the provider's environment variable). "
+                  "Skipping text generation.")
         else:
             data_notes = list(data_meta.get("warnings", []))
             if use_finedge:
@@ -585,11 +586,10 @@ def main():
                     generated_text = generate_text_section(
                         data_for_text_gen, 
                         text_type, 
-                        openai_api_key, 
+                        llm_settings.api_key, 
                         args.company_name, 
                         args.company_ticker,
-                        base_url=openai_base_url,
-                        model=openai_model
+                        settings=llm_settings,
                     )
                     
                     # Fallback validation can remain here as a safety net
@@ -659,6 +659,8 @@ def main():
         "currency": data_meta.get("currency", "USD"),
         "statement_type": data_meta.get("statement_type"),
         "template": "bank" if is_bank else "company",
+        "llm_provider": llm_settings.provider if llm_settings else None,
+        "llm_model": llm_settings.model_name if llm_settings else None,
         "data_warnings": data_meta.get("warnings", []),
         "data_period": args.period,
         "years_analyzed": len(actual_years),

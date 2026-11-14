@@ -7,6 +7,20 @@ fmp_api_key = YOUR_FMP_API_KEY
 # Get a token at: https://www.finedgeapi.com  (or set the FINEDGE_API_TOKEN environment variable)
 finedge_api_token = YOUR_FINEDGE_API_TOKEN
 
+# LLM for the AI text sections: openai | anthropic | gemini
+# (override per run with --llm-provider; the web app has an AI Model selector)
+llm_provider = openai
+
+# Optional model override for the chosen provider. Defaults:
+#   openai: gpt-4o-mini (or openai_model below), anthropic: claude-opus-5-5, gemini: gemini-2.5-flash
+# llm_model = claude-sonnet-5-5
+
+# Anthropic API key (for llm_provider = anthropic): https://platform.claude.com/settings/keys
+anthropic_api_key = YOUR_ANTHROPIC_API_KEY
+
+# Google Gemini API key (for llm_provider = gemini): https://aistudio.google.com/apikey
+gemini_api_key = YOUR_GEMINI_API_KEY
+
 # OpenAI API Key (or compatible API provider)
 # Get your API key at: https://platform.openai.com/account/api-keys
 openai_api_key = YOUR_OPENAI_API_KEY

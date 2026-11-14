@@ -22,6 +22,7 @@ finrobot_equity/
 │   │       ├── currency.py                  #   Report currency (USD / INR) formatting
 │   │       ├── financial_data_processor.py  #   Metrics extraction & forecasting
 │   │       ├── text_generator_agents.py     #   LLM text generation orchestrator
+│   │       ├── llm_providers.py             #   OpenAI / Anthropic / Gemini switch
 │   │       ├── chart_generator.py           #   Financial chart rendering
 │   │       ├── enhanced_chart_generator.py  #   Advanced chart configurations
 │   │       ├── html_renderer.py             #   HTML report renderer
@@ -101,6 +102,15 @@ adanos_api_key = YOUR_ADANOS_API_KEY    # Optional: enables Retail Sentiment Ins
 ```
 
 If `adanos_api_key` is configured, the report pipeline adds an optional **Retail Sentiment Insights** layer to the equity research output. It supplements the existing news workflow with structured public-retail activity snapshots across Reddit, X.com, and Polymarket.
+
+#### Choosing the LLM for the AI text sections
+
+The text sections (overview, risks, takeaways, ...) can be written by **OpenAI**, **Anthropic Claude**
+or **Google Gemini**. Pick one with `llm_provider` in `config.ini`, `--llm-provider openai|anthropic|gemini`
+on either script, or the *AI Model* selector in the web app. Keys come from `openai_api_key`,
+`anthropic_api_key` or `gemini_api_key` in `config.ini`, or from the `OPENAI_API_KEY`,
+`ANTHROPIC_API_KEY` or `GEMINI_API_KEY` environment variables. `llm_model` / `--llm-model` overrides
+the default model (gpt-4o-mini, claude-opus-5-5, gemini-2.5-flash).
 
 ### 2. Deploy via Script
 
@@ -215,7 +225,7 @@ when the latest actual is FY2026); `--revenue-growth-2025/2026/2027` set years 1
 |:---|:---|:---|
 | [Financial Modeling Prep](https://financialmodelingprep.com/developer) | Yes | Financial data, market metrics, peer comparison |
 | [FinEdge API](https://www.finedgeapi.com) | For Indian stocks | Financial data for NSE/BSE stocks (`--data-provider finedge`) |
-| [OpenAI](https://platform.openai.com/) | Yes | AI-powered text generation for report sections |
+| [OpenAI](https://platform.openai.com/), [Anthropic](https://platform.claude.com/) or [Google Gemini](https://aistudio.google.com/) | One of them, for AI text | AI-powered text generation for report sections (`llm_provider`) |
 | Adanos Finance API | No | Optional retail sentiment insights for Reddit, X.com, and Polymarket |
 
 ## License

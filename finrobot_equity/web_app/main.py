@@ -346,6 +346,9 @@ class AnalysisRequest(BaseModel):
     # 'finedge' = Indian NSE/BSE stocks via FinEdge (INR, needs FINEDGE_API_TOKEN or finedge_api_token)
     data_provider: Literal["fmp", "finedge"] = "fmp"
     statement_type: Literal["auto", "c", "s"] = "auto"
+    # LLM for the AI text sections; keys come from config.ini or the provider's environment variable
+    llm_provider: Literal["openai", "anthropic", "gemini"] = "openai"
+    llm_model: Optional[str] = None
     peers: List[str] = []
     years_limit: int = 5
     revenue_growth_2025: float = 0.05
@@ -442,6 +445,9 @@ def execute_analysis_pipeline(task_id: str, req: AnalysisRequest):
         
     if req.generate_text:
         cmd_analysis.append("--generate-text-sections")
+        cmd_analysis.extend(["--llm-provider", req.llm_provider])
+        if req.llm_model:
+            cmd_analysis.extend(["--llm-model", req.llm_model])
     
     # 新增增强功能选项
     if req.enable_sensitivity_analysis:
@@ -484,7 +490,10 @@ def execute_analysis_pipeline(task_id: str, req: AnalysisRequest):
         "--config-file", config_file,
         "--enable-text-regeneration",
         "--data-provider", req.data_provider,
+        "--llm-provider", req.llm_provider,
     ]
+    if req.llm_model:
+        cmd_report.extend(["--llm-model", req.llm_model])
     
     # 新增增强功能选项
     if req.enable_enhanced_charts:

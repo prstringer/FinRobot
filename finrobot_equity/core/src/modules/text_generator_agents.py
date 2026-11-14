@@ -3,7 +3,7 @@
 
 import pandas as pd
 from typing import Dict, Optional
-from openai import OpenAI
+from modules.llm_providers import LLMSettings, generate_text, normalize_provider
 
 from modules.retail_sentiment_client import format_retail_sentiment_for_prompt
 
@@ -97,44 +97,37 @@ def _prepare_user_prompt(data: Dict, prompt_type: str, company_name: str, compan
     return prompt
 
 
-def generate_text_section(data: Dict, prompt_type: str, api_key: str, company_name: str, company_ticker: str, base_url: str = None, model: str = None) -> str:
+def generate_text_section(data: Dict, prompt_type: str, api_key: str, company_name: str, company_ticker: str,
+                          base_url: str = None, model: str = None, provider: str = "openai",
+                          settings: Optional[LLMSettings] = None) -> str:
     """
-    Generates a specific text section for the equity report using OpenAI Chat API.
+    Generates a specific text section for the equity report with the chosen LLM provider.
     
     Args:
         data: Financial data dictionary
         prompt_type: Type of text section to generate
-        api_key: OpenAI API key
+        api_key: API key for the provider (ignored when ``settings`` is given)
         company_name: Company name
         company_ticker: Stock ticker
-        base_url: Optional API base URL (for proxy services like SiliconFlow)
-        model: Optional model name (default: gpt-4o-mini or configured model)
+        base_url: Optional OpenAI-compatible base URL (OpenAI provider only)
+        model: Optional model name (default depends on the provider)
+        provider: 'openai', 'anthropic' or 'gemini'
+        settings: Ready-made LLMSettings (overrides api_key/base_url/model/provider)
     """
     
     print(f"🤖 Generating '{prompt_type}' text section...")
+    if settings is None:
+        settings = LLMSettings(provider=normalize_provider(provider), api_key=api_key,
+                               model=model, base_url=base_url)
     
     # Validate API key
-    if not api_key:
+    if not settings.api_key:
         print(f"⚠️ Warning: No API key provided. Using fallback text for '{prompt_type}'.")
         return _get_fallback_text(prompt_type, company_name)
     
-    # Determine model to use
-    default_model = "gpt-4o-mini"
-    if model:
-        default_model = model
-    
-    # Create OpenAI client
-    try:
-        client_kwargs = {"api_key": api_key}
-        if base_url:
-            client_kwargs["base_url"] = base_url
-            print(f"📡 Using API base URL: {base_url}")
-        
-        client = OpenAI(**client_kwargs)
-        print(f"🤖 Using model: {default_model}")
-    except Exception as e:
-        print(f"⚠️ Warning: Could not create OpenAI client: {e}")
-        return _get_fallback_text(prompt_type, company_name)
+    if settings.base_url:
+        print(f"📡 Using API base URL: {settings.base_url}")
+    print(f"🤖 Using {settings.label}")
     
     # Get system prompt
     system_prompt = get_system_prompt(prompt_type, bool(data.get('is_bank')))
@@ -142,27 +135,10 @@ def generate_text_section(data: Dict, prompt_type: str, api_key: str, company_na
     # Prepare user prompt with data
     user_prompt = _prepare_user_prompt(data, prompt_type, company_name, company_ticker)
     
-    # Call OpenAI API
     try:
-        response = client.chat.completions.create(
-            model=default_model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            temperature=0.7,
-            max_tokens=1000
-        )
-        
-        generated_text = response.choices[0].message.content.strip()
-        
-        if generated_text:
-            print(f"✅ Successfully generated '{prompt_type}' ({len(generated_text)} chars)")
-            return generated_text
-        else:
-            print(f"⚠️ Warning: Empty response for '{prompt_type}'")
-            return _get_fallback_text(prompt_type, company_name)
-            
+        generated_text = generate_text(settings, system_prompt, user_prompt, max_tokens=1000, temperature=0.7)
+        print(f"✅ Successfully generated '{prompt_type}' ({len(generated_text)} chars)")
+        return generated_text
     except Exception as e:
         print(f"❌ Error generating '{prompt_type}': {e}")
         return _get_fallback_text(prompt_type, company_name)
