@@ -235,6 +235,14 @@
                     </div>
                 </div>
 
+                <!-- AI text provider -->
+                <div v-if="form.generate_text">
+                    <label class="block text-[10px] font-medium text-slate-400 mb-2 ml-1">AI Model</label>
+                    <div class="flex gap-2">
+                        <button type="button" v-for="p in llmProviders" :key="p.id" @click="form.llm_provider = p.id" class="flex-1 py-1.5 px-2 rounded-lg text-[10px] font-medium border transition-all duration-200" :class="form.llm_provider === p.id ? 'bg-blue-500/20 text-blue-300 border-blue-500/50' : 'bg-white/5 text-slate-500 border-transparent hover:bg-white/10'" :title="p.title">{{ p.label }}</button>
+                    </div>
+                </div>
+
                 <!-- Enhanced Analysis Options -->
                 <div>
                     <label class="block text-[10px] font-medium text-slate-400 mb-2 ml-1">Enhanced Analysis</label>
@@ -496,6 +504,7 @@
                     status: 'idle',
                     form: {
                         data_provider: 'fmp',
+                        llm_provider: 'openai',
                         ticker: '',
                         company_name: '',
                         peers_str: '',
@@ -512,6 +521,11 @@
                         enable_enhanced_charts: false,
                         enable_valuation_analysis: false
                     },
+                    llmProviders: [
+                        { id: 'openai', label: 'OpenAI', title: 'OpenAI (openai_api_key)' },
+                        { id: 'anthropic', label: 'Claude', title: 'Anthropic Claude (anthropic_api_key)' },
+                        { id: 'gemini', label: 'Gemini', title: 'Google Gemini (gemini_api_key)' }
+                    ],
                     tasks: [],
                     pollInterval: null,
                     isLogsExpanded: false

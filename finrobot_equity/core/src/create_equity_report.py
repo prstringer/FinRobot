@@ -51,6 +51,7 @@ from modules.finedge_api import (
 
 # Import the single, unified text generation function
 from modules.text_generator_agents import generate_text_section
+from modules.llm_providers import PROVIDERS, LLMSettings, resolve_llm_settings
 
 # 新增模块导入
 from modules.enhanced_chart_generator import EnhancedChartGenerator, ChartConfig
@@ -269,9 +270,10 @@ def regenerate_text_if_needed(text_content: str, text_type: str, company_name: s
             generated_text = generate_text_section(
                 data_for_generation, 
                 text_type, 
-                api_key, 
+                api_key.api_key if isinstance(api_key, LLMSettings) else api_key, 
                 company_name, 
-                company_ticker
+                company_ticker,
+                settings=api_key if isinstance(api_key, LLMSettings) else None,
             )
             
             # Basic validation of the generated content
@@ -290,7 +292,7 @@ def regenerate_text_if_needed(text_content: str, text_type: str, company_name: s
     return validate_and_fix_text_content(text_content, text_type, company_name, company_ticker)
 
 
-def process_text_content(args, analysis_df, peer_ebitda_df, peer_ev_ebitda_df, openai_api_key):
+def process_text_content(args, analysis_df, peer_ebitda_df, peer_ev_ebitda_df, llm_choice):
     """Process all text content with enhanced AI generation for competitor analysis and takeaways."""
     
     print("📖 Loading and processing text content...")
@@ -325,11 +327,11 @@ def process_text_content(args, analysis_df, peer_ebitda_df, peer_ev_ebitda_df, o
             )
             
             # Force regeneration for CSV-like data even without the flag
-            if is_csv_data and openai_api_key:
+            if is_csv_data and llm_choice:
                 print(f"⚠️ Detected CSV data in {text_type}, forcing AI regeneration...")
                 processed_texts[text_type] = regenerate_text_if_needed(
                     raw_content or "", text_type, args.company_name, args.company_ticker,
-                    analysis_df, peer_ebitda_df, peer_ev_ebitda_df, openai_api_key
+                    analysis_df, peer_ebitda_df, peer_ev_ebitda_df, llm_choice
                 )
             # If no API key, provide a fallback
             elif is_csv_data:
@@ -340,10 +342,10 @@ def process_text_content(args, analysis_df, peer_ebitda_df, peer_ev_ebitda_df, o
                     processed_texts[text_type] = f"Revenue Growth: {args.company_name}'s revenue growth shows consistent performance trends.\n\nGross Profit Margin: {args.company_name}'s gross profit margins demonstrate operational effectiveness.\n\nSG&A Expense Margin: {args.company_name}'s SG&A expense management shows disciplined cost control.\n\nEBITDA Margin Stability: {args.company_name}'s EBITDA margin stability reflects strong underlying fundamentals."
             else:
                 # Regular flow for non-CSV data
-                if args.enable_text_regeneration and openai_api_key:
+                if args.enable_text_regeneration and llm_choice:
                     processed_texts[text_type] = regenerate_text_if_needed(
                         raw_content or "", text_type, args.company_name, args.company_ticker,
-                        analysis_df, peer_ebitda_df, peer_ev_ebitda_df, openai_api_key
+                        analysis_df, peer_ebitda_df, peer_ev_ebitda_df, llm_choice
                     )
                 else:
                     processed_texts[text_type] = validate_and_fix_text_content(
@@ -351,10 +353,10 @@ def process_text_content(args, analysis_df, peer_ebitda_df, peer_ev_ebitda_df, o
                     )
         else:
             # Regular flow for other text types
-            if args.enable_text_regeneration and openai_api_key:
+            if args.enable_text_regeneration and llm_choice:
                 processed_texts[text_type] = regenerate_text_if_needed(
                     raw_content or "", text_type, args.company_name, args.company_ticker,
-                    analysis_df, peer_ebitda_df, peer_ev_ebitda_df, openai_api_key
+                    analysis_df, peer_ebitda_df, peer_ev_ebitda_df, llm_choice
                 )
             else:
                 processed_texts[text_type] = validate_and_fix_text_content(
@@ -424,6 +426,10 @@ def main():
     
     # Text regeneration option
     parser.add_argument("--enable-text-regeneration", action="store_true", help="Enable AI text regeneration if content quality is poor.")
+    parser.add_argument("--llm-provider", type=str, default=None, choices=list(PROVIDERS),
+                        help="LLM for text regeneration: openai, anthropic (Claude) or gemini. "
+                             "Default: the provider step 1 used, then llm_provider in config.ini, else openai.")
+    parser.add_argument("--llm-model", type=str, default=None, help="Model name for the chosen LLM provider.")
     
     # 新增增强功能选项
     parser.add_argument("--enable-enhanced-charts", action="store_true", help="Enable enhanced chart generation with 11 professional chart types.")
@@ -468,7 +474,7 @@ def main():
     print(f"Data provider: {provider} | currency: {currency.get_currency()}")
 
     # --- Load configuration and API key ---
-    openai_api_key = None
+    llm_choice = None
     finedge_client = None
     config = None
     try:
@@ -486,12 +492,17 @@ def main():
                 print(f"Warning: {e}")
         else:
             fmp_api_key = get_api_key(config, "API_KEYS", "fmp_api_key")
-        if args.enable_text_regeneration and config is not None:
-            try:
-                openai_api_key = get_api_key(config, "API_KEYS", "openai_api_key")
-                print("✅ OpenAI API key loaded for text regeneration")
-            except Exception as e:
-                print(f"⚠️ Warning: OpenAI API key not available: {e}")
+        if args.enable_text_regeneration:
+            llm_settings = resolve_llm_settings(
+                config, args.llm_provider or analysis_summary.get("llm_provider"),
+                args.llm_model or (analysis_summary.get("llm_model")
+                                   if not args.llm_provider or args.llm_provider == analysis_summary.get("llm_provider")
+                                   else None))
+            if llm_settings.api_key:
+                llm_choice = llm_settings  # passed through to the regeneration helpers
+                print(f"✅ {llm_settings.label} selected for text regeneration")
+            else:
+                print(f"⚠️ Warning: no API key for the '{llm_settings.provider}' LLM provider")
                 print("Text regeneration will be disabled")
     except Exception as e:
         print(f"Warning: Could not load FMP API key: {e}")
@@ -580,7 +591,7 @@ def main():
     peer_ev_ebitda_df = load_analysis_csv(args.peer_ev_ebitda_csv) if args.peer_ev_ebitda_csv else pd.DataFrame()
 
     # Process text content with AI enhancement
-    processed_texts = process_text_content(args, analysis_df, peer_ebitda_df, peer_ev_ebitda_df, openai_api_key)
+    processed_texts = process_text_content(args, analysis_df, peer_ebitda_df, peer_ev_ebitda_df, llm_choice)
     
     # Fix stale dates in cached text (e.g. "June 2024" → actual report date)
     import re as _re
