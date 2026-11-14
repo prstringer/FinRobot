@@ -214,12 +214,15 @@
             <!-- CARD 3: Options & Actions -->
             <div class="bg-white/5 border border-white/5 rounded-xl p-4 space-y-5 shadow-lg shadow-black/20 flex-1 flex flex-col">
                 <div>
-                    <div class="flex items-center justify-between mb-1.5 ml-1">
-                        <label class="text-[10px] font-medium text-slate-400">Comparables</label>
-                        <span class="text-[9px] text-slate-600 uppercase tracking-wider">Optional</span>
-                    </div>
-                    <div class="halo-input-wrapper">
-                        <input type="text" v-model="form.peers_str" :placeholder="form.data_provider === 'finedge' ? 'Leave blank - sector peers are chosen automatically' : 'Leave blank - peers are chosen automatically'" class="halo-input w-full rounded-lg px-3 py-2 text-xs font-medium placeholder-slate-600" @input="form.peers_str = form.peers_str.toUpperCase()">
+                    <button type="button" @click="showPeerOverride = !showPeerOverride" class="w-full flex items-center justify-between ml-1 pr-1 text-left group">
+                        <span class="text-[10px] font-medium text-slate-400 group-hover:text-slate-300 transition-colors">Advanced: override peers</span>
+                        <span class="text-[9px] text-slate-600 uppercase tracking-wider">{{ showPeerOverride ? 'Hide' : (peerList.length ? 'Custom' : 'Auto') }}</span>
+                    </button>
+                    <div v-show="showPeerOverride" class="mt-1.5">
+                        <div class="halo-input-wrapper">
+                            <input type="text" v-model="form.peers_str" :placeholder="form.data_provider === 'finedge' ? 'Leave blank - sector peers are chosen automatically' : 'Leave blank - peers are chosen automatically'" class="halo-input w-full rounded-lg px-3 py-2 text-xs font-medium placeholder-slate-600" @input="form.peers_str = form.peers_str.toUpperCase()">
+                        </div>
+                        <p class="text-[9px] text-slate-500 mt-1.5 ml-1 leading-snug">Only fill this in to compare against specific companies (space-separated tickers). Otherwise peers are found automatically.</p>
                     </div>
                 </div>
 
@@ -503,6 +506,7 @@
                     passwordSuccess: '',
                     passwordLoading: false,
                     status: 'idle',
+                    showPeerOverride: false,
                     nameLookup: '',
                     nameLookupTimer: null,
                     autoFilledName: '',
@@ -536,6 +540,7 @@
                 }
             },
             computed: {
+                peerList() { return (this.form.peers_str || '').split(' ').map(x => x.trim()).filter(x => x); },
                 isValid() { return this.form.ticker && this.form.company_name; },
                 userInitial() { return this.userName ? this.userName.charAt(0).toUpperCase() : 'U'; },
                 isGithubUser() { return this.userProvider === 'github' || this.userEmail.startsWith('github:'); },
@@ -651,11 +656,12 @@
                         startTime: new Date()
                     };
                     this.tasks.unshift(newTask);
-                    const peers = this.form.peers_str.split(' ').map(s => s.trim()).filter(s => s);
+                    const peers = this.peerList; // only what is typed in the override box (empty = automatic)
                     const payload = { ...this.form, peers: peers };
                     this.form.ticker = '';
                     this.form.company_name = '';
                     this.form.peers_str = '';
+                    this.showPeerOverride = false;
                     try {
                         const response = await fetch('/api/run', {
                             method: 'POST',
