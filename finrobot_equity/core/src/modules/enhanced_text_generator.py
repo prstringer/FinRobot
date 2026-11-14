@@ -11,6 +11,8 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 from datetime import datetime
 
+from . import currency as _cur
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -104,8 +106,8 @@ Support all conclusions with data references."""
     def _format_currency(self, value: float, billions: bool = True) -> str:
         """格式化货币值"""
         if billions:
-            return f"${value/1e9:.1f}B" if value >= 1e9 else f"${value/1e6:.1f}M"
-        return f"${value:,.0f}"
+            return _cur.fmt_amount(value)
+        return f"{_cur.symbol()}{value:,.0f}"
     
     def _format_percentage(self, value: float) -> str:
         """格式化百分比"""
@@ -138,8 +140,8 @@ Support all conclusions with data references."""
 Generate an executive summary for {company_name} ({ticker}):
 
 Key Data:
-- Current Price: ${current_price:.2f}
-- Target Price: ${target_price:.2f}
+- Current Price: {_cur.symbol()}{current_price:.2f}
+- Target Price: {_cur.symbol()}{target_price:.2f}
 - Implied Upside: {upside:.1f}%
 - Rating: {rating}
 - Revenue (LTM): {self._format_currency(data.get('revenue', 0))}
@@ -291,16 +293,16 @@ Generate a catalyst analysis that:
         methods_summary = []
         for m in methods:
             methods_summary.append(
-                f"- {m.get('method', 'N/A')}: ${m.get('target', 0):.2f} "
-                f"(Range: ${m.get('range', (0,0))[0]:.2f} - ${m.get('range', (0,0))[1]:.2f})"
+                f"- {m.get('method', 'N/A')}: {_cur.symbol()}{m.get('target', 0):.2f} "
+                f"(Range: {_cur.symbol()}{m.get('range', (0,0))[0]:.2f} - {_cur.symbol()}{m.get('range', (0,0))[1]:.2f})"
             )
         
         user_prompt = f"""
 Analyze the valuation for this stock:
 
 Valuation Summary:
-- Current Price: ${current_price:.2f}
-- Target Price: ${target_price:.2f}
+- Current Price: {_cur.symbol()}{current_price:.2f}
+- Target Price: {_cur.symbol()}{target_price:.2f}
 - Implied Upside/Downside: {upside:.1f}%
 
 Valuation Methods Used:
@@ -354,8 +356,8 @@ Generate a valuation analysis that:
 Generate an investment recommendation for {ticker}:
 
 Rating: {rating}
-Current Price: ${current_price:.2f}
-Target Price: ${target_price:.2f}
+Current Price: {_cur.symbol()}{current_price:.2f}
+Target Price: {_cur.symbol()}{target_price:.2f}
 Implied Return: {upside:.1f}%
 
 Supporting Financial Data:
@@ -506,12 +508,8 @@ Generate an investment recommendation that:
         if isinstance(value, (int, float)):
             if 'margin' in metric.lower() or 'ratio' in metric.lower() or '%' in metric.lower():
                 formatted_value = f"{value:.1f}%"
-            elif value >= 1e9:
-                formatted_value = f"${value/1e9:.1f}B"
-            elif value >= 1e6:
-                formatted_value = f"${value/1e6:.1f}M"
             else:
-                formatted_value = f"${value:,.0f}"
+                formatted_value = _cur.fmt_amount(value)
         else:
             formatted_value = str(value)
         

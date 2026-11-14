@@ -5,6 +5,8 @@
 """
 import re as _re
 
+from . import currency as _cur
+
 
 def _auto_bold_key_data(text: str) -> str:
     """自动加粗关键金融数据和结论性语句。"""
@@ -13,7 +15,7 @@ def _auto_bold_key_data(text: str) -> str:
 
     # 1. 加粗 $金额+单位: "$97.7 billion", "$14.8B", "$1.5 million"
     text = _re.sub(
-        r'(\$[\d,.]+\s*(?:billion|million|trillion|bn|mn|trn|B|M|K|T))',
+        _cur.amount_regex(),
         r'<strong>\1</strong>', text, flags=_re.IGNORECASE)
 
     # 2. 加粗百分比: "15.2%", "-0.9%", "+3.5%"
@@ -330,7 +332,7 @@ HTML_PROFESSIONAL_TEMPLATE = """
                     <p style="color: #0f172a; font-size: 1rem; font-weight: 600;">{market_cap}</p>
                 </div>
                 <div class="metric-card">
-                    <p style="color: #94a3b8; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">P/E (Fwd)</p>
+                    <p style="color: #94a3b8; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">{pe_label}</p>
                     <p style="color: #0f172a; font-size: 1rem; font-weight: 600;">{fwd_pe}</p>
                 </div>
                 <div class="metric-card">
@@ -373,7 +375,7 @@ HTML_PROFESSIONAL_TEMPLATE = """
         <section class="mb-10 page-break" id="financial-analysis">
             <h2 class="section-title">Financial Analysis</h2>
 
-            <h3 class="heading-2">Revenue & EBITDA Performance</h3>
+            <h3 class="heading-2">{revenue_section_title}</h3>
             <div class="two-column">
                 <div class="content-card">
                     <p class="body-text">{revenue_analysis_text}</p>
@@ -419,7 +421,7 @@ HTML_PROFESSIONAL_TEMPLATE = """
                 </div>
                 <div class="chart-container">
                     <img src="{ev_ebitda_chart_path}" alt="EV/EBITDA Peer Comparison">
-                    <p class="caption mt-2">EV/EBITDA Peer Comparison</p>
+                    <p class="caption mt-2">{peer_chart_title}</p>
                 </div>
             </div>
         </section>
@@ -463,11 +465,11 @@ HTML_PROFESSIONAL_TEMPLATE = """
 
             <!-- Peer Comparison Tables -->
             <div class="content-card mb-6">
-                <h3 class="heading-2" style="margin-top:0;">Peer EBITDA Comparison</h3>
+                <h3 class="heading-2" style="margin-top:0;">{peer_ebitda_title}</h3>
                 {peer_ebitda_table_html}
             </div>
             <div class="content-card mb-6">
-                <h3 class="heading-2" style="margin-top:0;">Peer EV/EBITDA Comparison</h3>
+                <h3 class="heading-2" style="margin-top:0;">{peer_ev_ebitda_title}</h3>
                 {peer_ev_ebitda_table_html_comp}
             </div>
 
@@ -492,7 +494,7 @@ HTML_PROFESSIONAL_TEMPLATE = """
             <h3 class="heading-2">Income Statement Summary</h3>
             {financial_summary_table_html}
 
-            <h3 class="heading-2">Credit & Cash Flow Metrics</h3>
+            <h3 class="heading-2">{credit_section_title}</h3>
             {credit_cashflow_table_html}
         </section>
 
@@ -544,16 +546,10 @@ def _format_figure_value(value) -> str:
         return str(value)
 
     abs_num = abs(num)
-    if abs_num >= 1e12:
-        return f"${num/1e12:,.2f}T"
-    elif abs_num >= 1e9:
-        return f"${num/1e9:,.2f}B"
-    elif abs_num >= 1e6:
-        return f"${num/1e6:,.1f}M"
-    elif abs_num >= 1e3:
-        return f"${num/1e3:,.1f}K"
+    if abs_num >= 1e3:
+        return _cur.fmt_amount(num, decimals=2 if _cur.get_currency() == "USD" and abs_num >= 1e9 else None)
     elif abs_num == 0:
-        return "$0"
+        return f"{_cur.symbol()}0"
     else:
         return f"{num:,.2f}"
 
@@ -596,9 +592,9 @@ def format_sensitivity_analysis_html_professional(sensitivity_data: dict) -> str
                 low_val = ci.get('low') or ci.get('lower', 'N/A')
                 high_val = ci.get('high') or ci.get('upper', 'N/A')
                 if isinstance(low_val, (int, float)):
-                    low_val = f"${low_val/1e9:.1f}B" if low_val > 1e9 else f"${low_val/1e6:.1f}M"
+                    low_val = _cur.fmt_amount(low_val)
                 if isinstance(high_val, (int, float)):
-                    high_val = f"${high_val/1e9:.1f}B" if high_val > 1e9 else f"${high_val/1e6:.1f}M"
+                    high_val = _cur.fmt_amount(high_val)
                 html += f'<div style="display:flex; justify-content:space-between; padding:0.4rem 0.6rem; background:#f8fafc; border-radius:0.375rem; font-size:0.85rem;"><span style="color:#64748b;">{metric}</span><span style="color:#0f172a; font-weight:500;">{low_val} — {high_val}</span></div>'
         html += '</div>'
 
@@ -780,9 +776,9 @@ def format_valuation_breakdown_html(valuation_data: dict) -> str:
     html += '<thead><tr><th>Method</th><th>Target Price</th><th>Low</th><th>High</th><th>Weight</th><th>Key Assumptions</th></tr></thead><tbody>'
 
     for m in methods:
-        target = f"${m['target_price']:.2f}"
-        low = f"${m['low_estimate']:.2f}"
-        high = f"${m['high_estimate']:.2f}"
+        target = _cur.fmt_price(m['target_price'])
+        low = _cur.fmt_price(m['low_estimate'])
+        high = _cur.fmt_price(m['high_estimate'])
         weight = f"{m['confidence'] * 100:.0f}%"
         # 格式化假设
         parts = []
@@ -814,11 +810,11 @@ def format_valuation_breakdown_html(valuation_data: dict) -> str:
             flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
             <div>
                 <p style="color:#64748b; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.15rem;">Weighted Target Price</p>
-                <p style="color:#0f172a; font-size:1.5rem; font-weight:700;">${synth_target:.2f}</p>
+                <p style="color:#0f172a; font-size:1.5rem; font-weight:700;">{_cur.fmt_price(synth_target)}</p>
             </div>
             <div>
                 <p style="color:#64748b; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.15rem;">Valuation Range</p>
-                <p style="color:#0f172a; font-size:1rem; font-weight:600;">${synth_range[0]:.2f} - ${synth_range[1]:.2f}</p>
+                <p style="color:#0f172a; font-size:1rem; font-weight:600;">{_cur.fmt_price(synth_range[0])} - {_cur.fmt_price(synth_range[1])}</p>
             </div>
             <div>
                 <p style="color:#64748b; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.15rem;">Implied {upside_label}</p>
@@ -912,9 +908,9 @@ def format_advanced_charts_html_professional(data: dict) -> str:
     ma_sig = ti.get('ma_signal', 'N/A')
     ma_detail = ''
     if sma50:
-        ma_detail += f'SMA 50: <strong>${sma50:.2f}</strong>'
+        ma_detail += f'SMA 50: <strong>{_cur.fmt_price(sma50)}</strong>'
     if sma200:
-        ma_detail += f' &nbsp;|&nbsp; SMA 200: <strong>${sma200:.2f}</strong>'
+        ma_detail += f' &nbsp;|&nbsp; SMA 200: <strong>{_cur.fmt_price(sma200)}</strong>'
     if not ma_detail:
         ma_detail = 'Price data not available for SMA calculation.'
     html += f'<div style="{card_style}"><p style="{label_style}">Moving Averages {_signal_badge(ma_sig)}</p><p style="{val_style}">{ma_detail}</p></div>'
@@ -974,8 +970,10 @@ def _derive_rating(share_price, target_price, api_rating: str) -> str:
     如果价格数据无效，fallback 到 API 评级。
     """
     try:
-        price = float(str(share_price).replace('$', '').replace(',', ''))
-        target = float(str(target_price).replace('$', '').replace(',', ''))
+        price = _cur.parse_money(share_price)
+        target = _cur.parse_money(target_price)
+        if price is None or target is None:
+            return api_rating or 'N/A'
         if price <= 0:
             return api_rating or 'N/A'
         upside = (target - price) / price
@@ -1053,7 +1051,11 @@ def render_professional_html_report(data: dict) -> str:
         'data_source_text': data.get('data_source_text', 'Company Filings, FMP API'),
         'research_source': data.get('research_source', 'AI4Finance FinRobot'),
         'report_generated_time': datetime.now().strftime('%Y-%m-%d %H:%M'),
+        'pe_label': data.get('pe_label', 'P/E (Fwd)'),
     }
+    from .html_renderer import REPORT_LABEL_DEFAULTS
+    for _k, _v in REPORT_LABEL_DEFAULTS.items():
+        report_data[_k] = data.get(_k, _v)
 
     try:
         return HTML_PROFESSIONAL_TEMPLATE.format(**report_data)

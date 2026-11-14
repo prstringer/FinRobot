@@ -18,6 +18,8 @@ finrobot_equity/
 │   │   └── modules/                         # Core modules
 │   │       ├── common_utils.py              #   Config & API key management
 │   │       ├── market_data_api.py           #   FMP API client
+│   │       ├── finedge_api.py               #   FinEdge API adapter (Indian stocks)
+│   │       ├── currency.py                  #   Report currency (USD / INR) formatting
 │   │       ├── financial_data_processor.py  #   Metrics extraction & forecasting
 │   │       ├── text_generator_agents.py     #   LLM text generation orchestrator
 │   │       ├── chart_generator.py           #   Financial chart rendering
@@ -138,6 +140,50 @@ python finrobot_equity/core/src/create_equity_report.py \
     --config-file finrobot_equity/core/config/config.ini
 ```
 
+### Indian Stocks (NSE/BSE) via FinEdge
+
+`--data-provider finedge` pulls statements, ratios, prices, shareholding and exchange
+announcements from the [FinEdge API](https://www.finedgeapi.com) and renders the report in
+rupees (₹ crore). Set the token as `FINEDGE_API_TOKEN` or `finedge_api_token` in `config.ini`.
+
+```bash
+# Step 1: analysis (consolidated for companies, standalone for banks; sector peers found automatically)
+python finrobot_equity/core/src/generate_financial_analysis.py \
+    --data-provider finedge \
+    --company-ticker RELIANCE \
+    --company-name "Reliance Industries Ltd" \
+    --enable-sensitivity-analysis --enable-enhanced-news
+
+# Step 2: report (provider and currency are read from analysis_summary.json)
+python finrobot_equity/core/src/create_equity_report.py \
+    --company-ticker RELIANCE \
+    --company-name "Reliance Industries Ltd" \
+    --analysis-csv output/RELIANCE/analysis/financial_metrics_and_forecasts.csv \
+    --ratios-csv output/RELIANCE/analysis/ratios_raw_data.csv \
+    ...  # same text-file arguments as above
+```
+
+What differs from the FMP path:
+
+- **Banks** (e.g. HDFCBANK) use a bank template: net interest income, pre-provision profit,
+  provisions, NIM, cost-to-income, credit cost, GNPA/NNPA, CET1, advances and deposits, and a
+  P/B + P/E valuation instead of EV/EBITDA and DCF.
+- **Derived figures:** FinEdge has no EBITDA, gross profit or SG&A fields. EBITDA is revenue
+  from operations minus operating expenses (excluding other income and exceptional items);
+  SG&A is employee plus other expenses.
+- **Not available from FinEdge:** analyst target price and rating (shown as N/A), news (exchange
+  announcements are used instead) and forward P/E (trailing P/E is shown).
+- **Peers:** the free plan only serves the sample symbols (ITC, RELIANCE, HDFCBANK, ICICIPRULI).
+  Peer symbols outside the plan are skipped with a note in the report; peer tables fill in
+  automatically on a plan that includes them.
+- **Data notes** (e.g. ITC's excise-inclusive revenue from Feb 2026, one-off discontinued
+  operations, merger years) are printed during step 1, passed to the AI text sections and shown
+  in the report footer.
+
+See [docs/finedge_data_quality.md](docs/finedge_data_quality.md) for the data-quality test behind
+these choices. Forecast years are the three years after the latest actual year (e.g. 2027E–2029E
+when the latest actual is FY2026); `--revenue-growth-2025/2026/2027` set years 1–3.
+
 ## Deployment Commands
 
 | Command | Description |
@@ -164,6 +210,7 @@ python finrobot_equity/core/src/create_equity_report.py \
 | Service | Required | Purpose |
 |:---|:---|:---|
 | [Financial Modeling Prep](https://financialmodelingprep.com/developer) | Yes | Financial data, market metrics, peer comparison |
+| [FinEdge API](https://www.finedgeapi.com) | For Indian stocks | Financial data for NSE/BSE stocks (`--data-provider finedge`) |
 | [OpenAI](https://platform.openai.com/) | Yes | AI-powered text generation for report sections |
 | Adanos Finance API | No | Optional retail sentiment insights for Reddit, X.com, and Polymarket |
 

@@ -19,6 +19,8 @@ import base64
 import logging
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Tuple, Any
+
+from . import currency as _cur
 from datetime import datetime
 
 # 配置日志
@@ -151,15 +153,15 @@ class EnhancedChartGenerator:
                 return None
             
             df = income_df.sort_values('date').copy()
-            df['RevenueBn'] = df['revenue'] / 1e9
+            df['RevenueBn'] = df['revenue'] / _cur.chart_scale()[0]
             df['YoY'] = df['RevenueBn'].pct_change(4) * 100  # 同比增长
             
             fig, ax1 = plt.subplots(figsize=self.config.figsize)
             
             # 收入柱状图
             bars = ax1.bar(df['date'], df['RevenueBn'], color=ChartColors.PRIMARY, 
-                          alpha=0.85, label='Revenue ($B)', edgecolor='white', linewidth=0.5)
-            ax1.set_ylabel('Revenue ($B)', fontweight='bold', color=ChartColors.PRIMARY)
+                          alpha=0.85, label=f'Revenue ({_cur.chart_scale()[1]})', edgecolor='white', linewidth=0.5)
+            ax1.set_ylabel(f'Revenue ({_cur.chart_scale()[1]})', fontweight='bold', color=ChartColors.PRIMARY)
             ax1.tick_params(axis='y', labelcolor=ChartColors.PRIMARY)
             
             # YoY增长率折线图
@@ -206,15 +208,15 @@ class EnhancedChartGenerator:
                 return None
             
             df = income_df.sort_values('date').copy()
-            df['EBITDABn'] = df['ebitda'] / 1e9
+            df['EBITDABn'] = df['ebitda'] / _cur.chart_scale()[0]
             df['EBITDA_Margin'] = (df['ebitda'] / df['revenue']) * 100
             
             fig, ax1 = plt.subplots(figsize=self.config.figsize)
             
             # EBITDA柱状图
             bars = ax1.bar(df['date'], df['EBITDABn'], color=ChartColors.PRIMARY,
-                          alpha=0.85, label='EBITDA ($B)', edgecolor='white')
-            ax1.set_ylabel('EBITDA ($B)', fontweight='bold', color=ChartColors.PRIMARY)
+                          alpha=0.85, label=f'EBITDA ({_cur.chart_scale()[1]})', edgecolor='white')
+            ax1.set_ylabel(f'EBITDA ({_cur.chart_scale()[1]})', fontweight='bold', color=ChartColors.PRIMARY)
             ax1.tick_params(axis='y', labelcolor=ChartColors.PRIMARY)
             
             # EBITDA利润率折线图
@@ -520,8 +522,8 @@ class EnhancedChartGenerator:
             
             # 准备数据
             tickers = list(peer_data.keys())
-            revenues = [peer_data[t].get('revenue', 0) / 1e9 for t in tickers]
-            ebitdas = [peer_data[t].get('ebitda', 0) / 1e9 for t in tickers]
+            revenues = [peer_data[t].get('revenue', 0) / _cur.chart_scale()[0] for t in tickers]
+            ebitdas = [peer_data[t].get('ebitda', 0) / _cur.chart_scale()[0] for t in tickers]
             gross_margins = [peer_data[t].get('gross_margin', 0) for t in tickers]
             
             # 按收入排序
@@ -540,10 +542,10 @@ class EnhancedChartGenerator:
             colors_rev = [ChartColors.PRIMARY if t == ticker else ChartColors.MEDIUM_GRAY for t in tickers]
             colors_ebitda = [ChartColors.ACCENT if t == ticker else '#B8B8B8' for t in tickers]
             
-            bars1 = ax1.bar(x - width/2, revenues, width, color=colors_rev, label='Revenue ($B)')
-            bars2 = ax1.bar(x + width/2, ebitdas, width, color=colors_ebitda, label='EBITDA ($B)')
+            bars1 = ax1.bar(x - width/2, revenues, width, color=colors_rev, label=f'Revenue ({_cur.chart_scale()[1]})')
+            bars2 = ax1.bar(x + width/2, ebitdas, width, color=colors_ebitda, label=f'EBITDA ({_cur.chart_scale()[1]})')
             
-            ax1.set_ylabel('$B', fontweight='bold')
+            ax1.set_ylabel(_cur.chart_scale()[1], fontweight='bold')
             ax1.set_title('Revenue & EBITDA Comparison', fontweight='bold')
             ax1.set_xticks(x)
             ax1.set_xticklabels(tickers, rotation=45, ha='right')
@@ -611,12 +613,12 @@ class EnhancedChartGenerator:
                        markeredgecolor='white', markeredgewidth=2)
                 
                 # 添加数值标签
-                ax.text(low - 2, i, f'${low:.0f}', va='center', ha='right', fontsize=9)
-                ax.text(high + 2, i, f'${high:.0f}', va='center', ha='left', fontsize=9)
+                ax.text(low - 2, i, f'{_cur.symbol()}{low:.0f}', va='center', ha='right', fontsize=9)
+                ax.text(high + 2, i, f'{_cur.symbol()}{high:.0f}', va='center', ha='left', fontsize=9)
             
             ax.set_yticks(y)
             ax.set_yticklabels(methods)
-            ax.set_xlabel('Target Price ($)', fontweight='bold')
+            ax.set_xlabel(f'Target Price ({_cur.symbol()})', fontweight='bold')
             ax.set_title(f'{ticker} Valuation Football Field', fontweight='bold', pad=20)
             ax.grid(True, axis='x', linestyle='--', alpha=0.5)
             
@@ -624,7 +626,7 @@ class EnhancedChartGenerator:
             if 'current_price' in valuation_data:
                 current = valuation_data['current_price']
                 ax.axvline(x=current, color=ChartColors.DANGER, linestyle='--', 
-                          linewidth=2, label=f'Current: ${current:.0f}')
+                          linewidth=2, label=f'Current: {_cur.symbol()}{current:.0f}')
                 ax.legend(loc='upper right')
             
             fig.tight_layout()
@@ -665,8 +667,8 @@ class EnhancedChartGenerator:
             
             # EPS折线
             ax1.plot(x, eps_data, color=ChartColors.PRIMARY, marker='o',
-                    markersize=8, linewidth=2.5, label='EPS ($)')
-            ax1.set_ylabel('EPS ($)', fontweight='bold', color=ChartColors.PRIMARY)
+                    markersize=8, linewidth=2.5, label=f'EPS ({_cur.symbol()})')
+            ax1.set_ylabel(f'EPS ({_cur.symbol()})', fontweight='bold', color=ChartColors.PRIMARY)
             ax1.tick_params(axis='y', labelcolor=ChartColors.PRIMARY)
             
             # PE折线

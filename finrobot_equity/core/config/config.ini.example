@@ -3,6 +3,10 @@
 # Get your free API key at: https://financialmodelingprep.com/developer
 fmp_api_key = YOUR_FMP_API_KEY
 
+# FinEdge API token (optional, for Indian NSE/BSE stocks with --data-provider finedge)
+# Get a token at: https://www.finedgeapi.com  (or set the FINEDGE_API_TOKEN environment variable)
+finedge_api_token = YOUR_FINEDGE_API_TOKEN
+
 # OpenAI API Key (or compatible API provider)
 # Get your API key at: https://platform.openai.com/account/api-keys
 openai_api_key = YOUR_OPENAI_API_KEY

@@ -11,6 +11,8 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 import logging
 
+from . import currency as _cur
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -127,7 +129,7 @@ class ValuationEngine:
         )
         
         self.valuation_results.append(result)
-        logger.info(f"✅ EV/EBITDA valuation: ${target_price:.2f}")
+        logger.info(f"✅ EV/EBITDA valuation: {_cur.symbol()}{target_price:.2f}")
         return result
     
     def calculate_peer_comparison_valuation(self) -> ValuationResult:
@@ -197,7 +199,7 @@ class ValuationEngine:
         )
         
         self.valuation_results.append(result)
-        logger.info(f"✅ Peer comparison valuation: ${target_price:.2f}")
+        logger.info(f"✅ Peer comparison valuation: {_cur.symbol()}{target_price:.2f}")
         return result
     
     def calculate_dcf_valuation(self, assumptions: Dict = None) -> ValuationResult:
@@ -278,9 +280,41 @@ class ValuationEngine:
         )
         
         self.valuation_results.append(result)
-        logger.info(f"✅ DCF valuation: ${target_price:.2f}")
+        logger.info(f"✅ DCF valuation: {_cur.symbol()}{target_price:.2f}")
         return result
     
+    def calculate_multiple_valuation(self, method: str, per_share_value: float,
+                                     historical_multiples: List[float], confidence: float = 0.6,
+                                     value_label: str = "") -> ValuationResult:
+        """Target price = historical average multiple x a per-share value.
+
+        Used for banks, where EV/EBITDA and DCF on EBITDA do not apply:
+        P/B x book value per share, and P/E x EPS. The range is +/- one
+        standard deviation of the historical multiple.
+        """
+        multiples = pd.Series([m for m in historical_multiples
+                               if m is not None and pd.notna(m) and m > 0], dtype=float)
+        if per_share_value is None or pd.isna(per_share_value) or per_share_value <= 0 or multiples.empty:
+            logger.info(f"Skipping {method}: missing per-share value or multiples")
+            return ValuationResult(method=method, target_price=0, low_estimate=0, high_estimate=0)
+        avg, std = multiples.mean(), (multiples.std() if len(multiples) > 1 else multiples.mean() * 0.15)
+        result = ValuationResult(
+            method=method,
+            target_price=avg * per_share_value,
+            low_estimate=max((avg - std) * per_share_value, 0),
+            high_estimate=(avg + std) * per_share_value,
+            assumptions={
+                value_label or 'Per-share value': round(float(per_share_value), 2),
+                'Historical Avg Multiple': round(float(avg), 2),
+                'Years of history': int(len(multiples)),
+            },
+            confidence=confidence,
+            description=f"Based on {avg:.2f}x historical average {method.split()[0]}",
+        )
+        self.valuation_results.append(result)
+        logger.info(f"✅ {method} valuation: {_cur.symbol()}{result.target_price:.2f}")
+        return result
+
     def generate_football_field_data(self) -> Dict[str, Dict]:
         """
         生成足球场图数据
@@ -352,8 +386,8 @@ class ValuationEngine:
             ]
         }
         
-        logger.info(f"✅ Synthesized target price: ${weighted_price:.2f} "
-                   f"(Range: ${synthesis['range'][0]:.2f} - ${synthesis['range'][1]:.2f})")
+        logger.info(f"✅ Synthesized target price: {_cur.symbol()}{weighted_price:.2f} "
+                   f"(Range: {_cur.symbol()}{synthesis['range'][0]:.2f} - {_cur.symbol()}{synthesis['range'][1]:.2f})")
         
         return synthesis
     
@@ -379,11 +413,11 @@ class ValuationEngine:
         
         explanation_parts = [
             f"## Valuation Method Comparison\n",
-            f"The valuation analysis reveals a range of ${lowest[1]:.2f} to ${highest[1]:.2f}, "
+            f"The valuation analysis reveals a range of {_cur.symbol()}{lowest[1]:.2f} to {_cur.symbol()}{highest[1]:.2f}, "
             f"representing a {diff_pct:.1f}% spread between methods.\n",
             f"\n### Key Differences:\n",
-            f"- **{lowest[0]}** provides the most conservative estimate at ${lowest[1]:.2f}",
-            f"- **{highest[0]}** suggests the highest value at ${highest[1]:.2f}",
+            f"- **{lowest[0]}** provides the most conservative estimate at {_cur.symbol()}{lowest[1]:.2f}",
+            f"- **{highest[0]}** suggests the highest value at {_cur.symbol()}{highest[1]:.2f}",
         ]
         
         # 添加方法特定说明
@@ -394,7 +428,7 @@ class ValuationEngine:
         # 综合建议
         synthesis = self.synthesize_valuation()
         explanation_parts.append(f"\n### Synthesis:")
-        explanation_parts.append(f"Weighted average target price: ${synthesis['target_price']:.2f}")
+        explanation_parts.append(f"Weighted average target price: {_cur.symbol()}{synthesis['target_price']:.2f}")
         if synthesis['upside'] != 0:
             direction = "upside" if synthesis['upside'] > 0 else "downside"
             explanation_parts.append(f"Implied {direction}: {abs(synthesis['upside']):.1f}%")

@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional
 import logging
 
+from . import currency as _cur
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -198,9 +200,9 @@ class SensitivityAnalyzer:
             
             for margin_delta in margin_deltas:
                 adjusted_margin = base_margin + margin_delta * 100
-                ebitda = adjusted_rev * (adjusted_margin / 100) / 1e9  # 转为十亿
+                ebitda = adjusted_rev * (adjusted_margin / 100)
                 col_name = f"Margin {margin_delta*100:+.1f}%"
-                row[col_name] = f"${ebitda:.1f}B"
+                row[col_name] = _cur.fmt_amount(ebitda)
             
             matrix.append(row)
         
@@ -301,7 +303,7 @@ class SensitivityAnalyzer:
             summary_parts.append("### Confidence Intervals:")
             for metric, ci in self.confidence_intervals.items():
                 summary_parts.append(
-                    f"- {metric}: ${ci['lower']/1e9:.1f}B - ${ci['upper']/1e9:.1f}B "
+                    f"- {metric}: {_cur.fmt_amount(ci['lower'])} - {_cur.fmt_amount(ci['upper'])} "
                     f"({ci['confidence']*100:.0f}% confidence)"
                 )
             summary_parts.append("")
