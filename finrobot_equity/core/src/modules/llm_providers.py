@@ -46,6 +46,7 @@ SECTION_TIERS = {
     "major_takeaways": MID,
     "tagline": SMALL,
     "news_summary": SMALL,
+    "news_analysis": SMALL,
 }
 
 MODEL_PRICES = {

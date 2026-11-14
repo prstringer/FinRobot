@@ -241,7 +241,7 @@ class NewsIntegrator:
             # 分类和评估
             category = self._classify_category(combined_text)
             importance = self._assess_importance(combined_text, category)
-            sentiment = self._analyze_sentiment(combined_text)
+            sentiment = article.get('llm_sentiment') or self._analyze_sentiment(combined_text)
             
             news_article = NewsArticle(
                 symbol=article.get('symbol', self.ticker),

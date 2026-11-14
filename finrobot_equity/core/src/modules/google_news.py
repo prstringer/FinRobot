@@ -66,7 +66,7 @@ def parse_feed(xml_bytes: bytes, company_name: str, ticker: str) -> list[dict]:
         publisher = (item.findtext("source") or "").strip()
         if publisher and title.endswith(f" - {publisher}"):
             title = title[: -len(publisher) - 3].rstrip()
-        if not title or _QUOTE_PAGE.match(title) or not is_relevant(title, company_name, ticker):
+        if not title or _QUOTE_PAGE.search(title) or not is_relevant(title, company_name, ticker):
             continue
         key = re.sub(r"[^a-z0-9]", "", title.lower())[:50]
         if key in seen:

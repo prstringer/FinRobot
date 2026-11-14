@@ -486,6 +486,7 @@ def execute_analysis_pipeline(task_id: str, req: AnalysisRequest):
         "--risks-file", os.path.join(base_output_dir, "risks.txt"),
         "--competitor-analysis-file", os.path.join(base_output_dir, "competitor_analysis.txt"),
         "--major-takeaways-file", os.path.join(base_output_dir, "major_takeaways.txt"),
+        "--news-summary-file", os.path.join(base_output_dir, "news_summary.txt"),
         "--output-dir", report_output_dir,
         "--config-file", config_file,
         "--data-provider", req.data_provider,

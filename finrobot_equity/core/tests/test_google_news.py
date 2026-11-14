@@ -104,3 +104,69 @@ def test_quote_pages_are_not_news():
     for t in ["ITC shares slide 4% to near 52-week low after block deal",
               "HDFC Bank share price target raised by Jefferies"]:
         assert not gn._QUOTE_PAGE.search(t), t
+
+
+# ---- AI classification of news ----------------------------------------------
+
+def test_parse_response_validates_and_ignores_junk():
+    from modules.news_analysis_llm import parse_response
+    reply = '''Sure! {"items": [
+        {"n": 1, "sentiment": "Positive", "impact": "high", "event_type": "earnings"},
+        {"n": 2, "sentiment": "great", "impact": "high", "event_type": "earnings"},
+        {"n": 9, "sentiment": "negative", "impact": "low", "event_type": "other"},
+        {"n": 3, "sentiment": "negative", "impact": "low", "event_type": "other"}]}'''
+    out = parse_response(reply, 3)
+    assert out == {1: {"llm_sentiment": "positive", "llm_impact": "high", "llm_event_type": "earnings"},
+                   3: {"llm_sentiment": "negative", "llm_impact": "low", "llm_event_type": "other"}}
+    assert parse_response("no json here", 3) == {} and parse_response("", 3) == {}
+
+
+def test_annotate_news_uses_one_call_and_survives_failure(monkeypatch):
+    from modules import news_analysis_llm as na
+    from modules.llm_providers import LLMSettings
+    news = [{"title": "Shares rally 20%", "site": "Mint", "publishedDate": "2026-11-12"},
+            {"title": "ESOP allotment", "site": "NSE/BSE filing", "publishedDate": "2026-11-13"}]
+    calls = []
+
+    def fake(settings, system, user, **kw):
+        calls.append(kw["section"])
+        return '{"items":[{"n":1,"sentiment":"positive","impact":"medium","event_type":"market"},' \
+               '{"n":2,"sentiment":"neutral","impact":"low","event_type":"other"}]}'
+    monkeypatch.setattr(na, "generate_text", fake)
+    assert na.annotate_news_with_llm(news, LLMSettings("anthropic", "k"), "Acme") == 2
+    assert calls == ["news_analysis"] and news[0]["llm_sentiment"] == "positive" and news[1]["llm_impact"] == "low"
+
+    def boom(*a, **k):
+        raise RuntimeError("api down")
+    monkeypatch.setattr(na, "generate_text", boom)
+    assert na.annotate_news_with_llm([{"title": "x"}], LLMSettings("anthropic", "k"), "Acme") == 0
+    assert na.annotate_news_with_llm(news, None, "Acme") == 0  # no LLM configured
+
+
+def test_ai_labels_drive_sentiment_and_drop_routine_filings_from_catalysts():
+    from datetime import datetime
+    from modules.catalyst_analyzer import CatalystAnalyzer
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    news = [
+        {"symbol": "ACME", "title": "Acme shares rally 20% in 12 sessions", "text": "x", "publishedDate": now, "site": "Mint",
+         "llm_sentiment": "positive", "llm_impact": "medium", "llm_event_type": "market"},
+        {"symbol": "ACME", "title": "Disclosure under Regulation 30 (SEBI approval)", "text": "x", "publishedDate": now,
+         "site": "NSE/BSE filing", "llm_sentiment": "neutral", "llm_impact": "low", "llm_event_type": "other"},
+    ]
+    cats = CatalystAnalyzer("ACME", company_name="Acme Ltd").identify_catalysts(news)
+    descs = [c.description for c in cats]
+    assert any("rally" in d for d in descs)
+    assert not any("Regulation 30" in d for d in descs)       # keyword rules would have called this high-impact regulatory
+    rally = next(c for c in cats if "rally" in c.description)
+    assert rally.sentiment == "positive" and rally.impact_level == "medium"
+
+
+def test_parse_feed_drops_quote_pages_end_to_end():
+    feed = b"""<rss><channel>
+    <item><title>HDFC Bank Limited (HDB) Stock Price, News, Quote &amp; History - Yahoo Finance</title><source>Yahoo Finance</source>
+      <pubDate>Sat, 14 Nov 2026 08:00:00 GMT</pubDate><link>http://a/1</link></item>
+    <item><title>HDFC Bank profit rises 11% on other income - Mint</title><source>Mint</source>
+      <pubDate>Fri, 13 Nov 2026 08:00:00 GMT</pubDate><link>http://a/2</link></item>
+    </channel></rss>"""
+    items = gn.parse_feed(feed, "HDFC Bank Limited", "HDFCBANK")
+    assert [i["title"] for i in items] == ["HDFC Bank profit rises 11% on other income"]

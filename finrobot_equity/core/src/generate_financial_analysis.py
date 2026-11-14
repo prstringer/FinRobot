@@ -24,6 +24,7 @@ from modules.sensitivity_analyzer import SensitivityAnalyzer
 from modules.catalyst_analyzer import CatalystAnalyzer
 from modules.news_integrator import NewsIntegrator, get_enhanced_company_news, build_enhanced_news
 from modules.google_news import get_google_news
+from modules.news_analysis_llm import annotate_news_with_llm
 from modules.retail_sentiment_client import RetailSentimentClient
 from modules import currency
 from modules.finedge_api import (
@@ -369,6 +370,10 @@ def main():
         headlines = get_google_news(args.company_name, args.company_ticker, days_back=args.news_days_back, limit=15)
         print(f"Found {len(filings)} exchange announcement(s) and {len(headlines)} news headline(s)")
         company_news = sorted(filings + headlines, key=lambda a: a.get('publishedDate', ''), reverse=True)[:args.news_limit]
+        if company_news and llm_settings is not None:
+            n_ai = annotate_news_with_llm(company_news, llm_settings, args.company_name, usage_sink=llm_usage)
+            if n_ai:
+                print(f"AI classified sentiment and impact of {n_ai} news item(s)")
         if company_news:
             if args.enable_enhanced_news:
                 enhanced_news_data = build_enhanced_news(args.company_ticker, company_news, args.news_days_back,

@@ -206,9 +206,9 @@ class CatalystAnalyzer:
 
             combined_text = f"{title} {text}"
 
-            event_type = self._classify_event_type(combined_text)
-            sentiment = self._analyze_sentiment(combined_text)
-            impact = self._assess_impact_level(event_type, sentiment)
+            event_type = article.get('llm_event_type') or self._classify_event_type(combined_text)
+            sentiment = article.get('llm_sentiment') or self._analyze_sentiment(combined_text)
+            impact = article.get('llm_impact') or self._assess_impact_level(event_type, sentiment)
             probability = self._estimate_probability(event_type, source)
             
             # 只保留有意义的催化剂
