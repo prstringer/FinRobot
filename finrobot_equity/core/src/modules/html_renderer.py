@@ -645,7 +645,7 @@ def format_valuation_breakdown_html(valuation_data: dict) -> str:
         high = _cur.fmt_price(m['high_estimate'])
         weight = f"{m['confidence'] * 100:.0f}%"
         parts = []
-        for k, v in list(m.get('assumptions', {}).items())[:3]:
+        for k, v in list(m.get('assumptions', {}).items())[:4]:
             if isinstance(v, float):
                 parts.append(f"{k}: {v * 100:.1f}%" if v < 1 else f"{k}: {v:.1f}")
             else:

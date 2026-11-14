@@ -46,28 +46,63 @@ class ValuationEngine:
         self.current_price = financial_data.get('current_price', 0)
         self.shares_outstanding = financial_data.get('shares_outstanding', 1)
     
-    def _get_metric(self, metric: str, year: str = None) -> Optional[float]:
-        """获取财务指标"""
+    @staticmethod
+    def _year_columns(df: pd.DataFrame, include_estimates: bool) -> List[str]:
+        """Year columns ('2026A', '2027E') in chronological order."""
+        suffixes = ('A', 'E') if include_estimates else ('A',)
+        cols = [c for c in df.columns
+                if isinstance(c, str) and len(c) == 5 and c[:4].isdigit() and c.endswith(suffixes)]
+        return sorted(cols, key=lambda c: (int(c[:4]), c[-1]))
+
+    def _get_metric_with_year(self, metric: str, year: str = None,
+                              include_estimates: bool = False) -> Tuple[Optional[float], Optional[str]]:
+        """(value, year label) of a metric.
+
+        Without ``year`` this is the latest year with a numeric value. Forecast
+        ('E') columns are skipped unless ``include_estimates`` is True, so
+        valuations are based on reported figures rather than the third forecast
+        year (which also carries the assumed margin improvement).
+        """
+        df = self.financial_data.get('analysis')
+        if df is None or not isinstance(df, pd.DataFrame) or df.empty or 'metrics' not in df.columns:
+            return None, None
+        row = df[df['metrics'] == metric]
+        if row.empty:
+            return None, None
+        candidates = [year] if year else list(reversed(self._year_columns(df, include_estimates)))
+        for col in candidates:
+            if col not in row.columns:
+                continue
+            val = row[col].iloc[0]
+            if isinstance(val, str):
+                val = val.replace('%', '').replace(',', '')
+            try:
+                num = float(val)
+            except (TypeError, ValueError):
+                continue
+            if not np.isnan(num):
+                return num, col
+        return None, None
+
+    def _get_metric(self, metric: str, year: str = None, include_estimates: bool = False) -> Optional[float]:
+        """获取财务指标 (latest actual year by default)."""
+        return self._get_metric_with_year(metric, year, include_estimates)[0]
+
+    def _net_debt(self, enterprise_value: float) -> Tuple[float, str]:
+        """Net debt for the EV-to-equity bridge, and a label saying where it came from.
+
+        Uses ``financial_data['net_debt']`` (debt minus cash and short-term
+        investments, from the balance sheet) when given; otherwise falls back to
+        the old simplifying assumption of 10% of enterprise value.
+        """
+        nd = self.financial_data.get('net_debt')
         try:
-            if 'analysis' in self.financial_data:
-                df = self.financial_data['analysis']
-                row = df[df['metrics'] == metric]
-                if not row.empty:
-                    if year:
-                        val = row[year].iloc[0]
-                    else:
-                        # 获取最新年份
-                        years = [c for c in df.columns if c.endswith('A') or c.endswith('E')]
-                        if years:
-                            val = row[years[-1]].iloc[0]
-                        else:
-                            return None
-                    if isinstance(val, str):
-                        val = val.replace('%', '').replace(',', '')
-                    return float(val)
-            return None
-        except:
-            return None
+            nd = float(nd)
+        except (TypeError, ValueError):
+            nd = None
+        if nd is not None and not np.isnan(nd):
+            return nd, _cur.fmt_amount(nd)
+        return enterprise_value * 0.1, "assumed 10% of EV"
     
     def calculate_ev_ebitda_valuation(self, target_multiple: float = None) -> ValuationResult:
         """
@@ -81,20 +116,29 @@ class ValuationEngine:
         """
         logger.info("Calculating EV/EBITDA valuation...")
         
-        # 获取EBITDA
-        ebitda = self._get_metric('EBITDA')
+        # 获取EBITDA (latest actual year)
+        ebitda, ebitda_year = self._get_metric_with_year('EBITDA')
         if not ebitda:
-            ebitda = self.financial_data.get('ebitda', 0)
+            ebitda, ebitda_year = self.financial_data.get('ebitda', 0), None
         
         # 获取历史EV/EBITDA倍数
         key_metrics = self.financial_data.get('key_metrics', pd.DataFrame())
-        if not key_metrics.empty and 'enterpriseValueOverEBITDA' in key_metrics.columns:
-            hist_multiples = key_metrics['enterpriseValueOverEBITDA'].dropna()
+        hist_multiples = pd.Series(dtype=float)
+        if isinstance(key_metrics, pd.DataFrame) and 'enterpriseValueOverEBITDA' in key_metrics.columns:
+            hist_multiples = pd.to_numeric(key_metrics['enterpriseValueOverEBITDA'], errors='coerce')
+            hist_multiples = hist_multiples[hist_multiples > 0].dropna()
+        if len(hist_multiples) >= 2:
             avg_multiple = hist_multiples.mean()
             std_multiple = hist_multiples.std()
+            multiple_source = f"historical average of {len(hist_multiples)} years"
+        elif len(hist_multiples) == 1:
+            avg_multiple = hist_multiples.iloc[0]
+            std_multiple = avg_multiple * 0.25
+            multiple_source = "1 year of history"
         else:
             avg_multiple = 12.0  # 默认倍数
             std_multiple = 3.0
+            multiple_source = "default 12x (no history)"
         
         if target_multiple is None:
             target_multiple = avg_multiple
@@ -102,8 +146,8 @@ class ValuationEngine:
         # 计算企业价值
         ev = ebitda * target_multiple
         
-        # 调整为股权价值（简化：假设净债务为EV的10%）
-        net_debt = ev * 0.1
+        # 调整为股权价值 (actual net debt when available)
+        net_debt, net_debt_label = self._net_debt(ev)
         equity_value = ev - net_debt
         
         # 计算每股价值
@@ -120,9 +164,10 @@ class ValuationEngine:
             low_estimate=max(low_price, 0),
             high_estimate=max(high_price, 0),
             assumptions={
-                'EBITDA': ebitda,
-                'Target Multiple': target_multiple,
-                'Historical Avg Multiple': avg_multiple
+                f"EBITDA ({ebitda_year or 'n/a'})": _cur.fmt_amount(ebitda),
+                'Target Multiple': f"{target_multiple:.1f}x",
+                'Multiple source': multiple_source,
+                'Net debt': net_debt_label,
             },
             confidence=0.7,
             description=f"Based on {target_multiple:.1f}x EV/EBITDA multiple"
@@ -171,11 +216,13 @@ class ValuationEngine:
         min_multiple = np.min(peer_multiples)
         max_multiple = np.max(peer_multiples)
         
-        # 获取公司EBITDA
-        ebitda = self._get_metric('EBITDA') or self.financial_data.get('ebitda', 0)
+        # 获取公司EBITDA (latest actual year)
+        ebitda, ebitda_year = self._get_metric_with_year('EBITDA')
+        if not ebitda:
+            ebitda, ebitda_year = self.financial_data.get('ebitda', 0), None
         
         # 计算估值
-        net_debt = ebitda * avg_multiple * 0.1  # 简化假设
+        net_debt, net_debt_label = self._net_debt(ebitda * avg_multiple)
         
         if self.shares_outstanding > 0:
             target_price = (ebitda * avg_multiple - net_debt) / self.shares_outstanding
@@ -190,9 +237,11 @@ class ValuationEngine:
             low_estimate=max(low_price, 0),
             high_estimate=max(high_price, 0),
             assumptions={
-                'Peer Avg Multiple': avg_multiple,
+                f"EBITDA ({ebitda_year or 'n/a'})": _cur.fmt_amount(ebitda),
+                'Peer Avg Multiple': f"{avg_multiple:.1f}x",
                 'Peer Range': f"{min_multiple:.1f}x - {max_multiple:.1f}x",
-                'Number of Peers': len(peer_multiples)
+                'Number of Peers': len(peer_multiples),
+                'Net debt': net_debt_label,
             },
             confidence=0.6,
             description=f"Based on {len(peer_multiples)} peer companies"
@@ -226,11 +275,20 @@ class ValuationEngine:
         if assumptions:
             default_assumptions.update(assumptions)
         
-        # 获取基础FCF
+        # 获取基础FCF: reported free cash flow when given, else 60% of latest actual EBITDA
         fcf = self.financial_data.get('free_cash_flow', 0)
-        if not fcf:
-            ebitda = self._get_metric('EBITDA') or self.financial_data.get('ebitda', 0)
+        try:
+            fcf = float(fcf) if fcf is not None and not np.isnan(float(fcf)) else 0
+        except (TypeError, ValueError):
+            fcf = 0
+        if fcf > 0:
+            fcf_source = f"reported FCF {_cur.fmt_amount(fcf)}"
+        else:
+            ebitda, ebitda_year = self._get_metric_with_year('EBITDA')
+            if not ebitda:
+                ebitda, ebitda_year = self.financial_data.get('ebitda', 0), None
             fcf = ebitda * 0.6  # 简化假设：FCF = EBITDA * 60%
+            fcf_source = f"60% of EBITDA ({ebitda_year or 'n/a'})"
         
         # 计算预测期现金流现值
         pv_fcf = 0
@@ -255,7 +313,7 @@ class ValuationEngine:
         enterprise_value = pv_fcf + pv_terminal
         
         # 股权价值
-        net_debt = enterprise_value * 0.1  # 简化假设
+        net_debt, net_debt_label = self._net_debt(enterprise_value)
         equity_value = enterprise_value - net_debt
         
         # 每股价值
@@ -274,7 +332,14 @@ class ValuationEngine:
             target_price=max(target_price, 0),
             low_estimate=max(low_price, 0),
             high_estimate=max(high_price, 0),
-            assumptions=default_assumptions,
+            assumptions={
+                'Base FCF': fcf_source,
+                'WACC': f"{default_assumptions['wacc']:.1%}",
+                'Net debt': net_debt_label,
+                'Growth yrs 1-5 / 6-10 / terminal': (f"{default_assumptions['growth_rate_1_5']:.1%} / "
+                                                     f"{default_assumptions['growth_rate_6_10']:.1%} / "
+                                                     f"{default_assumptions['terminal_growth']:.1%}"),
+            },
             confidence=0.5,
             description=f"Based on {default_assumptions['wacc']*100:.1f}% WACC"
         )

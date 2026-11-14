@@ -58,6 +58,45 @@ from modules.valuation_engine import ValuationEngine
 from modules.report_structure import ReportStructureManager
 from modules.enhanced_text_generator import EnhancedTextGenerator
 
+def _latest_row(csv_path: str) -> pd.Series | None:
+    """Most recent row (by 'date', else 'year') of a statement CSV saved by step 1."""
+    if not os.path.exists(csv_path):
+        return None
+    try:
+        df = pd.read_csv(csv_path)
+    except Exception:
+        return None
+    if df.empty:
+        return None
+    sort_col = "date" if "date" in df.columns else ("year" if "year" in df.columns else None)
+    if sort_col:
+        df = df.sort_values(sort_col)
+    return df.iloc[-1]
+
+
+def load_valuation_inputs(analysis_dir: str) -> dict:
+    """Latest actual net debt, free cash flow and historical EV/EBITDA from step-1 CSVs.
+
+    Works for both FMP and FinEdge outputs (both save netDebt, freeCashFlow and
+    enterpriseValueOverEBITDA). Missing files or columns are simply left out,
+    and the valuation engine falls back to its default assumptions.
+    """
+    inputs = {}
+    bal = _latest_row(os.path.join(analysis_dir, "balance_sheet_raw_data.csv"))
+    if bal is not None and pd.notna(bal.get("netDebt")):
+        inputs["net_debt"] = float(bal["netDebt"])
+    cfs = _latest_row(os.path.join(analysis_dir, "cash_flow_raw_data.csv"))
+    if cfs is not None and pd.notna(cfs.get("freeCashFlow")):
+        inputs["free_cash_flow"] = float(cfs["freeCashFlow"])
+    km_csv = os.path.join(analysis_dir, "key_metrics_raw_data.csv")
+    if os.path.exists(km_csv):
+        try:
+            inputs["key_metrics"] = pd.read_csv(km_csv)
+        except Exception:
+            pass
+    return inputs
+
+
 def load_credit_cashflow_metrics_from_csv(file_path: str) -> pd.DataFrame:
     """Load credit and cashflow metrics from a pre-computed CSV file."""
     if not file_path or not os.path.exists(file_path):
@@ -865,10 +904,7 @@ def main():
                 'current_price': currency.parse_money(share_price) or 0.0,
                 'shares_outstanding': auto_fetched_metrics.get('shares_outstanding', 1e9)
             }
-            km_csv = os.path.join(analysis_dir, "key_metrics_raw_data.csv")
-            if use_finedge and os.path.exists(km_csv):
-                # Historical EV/EBITDA multiples from FinEdge (instead of the 12x default)
-                financial_data_for_valuation['key_metrics'] = pd.read_csv(km_csv)
+            financial_data_for_valuation.update(load_valuation_inputs(analysis_dir))
 
             # Prepare peer data if available
             peer_data_for_valuation = {}
