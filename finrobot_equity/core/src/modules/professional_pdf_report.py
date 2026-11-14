@@ -26,6 +26,23 @@ from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, 
     Image, PageBreak, KeepTogether, HRFlowable, ListFlowable, ListItem
 )
+
+from . import currency as _cur
+from reportlab.platypus import Paragraph as _RLParagraph
+
+
+def _pdf_safe(text):
+    """Built-in PDF fonts (Helvetica) have no rupee glyph: write 'Rs ' instead of '₹'."""
+    return text.replace("₹", "Rs ") if isinstance(text, str) else text
+
+
+class Paragraph(_RLParagraph):
+    """reportlab Paragraph that makes text safe for the built-in fonts."""
+
+    def __init__(self, text, *args, **kwargs):
+        super().__init__(_pdf_safe(text), *args, **kwargs)
+
+
 from reportlab.pdfgen import canvas
 from reportlab.graphics.shapes import Drawing, Line, Rect
 
@@ -336,6 +353,7 @@ def format_number(value, format_type='auto'):
         # 尝试解析为数字
         try:
             clean_val = value.replace(',', '').replace('$', '').replace('%', '')
+            clean_val = clean_val.replace('₹', '').replace('Rs', '').replace('Cr', '').strip()
             num = float(clean_val)
             # 如果原字符串没有特殊格式，走数字格式化
         except:
@@ -348,26 +366,20 @@ def format_number(value, format_type='auto'):
     
     # 数字格式化
     if format_type == 'currency':
-        return f"${num:,.2f}"
+        return _cur.fmt_price(num)
     elif format_type == 'percent':
         return f"{num:.1f}%"
     elif format_type == 'ratio':
         return f"{num:.2f}x"
-    elif format_type == 'billions':
-        return f"${num/1e9:,.1f}B"
-    elif format_type == 'millions':
-        return f"${num/1e6:,.1f}M"
+    elif format_type in ('billions', 'millions'):
+        return _cur.fmt_amount(num)
     elif format_type == 'auto':
         # 智能判断数字类型
         abs_num = abs(num)
         
         # 超大数字 - 使用 B/M/K 简化
-        if abs_num >= 1e12:
-            return f"${num/1e12:,.1f}T"
-        elif abs_num >= 1e9:
-            return f"${num/1e9:,.1f}B"
-        elif abs_num >= 1e6:
-            return f"${num/1e6:,.1f}M"
+        if _cur.is_large_amount(num):
+            return _cur.fmt_amount(num)
         elif abs_num >= 1e3:
             return f"{num:,.0f}"  # 千级数字，无小数
         # 小数 (如 PE ratio, 百分比)
@@ -523,7 +535,7 @@ class ProfessionalEquityReport:
         
         metrics_data = [
             ['Market Cap', self.data.get('market_cap', 'N/A')],
-            ['P/E (Fwd)', format_metric(self.data.get('fwd_pe', 'N/A'))],
+            [self.data.get('pe_label', 'P/E (Fwd)'), format_metric(self.data.get('fwd_pe', 'N/A'))],
             ['P/B Ratio', format_metric(self.data.get('pb_ratio', 'N/A'))],
             ['ROE', format_metric(self.data.get('roe', 'N/A'), is_percentage=True)],
             ['Dividend Yield', format_metric(self.data.get('dividend_yield', 'N/A'), is_percentage=True)],
@@ -628,7 +640,7 @@ class ProfessionalEquityReport:
         fixed_height = 52 * mm
         
         # -------------------- Revenue & EBITDA 分析 --------------------
-        self.elements.append(Paragraph("Revenue & EBITDA Performance", self.styles['Heading2']))
+        self.elements.append(Paragraph(self.data.get('revenue_section_title', "Revenue & EBITDA Performance"), self.styles['Heading2']))
         self.elements.append(Spacer(1, 2*mm))
         
         revenue_analysis = self._generate_revenue_analysis()
@@ -754,7 +766,7 @@ class ProfessionalEquityReport:
             img = load_image_from_base64(ev_chart, fixed_width, fixed_height)
             if img:
                 right_content.append(img)
-                right_content.append(Paragraph("EV/EBITDA Peer Comparison", self.styles['Caption']))
+                right_content.append(Paragraph(self.data.get('peer_chart_title', "EV/EBITDA Peer Comparison"), self.styles['Caption']))
         
         if left_content and right_content:
             layout = Table([[left_content, right_content]], 
@@ -1266,7 +1278,7 @@ class ProfessionalEquityReport:
         # 信用指标表
         credit_df = self.data.get('credit_cashflow_df')
         if credit_df is not None and not credit_df.empty:
-            self.elements.append(Paragraph("Credit & Cash Flow Metrics", self.styles['TableTitle']))
+            self.elements.append(Paragraph(self.data.get('credit_section_title', "Credit & Cash Flow Metrics"), self.styles['TableTitle']))
             table = self._create_financial_table(credit_df)
             if table:
                 self.elements.append(table)

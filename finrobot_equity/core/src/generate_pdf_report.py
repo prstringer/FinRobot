@@ -24,6 +24,23 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from modules.common_utils import load_config, get_api_key
+from modules import currency
+from modules.bank_template import (
+    BANK_SUMMARY_METRICS,
+    BANK_REPORT_LABELS,
+    is_bank_analysis,
+    bank_balance_table,
+    format_bank_peer_table,
+)
+from modules.finedge_api import (
+    FinEdgeClient,
+    FinEdgeError,
+    resolve_finedge_token,
+    normalize_symbol,
+    get_finedge_comprehensive_financial_data,
+    get_finedge_company_metrics,
+    get_finedge_technical_indicators,
+)
 from modules.report_data_loader import load_analysis_csv, load_text_from_file
 from modules.chart_generator import (
     generate_revenue_ebitda_chart, 
@@ -75,6 +92,10 @@ def load_analysis_data(analysis_dir: str, ticker: str) -> Dict[str, Any]:
     else:
         data['ratios_df'] = pd.DataFrame()
     
+    # Peer bank comparison (bank template, FinEdge)
+    peer_bank_path = os.path.join(analysis_dir, "peer_bank_comparison.csv")
+    data['peer_bank_df'] = pd.read_csv(peer_bank_path) if os.path.exists(peer_bank_path) else pd.DataFrame()
+
     # 加载价格数据（用于高级图表）
     price_csv_path = os.path.join(analysis_dir, "historical_price_full.csv")
     if os.path.exists(price_csv_path):
@@ -84,7 +105,10 @@ def load_analysis_data(analysis_dir: str, ticker: str) -> Dict[str, Any]:
         data['price_df'] = pd.DataFrame()
     
     # 加载现金流数据（用于高级图表）
-    cashflow_csv_path = os.path.join(analysis_dir, "cash_flow_statement_raw_data.csv")
+    # step 1 saves cash_flow_raw_data.csv; keep the old name as a fallback
+    cashflow_csv_path = os.path.join(analysis_dir, "cash_flow_raw_data.csv")
+    if not os.path.exists(cashflow_csv_path):
+        cashflow_csv_path = os.path.join(analysis_dir, "cash_flow_statement_raw_data.csv")
     if os.path.exists(cashflow_csv_path):
         data['cashflow_df'] = pd.read_csv(cashflow_csv_path)
         print(f"✅ Loaded cash flow data from {cashflow_csv_path}")
@@ -178,7 +202,7 @@ def load_analysis_data(analysis_dir: str, ticker: str) -> Dict[str, Any]:
     return data
 
 
-def prepare_financial_summary_df(analysis_df: pd.DataFrame) -> pd.DataFrame:
+def prepare_financial_summary_df(analysis_df: pd.DataFrame, is_bank: bool = False) -> pd.DataFrame:
     """
     准备财务摘要表格数据
     """
@@ -186,7 +210,7 @@ def prepare_financial_summary_df(analysis_df: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame()
     
     # 选择要显示的指标
-    summary_metrics = [
+    summary_metrics = BANK_SUMMARY_METRICS + ["EPS", "PE Ratio"] if is_bank else [
         "Revenue", "Revenue Growth", "EBITDA", "EBITDA Margin",
         "Contribution Profit", "Contribution Margin", "SG&A", "SG&A Margin",
         "EPS", "PE Ratio"
@@ -267,7 +291,8 @@ def generate_all_charts(analysis_df: pd.DataFrame, peer_ev_ebitda_df: pd.DataFra
                        output_dir: str, ticker: str, 
                        price_df: pd.DataFrame = None,
                        ratios_df: pd.DataFrame = None,
-                       cashflow_df: pd.DataFrame = None) -> Dict[str, str]:
+                       cashflow_df: pd.DataFrame = None,
+                       is_bank: bool = False) -> Dict[str, str]:
     """
     生成所有图表（包括高级图表）
     
@@ -282,9 +307,15 @@ def generate_all_charts(analysis_df: pd.DataFrame, peer_ev_ebitda_df: pd.DataFra
     # ========== 基础图表 ==========
     # 1. Revenue & EBITDA 图表
     revenue_chart_path = os.path.join(output_dir, f"{ticker}_revenue_ebitda_chart.png")
-    charts['revenue_chart_path'] = generate_revenue_ebitda_chart(
-        analysis_df, revenue_chart_path, ticker
-    ) or ""
+    if is_bank:
+        charts['revenue_chart_path'] = generate_revenue_ebitda_chart(
+            analysis_df, revenue_chart_path, ticker,
+            revenue_label="Total Income", ebitda_label="Pre-Provision Profit"
+        ) or ""
+    else:
+        charts['revenue_chart_path'] = generate_revenue_ebitda_chart(
+            analysis_df, revenue_chart_path, ticker
+        ) or ""
     
     # 2. EPS × PE 图表
     eps_pe_chart_path = os.path.join(output_dir, f"{ticker}_eps_pe_chart.png")
@@ -381,6 +412,24 @@ def generate_all_charts(analysis_df: pd.DataFrame, peer_ev_ebitda_df: pd.DataFra
     return charts
 
 
+def fetch_finedge_market_data(ticker: str, config_file: Optional[str], statement_type: str) -> tuple:
+    """Market data and technical indicators from FinEdge (Indian stocks)."""
+    try:
+        try:
+            config = load_config(config_file)
+        except FileNotFoundError:
+            config = None
+        client = FinEdgeClient(resolve_finedge_token(config))
+        print(f"📊 Fetching FinEdge market data for {ticker}...")
+        fe_data = get_finedge_comprehensive_financial_data(ticker, client, limit=1, statement_type=statement_type)
+        market_data = get_finedge_company_metrics(ticker, client, fe_data)
+        tech = get_finedge_technical_indicators(ticker, client)
+        return market_data, tech
+    except FinEdgeError as e:
+        print(f"⚠️ Could not fetch FinEdge market data: {e}")
+        return {}, {}
+
+
 def fetch_market_data(ticker: str, config_file: Optional[str] = None) -> Dict[str, Any]:
     """
     从API获取市场数据
@@ -439,6 +488,8 @@ def main():
                        default=["AI4Finance FinRobot"])
     parser.add_argument("--research-source", type=str, 
                        default="AI4Finance Foundation FinRobot Equity Research")
+    parser.add_argument("--data-provider", type=str, default="auto", choices=["auto", "fmp", "finedge"],
+                       help="Market data source. 'auto' reads analysis_summary.json in the analysis dir.")
     
     args = parser.parse_args()
     
@@ -448,6 +499,28 @@ def main():
         analysis_dir = args.analysis_dir
     else:
         analysis_dir = os.path.join(".", "output", ticker, "analysis")
+
+    # Provider, currency and template from the step-1 summary
+    analysis_summary = {}
+    summary_path = os.path.join(analysis_dir, "analysis_summary.json")
+    if os.path.exists(summary_path):
+        try:
+            with open(summary_path, "r", encoding="utf-8") as f:
+                analysis_summary = json.load(f)
+        except Exception as e:
+            print(f"⚠️ Could not read {summary_path}: {e}")
+    provider = args.data_provider
+    if provider == "auto":
+        provider = analysis_summary.get("data_provider") or (
+            "finedge" if "FinEdge" in str(analysis_summary.get("data_source", "")) else "fmp")
+    use_finedge = provider == "finedge"
+    if use_finedge:
+        ticker = normalize_symbol(ticker)
+        currency.set_currency("INR")
+        currency.set_symbol_override("Rs ")  # built-in PDF fonts have no rupee glyph
+    else:
+        currency.set_currency(analysis_summary.get("currency", "USD"))
+    statement_type = {"standalone": "s", "consolidated": "c"}.get(analysis_summary.get("statement_type"), "auto")
     
     if args.output_dir:
         output_dir = args.output_dir
@@ -471,7 +544,9 @@ def main():
     # 2. 获取市场数据
     market_data = {}
     tech_indicators = {}
-    if not args.skip_market_fetch:
+    if not args.skip_market_fetch and use_finedge:
+        market_data, tech_indicators = fetch_finedge_market_data(ticker, args.config_file, statement_type)
+    elif not args.skip_market_fetch:
         market_data = fetch_market_data(ticker, args.config_file)
         # Fetch technical indicators
         try:
@@ -482,6 +557,9 @@ def main():
         except Exception as e:
             print(f"⚠️ Could not compute technical indicators: {e}")
 
+    analysis_df_loaded = loaded_data.get('analysis_df', pd.DataFrame())
+    is_bank = is_bank_analysis(analysis_df_loaded, analysis_summary)
+
     # 3. 生成图表（包括高级图表）
     print("\n📊 Generating charts...")
     charts = generate_all_charts(
@@ -491,17 +569,19 @@ def main():
         ticker,
         price_df=loaded_data.get('price_df', pd.DataFrame()),
         ratios_df=loaded_data.get('ratios_df', pd.DataFrame()),
-        cashflow_df=loaded_data.get('cashflow_df', pd.DataFrame())
+        cashflow_df=loaded_data.get('cashflow_df', pd.DataFrame()),
+        is_bank=is_bank,
     )
     
     # 4. 准备财务表格数据
     print("\n📋 Preparing financial tables...")
-    financial_summary_df = prepare_financial_summary_df(
-        loaded_data.get('analysis_df', pd.DataFrame())
-    )
-    credit_metrics_df = prepare_credit_metrics_df(
-        loaded_data.get('ratios_df', pd.DataFrame())
-    )
+    financial_summary_df = prepare_financial_summary_df(analysis_df_loaded, is_bank=is_bank)
+    if is_bank:
+        credit_metrics_df = bank_balance_table(analysis_df_loaded).set_index('metrics')
+    else:
+        credit_metrics_df = prepare_credit_metrics_df(
+            loaded_data.get('ratios_df', pd.DataFrame())
+        )
     
     # 4.5 Fix stale dates in cached text (e.g. "June 2024" → current report date)
     import re as _re
@@ -565,9 +645,9 @@ def main():
     # 4.7 Derive rating from target vs share price
     def _derive_rating_pdf(share_price, target_price, api_rating):
         try:
-            price = float(str(share_price).replace('$', '').replace(',', ''))
-            target = float(str(target_price).replace('$', '').replace(',', ''))
-            if price <= 0:
+            price = currency.parse_money(share_price)
+            target = currency.parse_money(target_price)
+            if price is None or target is None or price <= 0:
                 return api_rating or 'N/A'
             upside = (target - price) / price
             if upside >= 0.15:
@@ -622,13 +702,14 @@ def main():
         
         # 市场数据
         'share_price': get_value(args.share_price, 'share_price', None, 'N/A',
-                                lambda x: f"${x:.2f}"),
+                                currency.fmt_price),
         'target_price': get_value(args.target_price, 'target_price', None, 'N/A',
-                                 lambda x: f"${x:.2f}"),
+                                 currency.fmt_price),
         'rating': 'Hold',  # placeholder, will be derived below
         'market_cap': get_value(args.market_cap, 'market_cap', None, 'N/A',
-                               lambda x: f"${x:,.2f}B"),
-        '52w_range': market_data.get('52w_range', 'N/A'),
+                               currency.fmt_market_cap),
+        '52w_range': (f"{currency.fmt_price(market_data['52w_range'][0])} - {currency.fmt_price(market_data['52w_range'][1])}"
+                      if isinstance(market_data.get('52w_range'), (tuple, list)) else market_data.get('52w_range', 'N/A')),
         'volume': market_data.get('volume', 'N/A'),
         'fwd_pe': get_value(None, 'fwd_pe', 'pe_ratio', 'N/A', None),
         'pb_ratio': get_value(None, 'pb_ratio', 'pb_ratio', 'N/A', None),
@@ -663,7 +744,8 @@ def main():
         # 表格数据
         'financial_summary_df': financial_summary_df,
         'credit_cashflow_df': credit_metrics_df,
-        'peer_comparison_df': loaded_data.get('peer_ev_ebitda_df', pd.DataFrame()),
+        'peer_comparison_df': (format_bank_peer_table(loaded_data.get('peer_bank_df', pd.DataFrame()))
+                               if is_bank else loaded_data.get('peer_ev_ebitda_df', pd.DataFrame())),
         
         # 增强分析数据
         'sensitivity_analysis': loaded_data.get('sensitivity_analysis', {}),
@@ -673,7 +755,10 @@ def main():
         
         # 元数据
         'closing_price_date': datetime.now().strftime("%B %d, %Y"),
-        'data_source_text': 'FMP, Company Filings, AI4Finance Estimates',
+        'data_source_text': (('Company filings via FinEdge API (NSE/BSE), AI4Finance Estimates' if use_finedge
+                              else 'FMP, Company Filings, AI4Finance Estimates')
+                             + ('. Data notes: ' + ' '.join(analysis_summary.get('data_warnings', []))
+                                if analysis_summary.get('data_warnings') else '')),
         'research_source': args.research_source,
         'analyst_names': args.analyst_names,
         'disclaimer_text': (
@@ -686,6 +771,11 @@ def main():
         ),
     }
     
+    if use_finedge:
+        report_data['pe_label'] = 'P/E (TTM)'
+    if is_bank:
+        report_data.update(BANK_REPORT_LABELS)
+
     # 5.5 Derive rating from target vs share price
     api_rating = get_value(args.rating, 'rating', None, 'Hold', None)
     report_data['rating'] = _derive_rating_pdf(

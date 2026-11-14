@@ -303,3 +303,20 @@ def test_multiple_valuation_for_banks():
     assert r.low_estimate < r.target_price < r.high_estimate
     skipped = engine.calculate_multiple_valuation("P/E Multiple", None, [20.0])
     assert skipped.target_price == 0
+
+
+def test_pdf_symbol_override_and_safe_paragraph():
+    from modules.professional_pdf_report import Paragraph, _pdf_safe
+    try:
+        currency.set_currency("INR")
+        currency.set_symbol_override("Rs ")
+        assert currency.fmt_price(284.05) == "Rs 284.05"
+        assert currency.fmt_amount(899133000000) == "Rs 89,913 Cr"
+        assert currency.chart_scale() == (1e7, "Rs Cr")
+        assert currency.parse_money("Rs 1,339.60") == pytest.approx(1339.6)
+        assert _pdf_safe("Revenue ₹89,913 Cr") == "Revenue Rs 89,913 Cr"
+        assert "₹" not in Paragraph("₹10").text
+        currency.set_currency("INR")  # resets the override
+        assert currency.fmt_price(1) == "₹1.00"
+    finally:
+        currency.set_currency("USD")

@@ -180,6 +180,10 @@ What differs from the FMP path:
   operations, merger years) are printed during step 1, passed to the AI text sections and shown
   in the report footer.
 
+In the web app, choose **India · FinEdge** under *Market* (symbols such as `RELIANCE` or `ITC.NS`
+are accepted). The PDF step uses the same data; it prints amounts as "Rs" because the built-in PDF
+fonts have no ₹ glyph.
+
 See [docs/finedge_data_quality.md](docs/finedge_data_quality.md) for the data-quality test behind
 these choices. Forecast years are the three years after the latest actual year (e.g. 2027E–2029E
 when the latest actual is FY2026); `--revenue-growth-2025/2026/2027` set years 1–3.

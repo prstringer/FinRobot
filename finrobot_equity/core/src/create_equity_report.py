@@ -29,6 +29,16 @@ from modules.chart_generator import (
 )
 from modules.market_data_api import get_comprehensive_company_metrics, get_technical_indicators
 from modules import currency
+from modules.bank_template import (
+    BANK_SUMMARY_METRICS,
+    BANK_QUALITY_METRICS,
+    BANK_REPORT_LABELS,
+    is_bank_analysis,
+    bank_balance_table,
+    format_bank_peer_table,
+    _latest_numeric,
+    _history_numeric,
+)
 from modules.finedge_api import (
     FinEdgeClient,
     FinEdgeError,
@@ -47,59 +57,6 @@ from modules.enhanced_chart_generator import EnhancedChartGenerator, ChartConfig
 from modules.valuation_engine import ValuationEngine
 from modules.report_structure import ReportStructureManager
 from modules.enhanced_text_generator import EnhancedTextGenerator
-
-# Bank template: which rows of the bank analysis table go into each report table
-BANK_SUMMARY_METRICS = ["Net Interest Income", "NII Growth", "Other Income", "Total Income", "Operating Expenses",
-                        "Pre-Provision Profit", "Provisions", "Net Profit", "Net Profit Growth"]
-BANK_QUALITY_METRICS = ["NIM", "ROA", "ROE", "Cost-to-Income", "Credit Cost", "Gross NPA", "Net NPA", "CET1 Ratio"]
-BANK_BALANCE_METRICS = ["Advances", "Advances Growth", "Deposits", "Deposits Growth", "Credit-Deposit Ratio",
-                        "Book Value per Share", "PB Ratio"]
-BANK_REPORT_LABELS = {
-    "revenue_chart_title": "Total Income & Pre-Provision Profit",
-    "revenue_section_title": "Income & Pre-Provision Profit",
-    "peer_chart_title": "P/B Peer Comparison",
-    "credit_section_title": "Returns, Asset Quality & Balance Sheet",
-    "peer_valuation_title": "Peer Banks (latest fiscal year)",
-    "peer_ebitda_title": "Peer EBITDA (not meaningful for banks)",
-    "peer_ev_ebitda_title": "Peer Banks (latest fiscal year)",
-}
-
-
-def _latest_numeric(analysis_df: pd.DataFrame, metric: str):
-    """Latest actual-year numeric value of a metric row, or None."""
-    row = analysis_df[analysis_df["metrics"] == metric]
-    if row.empty:
-        return None
-    years = sorted(c for c in analysis_df.columns if isinstance(c, str) and c.endswith("A"))
-    for y in reversed(years):
-        v = pd.to_numeric(row[y].iloc[0], errors="coerce")
-        if pd.notna(v):
-            return float(v)
-    return None
-
-
-def _history_numeric(analysis_df: pd.DataFrame, metric: str) -> list:
-    row = analysis_df[analysis_df["metrics"] == metric]
-    if row.empty:
-        return []
-    years = sorted(c for c in analysis_df.columns if isinstance(c, str) and c.endswith("A"))
-    vals = pd.to_numeric(row[years].iloc[0], errors="coerce")
-    return [float(v) for v in vals if pd.notna(v)]
-
-
-def format_bank_peer_table(peer_df: pd.DataFrame) -> pd.DataFrame:
-    """Display table for peer banks: tickers as rows, ratios as formatted columns."""
-    if peer_df is None or peer_df.empty:
-        return pd.DataFrame()
-    out = peer_df.set_index("ticker")
-    display = pd.DataFrame(index=out.index)
-    display.index.name = "Bank"
-    display["FY"] = out["year"].astype(int).astype(str)
-    display["P/B (x)"] = out["P/B"].map(lambda v: f"{v:.2f}x" if pd.notna(v) else "N/A")
-    for col, digits in [("ROE", 1), ("ROA", 2), ("NIM", 2), ("GNPA", 2), ("NNPA", 2), ("CET1", 1)]:
-        display[col] = out[col].map(lambda v, d=digits: f"{v * 100:.{d}f}%" if pd.notna(v) else "N/A")
-    return display
-
 
 def load_credit_cashflow_metrics_from_csv(file_path: str) -> pd.DataFrame:
     """Load credit and cashflow metrics from a pre-computed CSV file."""
@@ -660,8 +617,7 @@ def main():
         "retail_sentiment": {},
     }
 
-    is_bank_report = analysis_summary.get("template") == "bank" or bool(
-        (analysis_df["metrics"] == "Net Interest Income").any())
+    is_bank_report = is_bank_analysis(analysis_df, analysis_summary)
     if use_finedge:
         report_data["pe_label"] = "P/E (TTM)"
     if data_warnings:
@@ -864,7 +820,10 @@ def main():
                         print(f"✅ Generated Valuation Waterfall chart")
             
             # 6. 现金流分析图（如果有现金流数据）
-            cashflow_csv_path = os.path.join(os.path.dirname(args.analysis_csv), "cash_flow_statement_raw_data.csv")
+            # step 1 saves cash_flow_raw_data.csv; keep the old name as a fallback
+            cashflow_csv_path = os.path.join(os.path.dirname(args.analysis_csv), "cash_flow_raw_data.csv")
+            if not os.path.exists(cashflow_csv_path):
+                cashflow_csv_path = os.path.join(os.path.dirname(args.analysis_csv), "cash_flow_statement_raw_data.csv")
             if os.path.exists(cashflow_csv_path):
                 try:
                     cashflow_df = pd.read_csv(cashflow_csv_path)
@@ -1071,11 +1030,7 @@ def main():
     # Load and format Credit & Cashflow metrics from the provided CSV
     print("Loading Credit & Cashflow metrics from CSV...")
     if is_bank_report:
-        bank_rows = BANK_QUALITY_METRICS + BANK_BALANCE_METRICS
-        bank_bs = analysis_actual_only[analysis_actual_only["metrics"].isin(bank_rows)].copy()
-        bank_bs["_order"] = bank_bs["metrics"].map({m: i for i, m in enumerate(bank_rows)})
-        bank_bs = bank_bs.sort_values("_order").drop(columns="_order")
-        credit_cashflow_df = bank_bs
+        credit_cashflow_df = bank_balance_table(analysis_df)
     else:
         credit_cashflow_df = load_credit_cashflow_metrics_from_csv(args.ratios_csv)
     if not credit_cashflow_df.empty:

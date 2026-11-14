@@ -41,15 +41,25 @@ _CURRENCIES = {
 }
 
 _active = dict(_CURRENCIES["USD"])
+_symbol_override: str | None = None
 
 
 def set_currency(code: str) -> None:
     """Set the report currency ('USD' or 'INR')."""
+    global _symbol_override
     code = (code or "USD").upper()
     if code not in _CURRENCIES:
         raise ValueError(f"Unsupported currency {code!r}; choose from {sorted(_CURRENCIES)}")
     _active.clear()
     _active.update(_CURRENCIES[code])
+    _symbol_override = None
+
+
+def set_symbol_override(text: str | None) -> None:
+    """Use ``text`` instead of the currency sign (e.g. 'Rs ' for PDFs whose
+    built-in fonts have no ₹ glyph). ``None`` restores the normal sign."""
+    global _symbol_override
+    _symbol_override = text
 
 
 def get_currency() -> str:
@@ -57,7 +67,7 @@ def get_currency() -> str:
 
 
 def symbol() -> str:
-    return _active["symbol"]
+    return _symbol_override if _symbol_override is not None else _active["symbol"]
 
 
 def price_label() -> str:
@@ -67,11 +77,15 @@ def price_label() -> str:
 
 def large_label() -> str:
     """Label for the market-cap unit, e.g. 'USDb' or '₹ Cr'."""
+    if get_currency() == "INR":
+        return f"{symbol().strip()} Cr"
     return _active["large_label"]
 
 
 def chart_scale() -> tuple[float, str]:
     """(divisor, axis label) for plotting absolute amounts."""
+    if get_currency() == "INR":
+        return _active["chart_div"], f"{symbol().strip()} Cr"
     return _active["chart_div"], _active["chart_label"]
 
 
