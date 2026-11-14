@@ -110,7 +110,7 @@ or **Google Gemini**. Pick one with `llm_provider` in `config.ini`, `--llm-provi
 on either script, or the *AI Model* selector in the web app. Keys come from `openai_api_key`,
 `anthropic_api_key` or `gemini_api_key` in `config.ini`, or from the `OPENAI_API_KEY`,
 `ANTHROPIC_API_KEY` or `GEMINI_API_KEY` environment variables. `llm_model` / `--llm-model` overrides
-the default model (gpt-4o-mini, claude-opus-5-5, gemini-2.5-flash).
+the default model (gpt-4o-mini, claude-opus-5-5, gemini-3.8-flash).
 
 ### 2. Deploy via Script
 

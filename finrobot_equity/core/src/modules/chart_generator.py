@@ -61,7 +61,9 @@ def setup_chart_style():
     """设置全局图表样式"""
     plt.rcParams.update({
         'font.family': 'sans-serif',
-        'font.sans-serif': ['Arial', 'Helvetica', 'DejaVu Sans'],
+        # Arial/Helvetica have no rupee glyph; DejaVu Sans does, so lead with it for INR.
+        'font.sans-serif': (['DejaVu Sans', 'Arial'] if _cur.get_currency() == "INR"
+                            else ['Arial', 'Helvetica', 'DejaVu Sans']),
         'font.size': 9,
         'axes.titlesize': 11,
         'axes.titleweight': 'bold',

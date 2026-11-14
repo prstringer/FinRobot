@@ -12,7 +12,7 @@ finedge_api_token = YOUR_FINEDGE_API_TOKEN
 llm_provider = openai
 
 # Optional model override for the chosen provider. Defaults:
-#   openai: gpt-4o-mini (or openai_model below), anthropic: claude-opus-5-5, gemini: gemini-2.5-flash
+#   openai: gpt-4o-mini (or openai_model below), anthropic: claude-opus-5-5, gemini: gemini-3.8-flash
 # llm_model = claude-sonnet-5-5
 
 # Anthropic API key (for llm_provider = anthropic): https://platform.claude.com/settings/keys

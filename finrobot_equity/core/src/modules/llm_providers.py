@@ -26,7 +26,7 @@ PROVIDERS = ("openai", "anthropic", "gemini")
 DEFAULT_MODELS = {
     "openai": "gpt-4o-mini",
     "anthropic": "claude-opus-5-5",
-    "gemini": "gemini-2.5-flash",
+    "gemini": "gemini-3.8-flash",
 }
 
 PROVIDER_LABELS = {"openai": "OpenAI", "anthropic": "Anthropic Claude", "gemini": "Google Gemini"}

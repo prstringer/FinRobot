@@ -74,7 +74,9 @@ class EnhancedChartGenerator:
         """设置matplotlib全局样式"""
         plt.rcParams.update({
             'font.family': 'sans-serif',
-            'font.sans-serif': [self.config.font_family, 'Arial', 'Helvetica', 'DejaVu Sans'],
+            # Arial/Helvetica have no rupee glyph; DejaVu Sans does, so lead with it for INR.
+            'font.sans-serif': (['DejaVu Sans', 'Arial'] if _cur.get_currency() == "INR"
+                                else [self.config.font_family, 'Arial', 'Helvetica', 'DejaVu Sans']),
             'font.size': self.config.tick_fontsize,
             'axes.titlesize': self.config.title_fontsize,
             'axes.titleweight': 'bold',

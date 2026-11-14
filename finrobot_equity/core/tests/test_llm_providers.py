@@ -170,7 +170,7 @@ def test_gemini_request(monkeypatch):
     out = generate_text(LLMSettings("gemini", "gk"), "SYS", "USER", temperature=0.7)
     assert out == "Gemini text"
     req = calls["request"]
-    assert calls["key"] == "gk" and req["model"] == "gemini-2.5-flash" and req["contents"] == "USER"
+    assert calls["key"] == "gk" and req["model"] == "gemini-3.8-flash" and req["contents"] == "USER"
     assert req["config"].system_instruction == "SYS" and req["config"].temperature == 0.7
 
 
