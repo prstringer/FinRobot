@@ -7,6 +7,7 @@ Build the visual report formats from a finished analysis folder.
 
 --format html   self-contained on-screen report (scrolling, light interaction, works offline)
 --format pdf    fixed-layout A4 print report (same content, printed from the same HTML)
+--format visual both visual formats (html + pdf)
 --format text   the existing text reports (create_equity_report.py and generate_pdf_report.py), unchanged
 --format all    text + html + pdf
 
@@ -52,7 +53,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Build visual (HTML, PDF) and text reports from an analysis folder.")
     ap.add_argument("--analysis-dir", required=True, help="Folder written by generate_financial_analysis.py (needs report_context.json).")
     ap.add_argument("--output-dir", required=True)
-    ap.add_argument("--format", choices=["html", "pdf", "text", "all"], default="all")
+    ap.add_argument("--format", choices=["html", "pdf", "visual", "text", "all"], default="all")
     ap.add_argument("--report-date", default=None, help="Override the report date (default: the analysis date).")
     ap.add_argument("--config-file", default=None, help="Used only by --format text/all.")
     ap.add_argument("--strict-validation", action="store_true", help="Stop (exit 2) if the report model has validation errors.")
@@ -66,7 +67,7 @@ def main(argv=None) -> int:
             print("Text reports failed.")
             if args.format == "text":
                 return rc
-    if args.format in ("html", "pdf", "all"):
+    if args.format in ("html", "pdf", "visual", "all"):
         from report_visual import model as M
         model = M.build_report_model(args.analysis_dir, report_date=args.report_date)
         json_path = M.save_report_model(model, args.output_dir)
@@ -81,10 +82,10 @@ def main(argv=None) -> int:
             print("Strict validation is on and errors were found: stopping.")
             return 2
         stem = f"{model['meta']['ticker']}_Visual_Report_{model['meta']['report_date']}"
-        if args.format in ("html", "all"):
+        if args.format in ("html", "visual", "all"):
             from report_visual.render_html import render_html
             print("HTML:", render_html(model, os.path.join(args.output_dir, stem + ".html")))
-        if args.format in ("pdf", "all"):
+        if args.format in ("pdf", "visual", "all"):
             from report_visual.render_pdf import render_pdf
             print("PDF:", render_pdf(model, os.path.join(args.output_dir, stem + ".pdf"), check=not args.no_pdf_checks))
     return rc
