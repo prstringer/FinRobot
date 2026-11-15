@@ -170,3 +170,38 @@ def test_parse_feed_drops_quote_pages_end_to_end():
     </channel></rss>"""
     items = gn.parse_feed(feed, "HDFC Bank Limited", "HDFCBANK")
     assert [i["title"] for i in items] == ["HDFC Bank profit rises 11% on other income"]
+
+
+# ---- non-English headlines (a Hindi Zee Business item rendered as black boxes in the PDF)
+def test_non_latin_headlines_are_dropped_at_the_source():
+    from modules.google_news import is_english
+    assert is_english("Welspun Living Q2 FY27 Results | Delhivery Q2 FY27 Results")
+    assert is_english("Café Coffee Day's Résumé of ₹ results")                 # accents and the rupee sign are fine
+    assert is_english("12345 / 67")                                              # no letters
+    assert not is_english("Zee Business. . Stock In Action RIL और Delhivery में अच्छी तेजी, आगे क्या होगा? Maruti के शेयर")
+    assert not is_english("टाटा स्टील के नतीजे")
+
+
+def test_pdf_text_drops_glyphs_helvetica_cannot_draw():
+    from modules.professional_pdf_report import _pdf_safe
+    out = _pdf_safe("Stock In Action RIL और Delhivery में अच्छी तेजी, आगे क्या होगा? Welspun ₹249 “quoted” – R&D")
+    assert not any("ऀ" <= ch <= "ॿ" for ch in out)                      # no Devanagari left
+    assert "Rs 249" in out and "“quoted”" in out and "–" in out    # rupee, curly quotes and dashes survive
+    assert "R&amp;D" in out
+    assert _pdf_safe("Plain ASCII, é and ü stay.") == "Plain ASCII, é and ü stay."
+    assert _pdf_safe(None) is None
+
+
+def test_saved_news_and_catalysts_lose_non_english_items_and_their_impact_line():
+    from modules.google_news import strip_non_english
+    data = {
+        "catalysts": [{"description": "Welspun Q2 FY27 results beat"}, {"description": "Zee Business RIL और Delhivery में अच्छी तेजी"}],
+        "summary": ("Positive Catalysts\n- Earnings (2026-11-03): Welspun Living Q2 FY27 Results\n- Impact: MEDIUM, Probability: 95%\n"
+                    "- Market (2026-11-02): Zee Business RIL और Delhivery में अच्छी तेजी, आगे क्या होगा\n- Impact: LOW, Probability: 50%\n"
+                    "- Market (2026-11-04): Welspun hit record highs\n- Impact: LOW, Probability: 50%"),
+    }
+    out = strip_non_english(data)
+    assert [c["description"] for c in out["catalysts"]] == ["Welspun Q2 FY27 results beat"]
+    assert "Zee" not in out["summary"] and out["summary"].count("- Impact") == 2          # each kept item keeps its own impact line
+    assert "Welspun hit record highs" in out["summary"]
+    assert strip_non_english({"a": "plain text", "n": 5}) == {"a": "plain text", "n": 5}

@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from modules.common_utils import load_config, get_api_key
 from modules import currency
+from modules.google_news import strip_non_english
 from modules.bank_template import (
     BANK_SUMMARY_METRICS,
     BANK_REPORT_LABELS,
@@ -176,7 +177,7 @@ def load_analysis_data(analysis_dir: str, ticker: str) -> Dict[str, Any]:
     catalyst_path = os.path.join(analysis_dir, "catalyst_analysis.json")
     if os.path.exists(catalyst_path):
         with open(catalyst_path, 'r', encoding='utf-8') as f:
-            data['catalyst_analysis'] = json.load(f)
+            data['catalyst_analysis'] = strip_non_english(json.load(f))
         print(f"✅ Loaded catalyst analysis")
     else:
         data['catalyst_analysis'] = {}
@@ -185,7 +186,7 @@ def load_analysis_data(analysis_dir: str, ticker: str) -> Dict[str, Any]:
     enhanced_news_path = os.path.join(analysis_dir, "enhanced_news.json")
     if os.path.exists(enhanced_news_path):
         with open(enhanced_news_path, 'r', encoding='utf-8') as f:
-            data['enhanced_news'] = json.load(f)
+            data['enhanced_news'] = strip_non_english(json.load(f))
         print(f"✅ Loaded enhanced news")
     else:
         data['enhanced_news'] = {}
@@ -194,7 +195,7 @@ def load_analysis_data(analysis_dir: str, ticker: str) -> Dict[str, Any]:
     company_news_path = os.path.join(analysis_dir, "company_news.json")
     if os.path.exists(company_news_path):
         with open(company_news_path, 'r', encoding='utf-8') as f:
-            data['company_news'] = json.load(f)
+            data['company_news'] = strip_non_english(json.load(f))
         print(f"✅ Loaded company news")
     else:
         data['company_news'] = []

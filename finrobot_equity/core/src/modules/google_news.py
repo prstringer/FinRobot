@@ -54,6 +54,51 @@ def is_relevant(title: str, company_name: str, ticker: str) -> bool:
     return bool(ticker) and re.search(rf"\b{re.escape(ticker.lower())}\b", t) is not None
 
 
+def is_english(title: str, max_non_latin: float = 0.10) -> bool:
+    """False when more than 10% of the letters are outside the Latin scripts (e.g. a Hindi headline from an Indian feed).
+
+    The reports are written in English and their PDFs use a Latin font, so such headlines can be neither summarised
+    reliably nor printed; they are dropped at the source.
+    """
+    letters = [c for c in (title or "") if c.isalpha()]
+    if not letters:
+        return True
+    return sum(1 for c in letters if ord(c) > 0x024F) / len(letters) <= max_non_latin
+
+
+_TEXT_KEYS = ("title", "description", "text", "headline")
+
+
+def strip_non_english(obj):
+    """Remove non-English headlines from already-saved news, catalyst and enhanced-news data (older outputs).
+
+    Lists of articles or catalysts lose any entry whose title/description is not English; multi-line summaries lose the
+    offending line and the "Impact:" line that belongs to it. Everything else is returned unchanged.
+    """
+    if isinstance(obj, list):
+        out = []
+        for x in obj:
+            if isinstance(x, dict) and any(isinstance(x.get(k), str) and not is_english(x[k]) for k in _TEXT_KEYS):
+                continue
+            out.append(strip_non_english(x))
+        return out
+    if isinstance(obj, dict):
+        return {k: strip_non_english(v) for k, v in obj.items()}
+    if isinstance(obj, str) and "\n" in obj and not is_english(obj, 0.0):
+        lines, keep, skip_impact = obj.split("\n"), [], False
+        for ln in lines:
+            if not is_english(ln):
+                skip_impact = True
+                continue
+            if skip_impact and ln.strip().startswith(("- Impact", "Impact")):
+                skip_impact = False
+                continue
+            skip_impact = False
+            keep.append(ln)
+        return "\n".join(keep)
+    return obj
+
+
 def parse_feed(xml_bytes: bytes, company_name: str, ticker: str) -> list[dict]:
     """Turn a Google News RSS document into news items (newest first, de-duplicated)."""
     try:
@@ -66,7 +111,7 @@ def parse_feed(xml_bytes: bytes, company_name: str, ticker: str) -> list[dict]:
         publisher = (item.findtext("source") or "").strip()
         if publisher and title.endswith(f" - {publisher}"):
             title = title[: -len(publisher) - 3].rstrip()
-        if not title or _QUOTE_PAGE.search(title) or not is_relevant(title, company_name, ticker):
+        if not title or not is_english(title) or _QUOTE_PAGE.search(title) or not is_relevant(title, company_name, ticker):
             continue
         key = re.sub(r"[^a-z0-9]", "", title.lower())[:50]
         if key in seen:

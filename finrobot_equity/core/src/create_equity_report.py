@@ -30,6 +30,7 @@ from modules.chart_generator import (
 )
 from modules.market_data_api import get_comprehensive_company_metrics, get_technical_indicators
 from modules import currency
+from modules.google_news import strip_non_english
 from modules.bank_template import (
     BANK_SUMMARY_METRICS,
     BANK_QUALITY_METRICS,
@@ -1043,7 +1044,7 @@ def main():
         print(f"Loading catalyst analysis from {args.catalyst_analysis_file}...")
         try:
             with open(args.catalyst_analysis_file, 'r', encoding='utf-8') as f:
-                catalyst_data = json.load(f)
+                catalyst_data = strip_non_english(json.load(f))
             # Re-classify sentiments for cached data (fix analyst action misclassification)
             _pos_patterns = ['acquires new holdings', 'initiates coverage', 'initiate coverage',
                              'starts coverage', 'begins coverage', 'upgrades to', 'builds position',
@@ -1089,7 +1090,7 @@ def main():
         print(f"Loading enhanced news from {args.enhanced_news_file}...")
         try:
             with open(args.enhanced_news_file, 'r', encoding='utf-8') as f:
-                report_data['enhanced_news'] = json.load(f)
+                report_data['enhanced_news'] = strip_non_english(json.load(f))
             print("✅ Enhanced news loaded")
         except Exception as e:
             print(f"⚠️ Error loading enhanced news: {e}")

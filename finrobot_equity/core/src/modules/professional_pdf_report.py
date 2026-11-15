@@ -9,6 +9,7 @@
 """
 
 import os
+import re
 import io
 import base64
 from datetime import datetime
@@ -42,9 +43,25 @@ def escape_ampersands(text):
     return _KNOWN_ENTITY.sub("&amp;", text) if isinstance(text, str) else text
 
 
+# Characters the built-in Helvetica font (WinAnsi encoding) can draw beyond Latin-1: typographic punctuation and a few symbols
+_WINANSI_EXTRA = set("\u2018\u2019\u201a\u201c\u201d\u201e\u2013\u2014\u2022\u2026\u2020\u2021\u2030\u2039\u203a\u20ac\u2122\u0152\u0153\u0160\u0161\u0178\u017d\u017e\u0192\u02c6\u02dc")
+
+
+def _drop_undrawable(text: str) -> str:
+    """Remove characters the built-in font cannot draw (Devanagari, CJK, emoji...) instead of printing black boxes."""
+    kept = "".join(ch for ch in text if ord(ch) < 256 or ch in _WINANSI_EXTRA or ch in "\n\t")
+    if kept == text:
+        return text
+    kept = re.sub(r"[ \t]{2,}", " ", kept)                   # tidy the gaps the removed characters leave
+    return re.sub(r"\s+([?!.,;:])", r"\1", kept)
+
+
 def _pdf_safe(text):
-    """Built-in PDF fonts (Helvetica) have no rupee glyph: write 'Rs ' instead of '₹'; escape bare ampersands."""
-    return escape_ampersands(text.replace("₹", "Rs ")) if isinstance(text, str) else text
+    """Built-in PDF fonts (Helvetica) have no rupee glyph: write 'Rs ' instead of '₹'; drop glyphs they cannot draw;
+    escape bare ampersands."""
+    if not isinstance(text, str):
+        return text
+    return escape_ampersands(_drop_undrawable(text.replace("₹", "Rs ")))
 
 
 class Paragraph(_RLParagraph):
