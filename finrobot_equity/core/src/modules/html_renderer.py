@@ -771,8 +771,11 @@ def format_enhanced_news_html(news_data):
         sentiment = news_data['sentiment_summary']
         if isinstance(sentiment, dict):
             overall = sentiment.get('overall', 'Neutral')
-            sentiment_class = 'catalyst-positive' if overall == 'positive' else ('catalyst-negative' if overall == 'negative' else 'catalyst-neutral')
-            html += f"<div class='mb-3'><strong>Overall Sentiment:</strong> <span class='{sentiment_class}'>{overall}</span></div>"
+            gated = str(overall).lower() == 'contradictory/bearish'
+            sentiment_class = 'catalyst-positive' if overall == 'positive' else ('catalyst-negative' if (overall == 'negative' or gated) else 'catalyst-neutral')
+            html += f"<div class='mb-3'><strong>Overall Sentiment:</strong> <span class='{sentiment_class}'>{str(overall).upper() if gated else overall}</span></div>"
+            if sentiment.get('gate_note'):
+                html += f"<div class='mb-3' style='color:#991b1b; font-size:11px;'>{sentiment['gate_note']} Headline tone alone was {sentiment.get('news_tone', 'n/a')}.</div>"
     
     if 'categories' in news_data:
         categories = news_data['categories']

@@ -1,0 +1,152 @@
+# Cost taxonomy: which cost labels a report uses for a company.
+#   industrial: manufacturers (steel, metals, cement, chemicals, power, oil and gas ...). Costs are shown as materials,
+#               employee cost and other operating expenses (power and fuel sit inside other expenses; the provider does
+#               not split them). "Material margin" replaces "Contribution margin".
+#   generic:    the original labels (SG&A, contribution margin). Used for services, consumer, retail, pharma, textiles and
+#               brand businesses where those labels are acceptable, and for any sector not listed (with a stated limitation).
+# Classification looks at the provider's sector, industry and macro sector (lower-case, substring match).
+# Order: a generic keyword in the SECTOR wins first (so "Other Textile Products" stays generic), then industrial keywords.
+
+generic_keywords:
+  - textile
+  - apparel
+  - garment
+  - home furnishing
+  - software
+  - it services
+  - it -
+  - information technology
+  - consumer
+  - fmcg
+  - retail
+  - food
+  - beverage
+  - tobacco
+  - pharma
+  - healthcare
+  - hospital
+  - diagnostic
+  - media
+  - entertainment
+  - hotel
+  - hospitality
+  - telecom
+  - real estate
+  - realty
+  - education
+  - logistics
+  - transport services
+  - business services
+  - trading
+
+industrial_keywords:
+  - steel
+  - iron
+  - metal
+  - mining
+  - minerals
+  - aluminium
+  - aluminum
+  - copper
+  - zinc
+  - coal
+  - cement
+  - construction materials
+  - chemical
+  - fertiliser
+  - fertilizer
+  - agrochemical
+  - petrochemical
+  - paint
+  - auto component
+  - castings
+  - forgings
+  - capital goods
+  - industrial
+  - engineering
+  - electrical equipment
+  - cables
+  - bearings
+  - power
+  - utilities
+  - oil
+  - gas
+  - petroleum
+  - refiner
+  - paper
+  - sugar
+  - ceramic
+  - glass
+  - packaging
+  - plastic
+  - rubber
+  - tyre
+  - shipbuilding
+  - defence
+
+kinds:
+  generic:
+    label: Generic cost buckets
+    labels:
+      materials_cost: Cost of operations
+      sga: SG&A
+      sga_margin: SG&A margin
+      contribution_profit: Contribution profit
+      contribution_margin: Contribution margin
+    replacements: []
+    glossary_overrides: []
+    limitation: null
+    unknown_limitation: "The sector is not classified as a manufacturer, so the generic cost buckets (SG&A, contribution margin) are used. For a manufacturer these can mislabel power, fuel and freight, which the provider reports inside other expenses."
+  industrial:
+    label: Industrial (manufacturing) cost structure
+    labels:
+      materials_cost: "Materials cost (consumed + purchases + change in inventory)"
+      sga: Employee and other operating costs
+      sga_margin: Employee and other operating costs as % of revenue
+      contribution_profit: Material margin
+      contribution_margin: Material margin (% of revenue)
+      employee_cost: Employee cost
+      other_operating: "Other operating expenses (includes power and fuel)"
+    # exact table row name -> display name (suffix " (INR crore)" is handled automatically)
+    row_names:
+      "Cost of Operations": "Materials cost (consumed + purchases + change in inventory)"
+      "SG&A": "Employee and other operating costs"
+      "Contribution Profit": "Material margin"
+      "Contribution Margin": "Material margin (% of revenue)"
+      "SG&A Margin": "Employee and other operating costs (% of revenue)"
+      "Employee Cost": "Employee cost"
+      "Other Operating Expenses": "Other operating expenses (includes power and fuel)"
+    # shorter names for chart legends
+    chart_names:
+      "Contribution Margin": "Material margin"
+      "SG&A Margin": "Employee + other operating costs"
+    # ordered phrase replacements for generated text, labels and chart strings (longest first)
+    replacements:
+      - ["SG&A as % of revenue", "Employee and other operating costs as % of revenue"]
+      - ["SG&A Expense Margin", "Operating Cost Ratio"]
+      - ["SG&A margin", "Employee and other operating costs margin"]
+      - ["SG&A Margin", "Employee and other operating costs margin"]
+      - ["Prices held. Costs broke the margin.", "Spreads held. Costs broke the margin."]
+      - ["Prices held, costs rose", "Spreads held, costs rose"]
+      - ["Pricing and product mix are holding up, so any profit squeeze comes from costs further down.", "The spread over materials is holding up, so any profit squeeze comes from costs further down."]
+      - ["Pricing is holding; any profit squeeze is further down.", "The spread over materials is holding; any profit squeeze is further down."]
+      - ["Pricing strong, overheads lean.", "Spreads strong, operating costs lean."]
+      - ["Pricing weakened; overheads held.", "Spreads weakened; operating costs held."]
+      - ["Pricing power is roughly intact, but there is little cushion if input costs rise.", "The spread over materials is roughly intact, but there is little cushion if input prices rise."]
+      - ["The business earns less on each sale before overheads, which points to price or mix pressure.", "The business keeps less of each sale after materials, which points to input-cost or pricing pressure."]
+      - ["Contribution margin", "Material margin"]
+      - ["Contribution Margin", "Material Margin"]
+      - ["contribution margin", "material margin"]
+      - ["Contribution profit", "Material margin"]
+      - ["Contribution Profit", "Material margin"]
+      - ["Cost of operations", "Materials cost"]
+      - ["Cost of Operations", "Materials cost"]
+      - ["SG&A", "Employee and other operating costs"]
+    glossary_overrides:
+      - {id: contribution_margin, term: Material margin, definition: "Revenue less the cost of materials consumed, purchases of traded goods and the change in inventory, as a share of revenue. For a manufacturer it is the spread over raw materials."}
+      - {id: sga, term: Employee and other operating costs, definition: "Employee benefit expense plus other expenses. Other expenses include power and fuel, which the data provider does not report separately."}
+      - {id: ebitda, term: EBITDA, definition: "Revenue from operations less total operating expenses (Ind-AS), before finance costs, depreciation and amortisation. It excludes other income and exceptional items."}
+    limitation: "Power and fuel are inside other operating expenses because the data provider does not split them."
+
+# Documented definition of the EBITDA used everywhere (checked by a unit test)
+ebitda_definition: "EBITDA = revenue from operations - (total expenses - finance costs - depreciation and amortisation). Other income and exceptional items are excluded."

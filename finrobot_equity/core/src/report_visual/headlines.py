@@ -67,6 +67,7 @@ def valuation(chips: dict, facts: dict) -> str:
     p = {"above": "above peers", "below": "below peers", "within": "in line with peers"}.get(peer)
     if steady and peer == "above":
         p = "above its steadiest peer"
+        h = h.replace("its history", "history") if h else h       # keeps the headline within 8 words
     if h and p:
         return f"Priced {h} and {p}."
     return f"Priced {h or p or 'without clear benchmarks'}."

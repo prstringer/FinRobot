@@ -734,9 +734,10 @@ def format_enhanced_news_html_professional(news_data: dict) -> str:
         sentiment = news_data['sentiment_summary']
         if isinstance(sentiment, dict):
             overall = sentiment.get('overall', 'neutral')
+            gated = str(overall).lower() == 'contradictory/bearish'
             if overall == 'positive':
                 bg = '#d1fae5'; color = '#065f46'
-            elif overall == 'negative':
+            elif overall == 'negative' or gated:
                 bg = '#fee2e2'; color = '#991b1b'
             else:
                 bg = '#f1f5f9'; color = '#475569'
@@ -745,6 +746,9 @@ def format_enhanced_news_html_professional(news_data: dict) -> str:
             if counts:
                 html += f'<span style="font-size:0.8rem; color:#64748b;">{" &middot; ".join(counts)} headlines</span>'
             html += '</div>'
+            if sentiment.get('gate_note'):
+                html += (f'<p class="body-text" style="font-size:0.8rem; color:#991b1b; margin-top:0.4rem;">{sentiment["gate_note"]} '
+                         f'Headline tone alone was {sentiment.get("news_tone", "n/a")}.</p>')
 
     # Categories
     if news_data.get('categories'):

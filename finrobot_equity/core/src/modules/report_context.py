@@ -37,7 +37,7 @@ TABLE_START = "<<FINANCIAL TABLE>>"
 TABLE_END = "<<END FINANCIAL TABLE>>"
 
 # Money rows of the analysis table (absolute rupees in the CSV) that are rescaled to crore for text sections
-MONEY_ROWS = ("Revenue", "Cost of Operations", "SG&A", "Contribution Profit", "EBITDA")
+MONEY_ROWS = ("Revenue", "Cost of Operations", "SG&A", "Contribution Profit", "EBITDA", "Employee Cost", "Other Operating Expenses")
 
 
 # --------------------------------------------------------------------------------------
@@ -397,16 +397,19 @@ def build_report_context(*, ticker: str, company_name: str, as_of: str, final_df
         "model_forecast": model_forecast, "model_forecast_assumptions": assumptions,
         "model_forecast_note": "our own driver-based projection; it is NOT analyst consensus",
         "peers": peer, "fair_value": fair_value, "derived": derived, "technicals": tech,
+        # cost taxonomy (industrial vs generic labels) and the forecast margin-cap flag, both set by the analysis step
+        "taxonomy": final_df.attrs.get("taxonomy"), "forecast_caps": final_df.attrs.get("margin_cap"),
     }
     from . import insights as _ins
+    from . import cost_taxonomy as _ct
     try:
-        ctx["insights"] = _ins.compute_insights(ctx, final_df, financial_data, extras)
+        ctx["insights"] = _ct.apply_text(_ins.compute_insights(ctx, final_df, financial_data, extras), ctx.get("taxonomy"))
     except Exception as e:   # explanatory facts must never block the report
         print(f"Warning: could not compute explanatory facts and verdicts: {e}")
         ctx["insights"] = {}
     ctx["extras"] = extras or {}
     ctx["checks"] = run_checks(ctx)
-    ctx["prompt_block"] = render_prompt_block(ctx)
+    ctx["prompt_block"] = _ct.apply_text(render_prompt_block(ctx), ctx.get("taxonomy"))
     return ctx
 
 
@@ -592,6 +595,13 @@ def render_prompt_block(ctx: dict) -> str:
         L.append("INTEREST COVERAGE (EBIT / interest): " + ", ".join(f"{k} {fmt_x(v)}" for k, v in d["interest_coverage_ebit_x"].items()))
     if d.get("working_capital_days"):
         L.append("CASH CONVERSION DAYS: " + ", ".join(f"{k} {v['cash_conversion_days']:.0f}" for k, v in d["working_capital_days"].items()))
+    tx, caps = ctx.get("taxonomy"), ctx.get("forecast_caps")
+    if tx and tx.get("kind") == "industrial":
+        L.append("COST TAXONOMY: industrial. Costs are materials (consumed + purchases + change in inventory), employee cost and other operating "
+                 "expenses; power and fuel are inside other operating expenses (the provider does not split them). "
+                 "EBITDA = revenue from operations less total operating expenses (Ind-AS), before finance costs, depreciation and amortisation.")
+    if caps and caps.get("message"):
+        L.append("FORECAST MARGIN CAP: " + caps["message"])
     if ctx.get("insights"):
         from . import insights as _ins
         L.append(_ins.render_insights_block(ctx["insights"]))
@@ -683,7 +693,9 @@ def build_text_data(ctx: dict, final_df: pd.DataFrame, peer_ebitda_actual: Optio
                     peer_ev_df: Optional[pd.DataFrame], base: Optional[dict] = None) -> dict:
     """The ``data`` dict handed to every text section: crore-scaled tables plus the canonical facts block."""
     data = dict(base or {})
-    data["financial_metrics"] = scale_table_to_crore(final_df)
+    from . import cost_taxonomy as _ct
+    data["financial_metrics"] = _ct.rename_rows(scale_table_to_crore(final_df), ctx.get("taxonomy"))   # display names per taxonomy
+    data["taxonomy"] = ctx.get("taxonomy")
     data["peer_ebitda"] = peer_ebitda_to_crore(peer_ebitda_actual)   # actual years only; projection lives in the facts block
     data["peer_ev_ebitda"] = peer_ev_df
     data["report_context"] = ctx
@@ -691,6 +703,9 @@ def build_text_data(ctx: dict, final_df: pd.DataFrame, peer_ebitda_actual: Optio
     notes = [n for n in data.get("data_notes", []) if "absolute rupees" not in n]
     notes.insert(0, "All rupee amounts in the tables and facts are in INR crore (1 crore = 10,000,000 rupees). Fiscal years end in March: 2026A is FY2025-26.")
     notes.append("Peer EV/EBITDA values are on each company's fiscal-year average price, not current prices.")
+    for n in _ct.notes(ctx.get("taxonomy")) + [(ctx.get("forecast_caps") or {}).get("message")]:
+        if n and n not in notes:
+            notes.append(n)
     data["data_notes"] = notes
     return data
 

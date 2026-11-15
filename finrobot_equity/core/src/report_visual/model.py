@@ -72,6 +72,11 @@ def _cv(xs) -> Optional[float]:
 # ----------------------------------------------------------------------------------------------
 # facts
 # ----------------------------------------------------------------------------------------------
+def peers_reliable(ctx: dict) -> bool:
+    """False when the peer selection found too few comparable peers (size band and sub-sector); then no peer yardstick is used."""
+    return not ((ctx.get("peer_selection") or {}).get("insufficient"))
+
+
 def compute_facts(ctx: dict, final_df: pd.DataFrame) -> dict:
     from modules import insights as ins
     ms = ins.margin_series(final_df)
@@ -122,7 +127,8 @@ def compute_facts(ctx: dict, final_df: pd.DataFrame) -> dict:
         f["ev_vs_history"] = "above" if now > max(ev_hist) else ("below" if now < min(ev_hist) else "within")
     pc = ctx["peers"].get("current") or {}
     med = pc.get("median_excl_subject_ttm")
-    if now and med:
+    f["peers_reliable"] = peers_reliable(ctx)
+    if now and med and f["peers_reliable"]:
         f["ev_vs_peers"] = "above" if now > 1.10 * med else ("below" if now < 0.90 * med else "within")
     # steadiest peer and EBITDA volatility
     ea = ctx["peers"].get("ebitda_actual_cr") or {}
@@ -138,9 +144,10 @@ def compute_facts(ctx: dict, final_df: pd.DataFrame) -> dict:
     if peer_cv:
         steady = min(peer_cv, key=peer_cv.get)
         f["steadiest_peer"] = steady
-        f["steadiest_peer_ebitda_band"] = (min(series[steady]), max(series[steady]))
+        vals_ = [v for v in series[steady] if v is not None]
+        f["steadiest_peer_ebitda_band"] = (min(vals_), max(vals_)) if vals_ else None
         st_mult = (pc.get("rows", {}).get(steady) or {}).get("ev_ebitda_ttm")
-        f["steadiest_peer_below_subject"] = bool(st_mult and now and st_mult < now)
+        f["steadiest_peer_below_subject"] = bool(st_mult and now and st_mult < now and peers_reliable(ctx))
     ttm, lf = ctx.get("ttm") or {}, ctx.get("latest_fy") or {}
     f["recovery_narrative"] = bool(ttm.get("ebitda_cr") and lf.get("ebitda_cr") and ttm["ebitda_cr"] >= 1.25 * lf["ebitda_cr"]
                                    and (_median(list(em.values())) or 0) > (em.get(latest) or 0))
@@ -156,7 +163,7 @@ def fair_value_cases(ctx: dict, facts: dict) -> list[dict]:
         return []
     hist = [r["ev_ebitda"] for r in ctx["fy_series"].values() if r.get("ev_ebitda")]
     pe, pc = ctx["peers"].get("ev_ebitda") or {}, ctx["peers"].get("current") or {}
-    meds = [m for m in (pe.get("median_excl_subject"), pc.get("median_excl_subject_ttm")) if m]
+    meds = [m for m in (pe.get("median_excl_subject"), pc.get("median_excl_subject_ttm")) if m] if peers_reliable(ctx) else []
     fv = ctx["fair_value"]
     tp = ctx["peers"].get("trend_projection") or {}
     subj = ctx["meta"]["ticker"].upper()
@@ -227,7 +234,7 @@ def build_signposts(ctx: dict, final_df: pd.DataFrame, facts: dict) -> list[dict
         out.append({"metric": "Interest coverage", "current": cur, "current_text": f"{cur:.1f}x", "threshold_text": f"Above {thr:.0f}x",
                     "status": _status(cur, thr, True, 0.2), "why": "Coverage back above its own median would take pressure off debt service."})
     cv, pc = ctx["current_valuation"], ctx["peers"].get("current") or {}
-    if cv.get("ev_ebitda_ttm") and pc.get("median_excl_subject_ttm"):
+    if cv.get("ev_ebitda_ttm") and pc.get("median_excl_subject_ttm") and peers_reliable(ctx):
         cur, thr = cv["ev_ebitda_ttm"], pc["median_excl_subject_ttm"]
         out.append({"metric": "EV/EBITDA (TTM)", "current": cur, "current_text": f"{cur:.1f}x", "threshold_text": f"At or below {thr:.1f}x (peer median)",
                     "status": _status(cur, thr, False, 0.10), "why": "Earnings growth, not a falling share price, is how the multiple should close the gap to peers."})
@@ -281,7 +288,8 @@ def build_chips(ctx: dict, final_df: pd.DataFrame, facts: dict, cases: list[dict
         put(ve.evaluate("pe", cvv["pe_ttm_api"], pe_hist, None, facts, "TTM"))
     ev_hist = [r["ev_ebitda"] for r in ctx["fy_series"].values() if r.get("ev_ebitda")]
     if cvv.get("ev_ebitda_ttm"):
-        put(ve.evaluate("ev_ebitda", cvv["ev_ebitda_ttm"], ev_hist, pc.get("median_excl_subject_ttm"), facts, "TTM"))
+        put(ve.evaluate("ev_ebitda", cvv["ev_ebitda_ttm"], ev_hist,
+                        pc.get("median_excl_subject_ttm") if peers_reliable(ctx) else None, facts, "TTM"))
     if cases and facts.get("price"):
         put(ve.fair_value(facts["price"], [(c["low_price"], c["high_price"]) for c in cases], "snapshot"))
     return chips
@@ -351,6 +359,28 @@ def build_warnings(ctx: dict, facts: dict, cases: list[dict]) -> list[dict]:
         w.append({"level": "warning", "text": "Peer multiples at current prices are unavailable."})
     for u in (ctx.get("derived") or {}).get("unavailable", []):
         w.append({"level": "info", "text": f"Not available: {u}."})
+    tx = ctx.get("taxonomy") or {}
+    if tx.get("limitation"):
+        w.append({"level": "info" if tx.get("kind") == "industrial" else "warning", "text": tx["limitation"]})
+    caps = ctx.get("forecast_caps") or {}
+    if caps.get("message"):
+        w.append({"level": "warning", "text": caps["message"]})
+    # reporting basis and fiscal calendar
+    basis = (ctx.get("extras") or {}).get("basis") or {}
+    from modules import fiscal_guard as _fg
+    for t in _fg.basis_warnings(basis.get("quarter"), basis.get("fiscal_issues") or []):
+        w.append({"level": "error" if t.startswith("Fiscal calendar") else "warning", "text": t})
+    w.append({"level": "info", "text": "Indian fiscal year: 1 April to 31 March. FY26 is 1 Apr 2025 to 31 Mar 2026; the trailing four quarters are shown "
+                                      "separately as TTM and never replace a full-year figure."})
+    # peer set
+    from modules import peer_selection as _ps
+    for t in _ps.peer_warnings(ctx.get("peer_selection") or {}):
+        w.append({"level": "warning", "text": t})
+    # sentiment gate
+    gate = ctx.get("sentiment_gate") or {}
+    if gate.get("triggered"):
+        from modules import sentiment_gate as _sg
+        w.append({"level": "warning", "text": _sg.gate_note(gate)})
     return w
 
 
@@ -458,6 +488,16 @@ def build_report_model(analysis_dir: str, report_date: Optional[str] = None, kin
         "headline_rules": hl.HEADLINE_RULES,
     }
     model["facts"]["years"] = facts.get("years")
+    tx = ctx.get("taxonomy")
+    if tx:
+        # cost taxonomy: record it, then relabel every string (chips, headlines, chart titles, notes) and the glossary
+        from modules import cost_taxonomy as _ct
+        model["meta"]["taxonomy"] = {k: tx.get(k) for k in ("kind", "label", "matched", "sector", "industry", "limitation", "ebitda_definition")}
+        model = _ct.apply_text(model, tx)
+        model["glossary"] = _ct.glossary_for(model["glossary"], tx)
+    caps = ctx.get("forecast_caps")
+    if caps:
+        model["meta"]["forecast_caps"] = {k: caps.get(k) for k in ("cap", "peak", "std", "binding", "lifted", "trigger", "message")}
     result = vmod.validate_model(model)
     model["sources"]["validation"] = result
     for e in result["errors"]:

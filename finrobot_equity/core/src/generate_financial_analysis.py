@@ -21,6 +21,9 @@ from modules import report_context as rctx
 from modules import technical_analysis as tech_an
 from modules import cashflow_analysis as cf_an
 from modules import ratio_bars as rbars
+from modules import cost_taxonomy
+from modules import fiscal_guard
+from modules import sentiment_gate as sgate
 from modules.llm_providers import PROVIDERS, resolve_llm_settings
 
 # 新增模块导入
@@ -109,6 +112,9 @@ def main():
     parser.add_argument("--revenue-growth-2027", type=float, default=0.04, help="Revenue growth for forecast year 3 (default: 4%%)")
     parser.add_argument("--margin-improvement", type=float, default=0.01, help="Annual margin improvement assumption (default: 1%%)")
     parser.add_argument("--sga-margin-improvement", type=float, default=-0.005, help="SG&A margin change assumption (default: -0.5%% efficiency gain)")
+    parser.add_argument("--margin-trigger", type=str, default=None,
+                        help="A stated fundamental reason (e.g. 'capex completion in FY28') that lifts the forecast EBITDA margin cap "
+                             "(historical 5-year peak margin + 1 standard deviation). The trigger text is recorded as a flag in the report.")
 
     # API Options
     parser.add_argument("--period", type=str, default="annual", choices=["annual", "quarterly"], help="Data period (annual or quarterly)")
@@ -269,7 +275,8 @@ def main():
             "Contribution Margin": args.margin_improvement, 
             "EBITDA Margin": args.margin_improvement
         },
-        "sga_margin_change": 0 if is_bank else args.sga_margin_improvement
+        "sga_margin_change": 0 if is_bank else args.sga_margin_improvement,
+        "margin_trigger": args.margin_trigger or None,
     }
     
     print(f"Forecast assumptions:")
@@ -291,6 +298,24 @@ def main():
     bridge_income_df = income_df if (use_finedge and not is_bank) else None
     final_data_df = calculate_growth_and_forecasts(historical_metrics_df, forecast_config,
                                                    income_df=bridge_income_df, current_price=current_price)
+    # Cost taxonomy (industrial vs generic labels), split cost rows, and the forecast margin-cap flag as data notes
+    _macro = None
+    if use_finedge:
+        try:
+            _macro = (finedge_client.profile(normalize_symbol(args.company_ticker)) or {}).get("macro_sector")
+        except Exception:
+            _macro = None
+    taxonomy = (cost_taxonomy.resolve(kind="generic") if is_bank else
+                cost_taxonomy.resolve(company_metrics.get("sector"), company_metrics.get("industry"), _macro))
+    if use_finedge and not is_bank:
+        final_data_df = cost_taxonomy.add_split_rows(final_data_df, income_df, taxonomy)
+    final_data_df.attrs["taxonomy"] = taxonomy
+    print(f"Cost taxonomy: {taxonomy['kind']} (sector {taxonomy.get('sector')!r}, matched {taxonomy.get('matched')!r})")
+    for _note in cost_taxonomy.notes(taxonomy):
+        data_meta.setdefault("warnings", []).append(_note)
+    _cap_flag = final_data_df.attrs.get("margin_cap")
+    if _cap_flag and _cap_flag.get("message"):
+        data_meta.setdefault("warnings", []).append(_cap_flag["message"])
     if final_data_df.attrs.get("forecast_bridge") is not None:
         print("\nForecast P&L bridge (INR crore; EPS in rupees):")
         _bridge = final_data_df.attrs["forecast_bridge"].drop(columns=["shares"]).copy()
@@ -312,17 +337,43 @@ def main():
     df_ev_ebitda_peers = None
     df_peer_current = None
     df_bank_peers = None
+    peer_selection_log = None
     if use_finedge:
+        from modules import peer_selection as psel
         peer_list = [normalize_symbol(t) for t in args.peer_tickers]
         if peer_list:
             peer_list, ignored = filter_valid_peers(peer_list, finedge_client)
             if ignored:
                 print(f"⚠️  Ignoring unrecognised peer symbol(s): {ignored} - using automatic sector peers instead.")
-        if not peer_list and not args.no_auto_peers:
-            peer_list = get_finedge_peers(args.company_ticker, finedge_client, max_peers=args.max_peers)
-            if peer_list:
-                print(f"\nAuto-discovered FinEdge sector peers: {peer_list}")
+        if peer_list:
+            # user-supplied peers are kept as given; any outside the size band or sub-sector are warned about
+            peer_selection_log = psel.select_peers(args.company_ticker, finedge_client, explicit=peer_list)
+        elif not args.no_auto_peers:
+            # automatic peers: same sub-sector and 0.2x to 5.0x the market cap (never silently widened)
+            peer_selection_log = psel.select_peers(args.company_ticker, finedge_client, max_peers=args.max_peers)
+            peer_list = peer_selection_log["peers"]
         args.peer_tickers = peer_list
+        if peer_selection_log is not None:
+            margin_check = None
+            if not is_bank and peer_list:
+                try:
+                    _, peer_income = get_finedge_peer_frames(peer_list, finedge_client)
+                    peer_margins = {}
+                    for _t, _inc in peer_income.items():
+                        _r = _inc.sort_values("year").iloc[-1] if _inc is not None and not _inc.empty else None
+                        peer_margins[_t] = (float(_r["ebitda"]) / float(_r["revenue"]) * 100) if _r is not None and _r["revenue"] else None
+                    _em = final_data_df.loc[final_data_df["metrics"] == "EBITDA Margin", latest_year]
+                    subject_margin = float(str(_em.iloc[0]).replace("%", "")) if len(_em) else None
+                    margin_check = psel.margin_profile_check(subject_margin, peer_margins)
+                    margin_check["peer_margins_pct"] = peer_margins
+                except Exception as e:
+                    print(f"Warning: margin-profile check skipped: {e}")
+            peer_selection_log["margin_profile"] = margin_check
+            if margin_check and margin_check.get("warning"):
+                peer_selection_log["warnings"].append(margin_check["warning"])
+            print("\n" + "\n".join(psel.summary_lines(peer_selection_log, margin_check)))
+            with open(os.path.join(output_dir, "peer_selection.json"), "w", encoding="utf-8") as _fh:
+                json.dump(peer_selection_log, _fh, indent=2, default=str)
     elif fmp_api_key and not args.peer_tickers and not args.no_auto_peers:
         args.peer_tickers = get_fmp_peers(args.company_ticker, fmp_api_key, max_peers=args.max_peers)
         if args.peer_tickers:
@@ -640,6 +691,21 @@ def main():
                 extras["fact_blocks"].append("RATIO YARDSTICKS (computed):\n  " + "\n  ".join(rbars.ratio_bar_text_lines(rb)))
             except Exception as e:
                 print(f"Warning: ratio bars skipped: {e}")
+            # Fiscal calendar and reporting basis: one basis for every figure, the other basis stated where it differs
+            try:
+                fiscal_issues = fiscal_guard.check_fiscal_year_ends({
+                    "income": financial_data.get("income_statement"), "balance": financial_data.get("balance_sheet"),
+                    "cash": financial_data.get("cash_flow")})
+                basis = fiscal_guard.quarter_basis_comparison(finedge_client, args.company_ticker, st_code)
+                extras["basis"] = {"quarter": basis, "fiscal_issues": fiscal_issues, "fiscal_year_rule": "1 April to 31 March"}
+                latest_fy_year = int(str(latest_year)[:4]) if latest_year else None
+                if basis:
+                    extras["fact_blocks"].append(fiscal_guard.basis_fact_block(basis, latest_fy_year))
+                for w in fiscal_guard.basis_warnings(basis, fiscal_issues):
+                    print(f"Warning: {w}")
+                    data_meta.setdefault("warnings", []).append(w)
+            except Exception as e:
+                print(f"Warning: basis check skipped: {e}")
             report_ctx = rctx.build_report_context(
                 ticker=normalize_symbol(args.company_ticker), company_name=args.company_name,
                 as_of=pd.Timestamp.now().strftime("%Y-%m-%d"), final_df=final_data_df,
@@ -648,6 +714,29 @@ def main():
                 peer_ebitda_projected=projected_peer_ebitda, peer_current_df=df_peer_current,
                 technicals=technicals, extras=extras)
             rctx.save_context(report_ctx, os.path.join(output_dir, "report_context.json"))
+            # Sentiment gate: valuation outranks headline tone (implied price below 70% of price forces CONTRADICTORY/BEARISH)
+            try:
+                gate = sgate.apply_gate(enhanced_news_data, report_ctx)
+                report_ctx["sentiment_gate"] = gate
+                tone = ((enhanced_news_data or {}).get("sentiment_summary") or {}).get("news_tone")
+                gb = sgate.gate_fact_block(gate, tone)
+                if gb:
+                    print("Sentiment gate triggered: " + sgate.gate_note(gate))
+                    report_ctx["prompt_block"] = report_ctx["prompt_block"].replace(rctx.FACTS_END, gb + "\n" + rctx.FACTS_END)
+                # Peer-set limits: an unreliable peer set must not be presented as a valuation benchmark
+                if peer_selection_log:
+                    report_ctx["peer_selection"] = peer_selection_log
+                    pf = psel.peer_fact_block(peer_selection_log)
+                    if pf:
+                        report_ctx["prompt_block"] = report_ctx["prompt_block"].replace(rctx.FACTS_END, pf + "\n" + rctx.FACTS_END)
+                    for w in psel.peer_warnings(peer_selection_log):
+                        data_meta.setdefault("warnings", []).append(w)
+                if enhanced_news_data:
+                    with open(os.path.join(output_dir, "enhanced_news.json"), 'w', encoding='utf-8') as f:
+                        json.dump(enhanced_news_data, f, indent=2, ensure_ascii=False, default=str)
+                rctx.save_context(report_ctx, os.path.join(output_dir, "report_context.json"))
+            except Exception as e:
+                print(f"Warning: sentiment gate skipped: {e}")
             bad = rctx.failed_checks(report_ctx)
             for c in bad:
                 print(f"⚠️  Consistency check FAILED: {c['name']} (expected {c['expected']}, got {c['actual']})")

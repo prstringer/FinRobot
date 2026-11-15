@@ -925,8 +925,9 @@ class ProfessionalEquityReport:
             if enhanced_news.get('sentiment_summary'):
                 sentiment = enhanced_news['sentiment_summary']
                 overall = sentiment.get('overall', 'neutral')
+                gated = str(overall).lower() == 'contradictory/bearish'
                 sentiment_color = Colors.POSITIVE if overall == 'positive' else (
-                    Colors.NEGATIVE if overall == 'negative' else Colors.NEUTRAL
+                    Colors.NEGATIVE if (overall == 'negative' or gated) else Colors.NEUTRAL
                 )
                 sentiment_style = ParagraphStyle(
                     'SentimentStyle', fontName='Helvetica-Bold', fontSize=10,
@@ -934,6 +935,8 @@ class ProfessionalEquityReport:
                 )
                 self.elements.append(Spacer(1, 3*mm))
                 self.elements.append(Paragraph(f"Overall Sentiment: {overall.upper()}", sentiment_style))
+                if sentiment.get('gate_note'):
+                    self.elements.append(Paragraph(f"{sentiment['gate_note']} Headline tone alone was {sentiment.get('news_tone', 'n/a')}.", self.styles['Caption']))
             
             # 新闻分类
             if enhanced_news.get('categories'):

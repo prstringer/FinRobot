@@ -587,7 +587,8 @@ def chart_price_ruler(ctx: dict) -> Optional[dict]:
               [per_share(m, ebitda, nd, shares) for m in (mults[0], mults[-1])])]
     tp = (ctx.get("peers") or {}).get("trend_projection")
     sub = _tag(ctx)
-    if tp:
+    peers_ok = not (ctx.get("peer_selection") or {}).get("insufficient")      # thin peer set: no peer-based fair-value cases
+    if tp and peers_ok:
         e = next((v for t, v in tp["ebitda_cr"].items() if t.upper() == sub), None)
         if e:
             cases.append((f"Peer-dataset projection (not consensus): {mults[0]}x to {mults[-1]}x of {fmt_cr(e)}",
@@ -595,7 +596,7 @@ def chart_price_ruler(ctx: dict) -> Optional[dict]:
     meds = [x for x in ((ctx["peers"].get("ev_ebitda") or {}).get("median_excl_subject"),
                         (ctx["peers"].get("current") or {}).get("median_excl_subject_ttm"),
                         (ctx["peers"].get("current") or {}).get("median_excl_subject_fy")) if x]
-    if meds:
+    if meds and peers_ok:
         cases.append((f"Peer median multiple ({fmt_x(min(meds))} to {fmt_x(max(meds))}) on our {fy(y)} EBITDA",
                       [per_share(min(meds), ebitda, nd, shares), per_share(max(meds), ebitda, nd, shares)]))
     axis_max = cc.nice_ceil(max(max(c[1]) for c in cases + [("", [price])]) * 1.15, 50)
@@ -884,6 +885,12 @@ def build_panel_charts(ctx: dict, analysis_dir: str, kind: str = "nonfinancial")
     _try("cash_conversion", lambda: chart_cash_conversion(ctx), panels["strength"])
     _try("debt_and_coverage", lambda: chart_debt_and_coverage(ctx, analysis_dir), panels["strength"])
     _try("valuation_strip", lambda: chart_valuation_strip(ctx), panels["valuation"])
+    ps_ = ctx.get("peer_selection") or {}
+    if ps_.get("insufficient"):            # a thin peer set is shown, but never as a valuation benchmark
+        for ch in panels["valuation"]:
+            if ch.get("id") == "valuation_strip":
+                ch["subtitle"] = (f"Thin peer set ({len(ps_.get('peers') or [])} comparable peers within the market-cap band and sub-sector): "
+                                  "indicative only, not a valuation benchmark. " + (ch.get("subtitle") or "")).strip()
     _try("pe_vs_history", lambda: chart_pe_vs_history(ctx), panels["valuation"])
     _try("price_ruler", lambda: chart_price_ruler(ctx), panels["valuation"])
     prep = None

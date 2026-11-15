@@ -40,6 +40,12 @@ def run_text_reports(analysis_dir: str, output_dir: str, config_file: str | None
             "--risks-file", os.path.join(a, "risks.txt"), "--competitor-analysis-file", os.path.join(a, "competitor_analysis.txt"),
             "--major-takeaways-file", os.path.join(a, "major_takeaways.txt"), "--news-summary-file", os.path.join(a, "news_summary.txt"),
             "--output-dir", output_dir, "--config-file", cfg, "--data-provider", s.get("data_provider", "finedge")]
+    # the same optional inputs the web app passes: news, catalysts and sensitivity are included when the analysis produced them
+    for flag, name in (("--enhanced-news-file", "enhanced_news.json"), ("--catalyst-analysis-file", "catalyst_analysis.json"),
+                       ("--sensitivity-analysis-file", "sensitivity_analysis.json")):
+        if os.path.exists(os.path.join(a, name)):
+            cmd1 += [flag, os.path.join(a, name)]
+    cmd1 += ["--enable-enhanced-charts", "--enable-valuation-analysis"]
     for flag, name in (("--peer-ebitda-csv", "peer_ebitda_comparison.csv"), ("--peer-ev-ebitda-csv", "peer_ev_ebitda_comparison.csv")):
         if os.path.exists(os.path.join(a, name)):
             cmd1 += [flag, os.path.join(a, name)]

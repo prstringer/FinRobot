@@ -252,6 +252,7 @@ def validate_and_fix_text_content(text_content: str, text_type: str, company_nam
 
 
 from modules import report_context as rctx
+from modules import cost_taxonomy
 from modules import report_extras as rextras
 from modules import report_validation as rval
 
@@ -1118,12 +1119,17 @@ def main():
 
     summary_metrics = (BANK_SUMMARY_METRICS if is_bank_report else
                        ["Revenue", "Revenue Growth", "EBITDA", "EBITDA Margin", "Contribution Profit", "Contribution Margin", "SG&A", "SG&A Margin"])
-    financial_summary_df = analysis_actual_only[analysis_actual_only["metrics"].isin(summary_metrics)].set_index("metrics")
+    _tax = (_TEXT_CTX or {}).get("taxonomy") or cost_taxonomy.taxonomy_from_table(analysis_df)    # industrial vs generic cost labels
+    if cost_taxonomy.is_industrial(_tax) and not is_bank_report:
+        summary_metrics = summary_metrics + ["Employee Cost", "Other Operating Expenses"]
+    financial_summary_df = cost_taxonomy.rename_rows(
+        analysis_actual_only[analysis_actual_only["metrics"].isin(summary_metrics)].set_index("metrics"), _tax)
     report_data["financial_summary_table_html"] = format_dataframe_to_html_table(financial_summary_df, table_id="financial-summary")
 
     valuation_metrics = (BANK_QUALITY_METRICS if is_bank_report else
                          ["EBITDA Margin", "Contribution Margin", "SG&A Margin", "Revenue Growth"])
-    valuation_metrics_df = analysis_actual_only[analysis_actual_only["metrics"].isin(valuation_metrics)].set_index("metrics")
+    valuation_metrics_df = cost_taxonomy.rename_rows(
+        analysis_actual_only[analysis_actual_only["metrics"].isin(valuation_metrics)].set_index("metrics"), _tax)
     report_data["valuation_metrics_table_html"] = format_dataframe_to_html_table(valuation_metrics_df, table_id="valuation-metrics")
 
     # Load and format Credit & Cashflow metrics from the provided CSV

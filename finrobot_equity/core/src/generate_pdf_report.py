@@ -216,6 +216,12 @@ def prepare_financial_summary_df(analysis_df: pd.DataFrame, is_bank: bool = Fals
         "EPS", "PE Ratio"
     ]
     
+    # Cost taxonomy: industrial companies show materials / employee / other operating cost rows with their own names
+    from modules import cost_taxonomy
+    _tax = cost_taxonomy.taxonomy_from_table(analysis_df)
+    if cost_taxonomy.is_industrial(_tax) and not is_bank:
+        summary_metrics = summary_metrics + ['Employee Cost', 'Other Operating Expenses']
+
     # The P/E row carries its price basis in its label; match it by prefix. This table shows actual years only,
     # so it is relabelled with the fiscal-year-average-price basis those years use.
     analysis_df = analysis_df.copy()
@@ -232,6 +238,7 @@ def prepare_financial_summary_df(analysis_df: pd.DataFrame, is_bank: bool = Fals
     df = analysis_df[analysis_df['metrics'].isin(available_metrics)].copy()
     df.loc[df['metrics'] == 'PE Ratio', 'metrics'] = 'PE Ratio (FY-avg price)'
     df.set_index('metrics', inplace=True)
+    df = cost_taxonomy.rename_rows(df, _tax)
     
     # 只保留实际年份列 (以A结尾)
     year_cols = [col for col in df.columns if col.endswith('A')]

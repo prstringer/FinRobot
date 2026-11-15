@@ -370,6 +370,62 @@ def build_forecast_pnl_bridge(df_final: pd.DataFrame, income_df: pd.DataFrame, f
     return pd.DataFrame(rows).set_index("year"), assumptions
 
 
+def apply_margin_cap(df_final: pd.DataFrame, actual_years: list, forecast_years: list, trigger: str | None = None) -> dict | None:
+    """Mean-reversion gate: bound each forecast year's EBITDA margin to ``5-year peak margin + 1 standard deviation``.
+
+    The peak and the (sample) standard deviation come from the actual-year EBITDA margins in the table. When a forecast
+    margin exceeds the cap it is set to the cap; the contribution/material margin forecast is kept and the cost bucket
+    (SG&A, which holds other operating expenses) absorbs the difference, so EBITDA = margin x revenue and the P&L bridge
+    still reconciles. A ``trigger`` (a stated fundamental reason, e.g. "capex completion in FY28") lifts the cap and is
+    recorded in the flag. Returns the flag dict (also stored by the caller in ``attrs['margin_cap']``) or None when there
+    is not enough history.
+    """
+    import statistics
+    margins = []
+    for y in actual_years:
+        rev, e = _row_value(df_final, "Revenue", y), _row_value(df_final, "EBITDA", y)
+        try:
+            if rev and pd.notna(rev) and pd.notna(e) and float(rev) != 0:
+                margins.append(float(e) / float(rev) * 100)
+        except (TypeError, ValueError):
+            continue
+    if len(margins) < 3:
+        return None
+    peak, std = max(margins), statistics.stdev(margins)
+    cap = peak + std
+    years, binding = {}, False
+    for f in forecast_years:
+        rev, e, cp = (_row_value(df_final, k, f) for k in ("Revenue", "EBITDA", "Contribution Profit"))
+        if rev is None or e is None or pd.isna(rev) or pd.isna(e) or not rev:
+            continue
+        uncapped = float(e) / float(rev) * 100
+        over = uncapped > cap + 1e-9
+        capped = uncapped
+        if over and not trigger:
+            capped = cap
+            new_e = cap / 100 * float(rev)
+            df_final.loc[df_final["metrics"] == "EBITDA", f] = round(new_e, 2)
+            df_final.loc[df_final["metrics"] == "EBITDA Margin", f] = f"{cap:.1f}%"
+            if cp is not None and pd.notna(cp):
+                new_sga = float(cp) - new_e
+                df_final.loc[df_final["metrics"] == "SG&A", f] = round(new_sga, 2)
+                df_final.loc[df_final["metrics"] == "SG&A Margin", f] = f"{new_sga / float(rev) * 100:.1f}%"
+            binding = True
+        elif over:
+            binding = True
+        years[f] = {"uncapped_margin": uncapped, "capped_margin": capped, "cap": cap, "peak": peak, "std": std, "exceeds_cap": over}
+    info = {"cap": cap, "peak": peak, "std": std, "n_actual_years": len(margins), "trigger": trigger or None,
+            "binding": binding, "lifted": bool(binding and trigger), "years": years, "message": None}
+    if binding and not trigger:
+        worst = max(v["uncapped_margin"] for v in years.values())
+        info["message"] = (f"EBITDA margin forecast capped at {cap:.1f}% = historical peak {peak:.1f}% + 1 sd ({std:.1f} pts); "
+                           f"the uncapped path reached {worst:.1f}%; no fundamental trigger supplied.")
+    elif binding and trigger:
+        info["message"] = (f"EBITDA margin forecast exceeds the historical ceiling of {cap:.1f}% (peak {peak:.1f}% + 1 sd) "
+                           f"and the cap is lifted by a stated trigger: {trigger}.")
+    return info
+
+
 def calculate_growth_and_forecasts(df_historical: pd.DataFrame, forecast_config: dict,
                                    income_df: pd.DataFrame | None = None,
                                    current_price: float | None = None) -> pd.DataFrame:
@@ -501,6 +557,13 @@ def calculate_growth_and_forecasts(df_historical: pd.DataFrame, forecast_config:
                 if rev != 0:
                     ebitda_margin = ebitda / rev
                     df_final.loc[df_final['metrics'] == 'EBITDA Margin', f_year] = f"{ebitda_margin*100:.1f}%"
+
+    # Forecast sanity bound (mean reversion): applied before the EPS bridge so every downstream figure uses it
+    cap_info = apply_margin_cap(df_final, actual_years, forecast_years, forecast_config.get("margin_trigger"))
+    if cap_info:
+        df_final.attrs["margin_cap"] = cap_info
+        if cap_info["message"]:
+            print(f"Warning: {cap_info['message']}")
 
     if use_bridge:
         built = build_forecast_pnl_bridge(df_final, income_df, forecast_years, last_actual_revenue_year)

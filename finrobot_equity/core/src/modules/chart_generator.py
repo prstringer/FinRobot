@@ -436,6 +436,14 @@ def generate_margin_trend_chart(analysis_df: pd.DataFrame, output_path: str,
         if not margin_data:
             return None
 
+        # industrial taxonomy (detected from the table's split cost rows): relabel the legend
+        try:
+            from . import cost_taxonomy as _ct
+            _tx = _ct.taxonomy_from_table(analysis_df)
+            margin_data = {_ct.chart_label(k, _tx): v for k, v in margin_data.items()}
+        except Exception:
+            pass
+
         fig, ax = plt.subplots(figsize=(7, 4))
         
         x = np.arange(len(years))

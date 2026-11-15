@@ -75,10 +75,17 @@ def clean_generated_text(text: str) -> str:
     return text.replace("\u2013", "-")
 
 
-def get_system_prompt(prompt_type: str, is_bank: bool = False) -> str:
-    """System prompt for a section, with bank-specific variants where they differ, plus the shared writing rules."""
+INDUSTRIAL_SYSTEM_PROMPTS = {
+    "major_takeaways": "You are a financial analyst covering a manufacturer. Provide 4 major takeaways covering: Revenue Growth, Material Margin (revenue less the cost of materials consumed, purchases and inventory change), Operating Cost Ratio (employee cost plus other operating expenses, which include power and fuel, as a share of revenue), and EBITDA Margin. Write each as one paragraph that starts with its label and a colon, then 1-2 sentences, exactly like 'Revenue Growth: ...'. Use the labels 'Revenue Growth:', 'Material Margin:', 'Operating Cost Ratio:' and 'EBITDA Margin:'. Plain text only: no title, no markdown, no bold, no bullets.",
+}
+
+
+def get_system_prompt(prompt_type: str, is_bank: bool = False, taxonomy_kind: str | None = None) -> str:
+    """System prompt for a section, with bank-specific and industrial-taxonomy variants where they differ, plus the shared writing rules."""
     if is_bank and prompt_type in BANK_SYSTEM_PROMPTS:
         base = BANK_SYSTEM_PROMPTS[prompt_type]
+    elif taxonomy_kind == "industrial" and prompt_type in INDUSTRIAL_SYSTEM_PROMPTS:
+        base = INDUSTRIAL_SYSTEM_PROMPTS[prompt_type]
     else:
         base = SYSTEM_PROMPTS.get(prompt_type, f"You are a financial analyst. Provide {prompt_type.replace('_', ' ')} analysis.")
     return base + WRITING_RULES
@@ -190,7 +197,7 @@ def generate_text_section(data: Dict, prompt_type: str, api_key: str, company_na
     print(f"🤖 Using {settings.label}")
     
     # Get system prompt
-    system_prompt = get_system_prompt(prompt_type, bool(data.get('is_bank')))
+    system_prompt = get_system_prompt(prompt_type, bool(data.get('is_bank')), (data.get('taxonomy') or {}).get('kind'))
     
     # Prepare user prompt with data
     user_prompt = _prepare_user_prompt(data, prompt_type, company_name, company_ticker)
