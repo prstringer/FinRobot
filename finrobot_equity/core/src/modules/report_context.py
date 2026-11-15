@@ -776,7 +776,18 @@ def _canonical_crore_values(ctx: dict) -> dict[str, float]:
         elif isinstance(x, (int, float)) and not isinstance(x, bool):
             add(name, x)
     walk((ctx.get("extras") or {}).get("cashflow"), "cashflow")
+    walk(((ctx.get("extras") or {}).get("basis") or {}).get("quarter"), "basis")     # latest-quarter PAT on both bases
     return canon
+
+
+def is_unit_slip(n: float, v: float, tol: float = 0.005) -> bool:
+    """True when ``n`` is exactly 10x or one-tenth of ``v`` to within rounding (0.5%), the signature of a unit slip.
+
+    A wider window matches unrelated figures by chance once the context holds hundreds of values.
+    """
+    if not v or not n:
+        return False
+    return abs(n / (10 * v) - 1) <= tol or abs(10 * n / v - 1) <= tol
 
 
 def lint_narrative_units(text: str, ctx: dict) -> list[str]:
@@ -795,7 +806,7 @@ def lint_narrative_units(text: str, ctx: dict) -> list[str]:
         if any(abs(n - v) <= max(0.01 * v, 0.6) for v in values):
             continue
         for name, v in canon.items():
-            if abs(n / v - 10) < 0.03 or abs(n / v - 0.1) < 0.003:
+            if is_unit_slip(n, v):
                 warnings.append(f"'{m.group(0)}' is 10x / one-tenth of canonical {name} ({v:,.1f} Cr)")
                 break
     return warnings

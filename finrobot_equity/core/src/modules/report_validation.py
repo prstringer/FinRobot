@@ -94,7 +94,7 @@ def validate_report(ctx: Optional[dict], texts: dict[str, str], html: Optional[s
                 n = rc._f(m.group(1).replace(",", ""))
                 if n and canon and not any(abs(n - v) <= max(0.01 * v, 0.6) for v in canon):
                     # already reported as a unit slip when it is exactly 10x; otherwise a softer warning
-                    if not any(abs(n / v - 10) < 0.03 or abs(n / v - 0.1) < 0.003 for v in canon):
+                    if not any(rc.is_unit_slip(n, v) for v in canon):
                         warnings.append(f"{sec}: amount '{m.group(0)}' matches no source figure within 1%")
         if not slips:
             passed.append("No factor-of-10 unit slips in any section")
@@ -174,12 +174,16 @@ def validate_report(ctx: Optional[dict], texts: dict[str, str], html: Optional[s
         for k, v in (ctx.get("technicals") or {}).items():
             if isinstance(v, (int, float)) and "pct" not in k:
                 ps_allowed.add(round(float(v), 2))
+        g_ = ctx.get("sentiment_gate") or {}                       # the gate quotes its implied and threshold prices
+        for k_ in ("implied_price", "threshold_price", "current_price"):
+            if g_.get(k_) is not None:
+                ps_allowed.add(round(float(g_[k_]), 2))
         ol = (ctx.get("insights") or {}).get("operating_leverage") or {}
         if ol.get("ebitda_per_100_revenue") is not None:
             ps_allowed |= {round(abs(float(ol["ebitda_per_100_revenue"])), 2), 100.0}
         bad_ps = 0
         for sec, t in texts.items():
-            for m in re.finditer(r"(?:Rs\.?|INR)\s?(\d[\d,]*(?:\.\d+)?)(?!\s*(?:crore|Cr|lakh|bn|mn))(?![\d,]*\s*(?:crore|Cr)\b)", t or ""):
+            for m in re.finditer(r"(?:Rs\.?|INR)\s?(\d[\d,]*(?:\.\d+)?)(?![\d,.])(?!\s*(?:crore|Cr\b|lakh|bn|mn))", t or ""):
                 raw = m.group(1).replace(",", "")
                 v = float(raw)
                 if v >= 1000:

@@ -149,3 +149,41 @@ def test_text_hygiene_helpers():
     prompt = get_system_prompt("valuation_overview")
     assert "em-dashes" in prompt and "general norm, not company-specific" in prompt
     assert "2 to 3 sentences" in get_system_prompt("company_overview")
+
+
+# ---- regressions from the Welspun run: false "unit slip" errors and a per-share regex that read crore amounts as rupees
+def test_unit_slip_needs_an_exact_tenfold_not_a_near_match():
+    from modules import report_context as rc
+    assert rc.is_unit_slip(93991, 9399.1) and rc.is_unit_slip(793.2, 7932) and rc.is_unit_slip(9770, 977.0)
+    assert not rc.is_unit_slip(12.98, 126.7)        # 2.4% off one-tenth: a coincidence, not a slip
+    assert not rc.is_unit_slip(0, 100) and not rc.is_unit_slip(5, 0)
+
+
+def test_basis_quarter_figures_are_known_values_not_errors():
+    ctx = _ctx()
+    ctx["extras"] = dict(ctx.get("extras") or {}, basis={"quarter": {
+        "consolidated": {"pat_cr": 169.10, "pat_prior_cr": 12.98, "yoy_pct": 1203.0},
+        "standalone": {"pat_cr": 108.67, "pat_prior_cr": 147.73, "yoy_pct": -26.4}}})
+    ctx["extras"].setdefault("cashflow", {"per_year": {"2022A": {"debt_repaid_gross": 126.7}}})
+    text = "Consolidated PAT rose to Rs 169.10 Cr from Rs 12.98 Cr; standalone fell to Rs 108.67 Cr from Rs 147.73 Cr."
+    res = rv.validate_report(ctx, {"investment_overview": text})
+    assert res["errors"] == [] and not any("per-share" in w for w in res["warnings"])
+
+
+def test_crore_amounts_are_not_read_as_per_share_rupees():
+    ctx = _ctx()
+    res = rv.validate_report(ctx, {"news_summary": "PAT was Rs 169.10 crore against Rs 12.98 crore a year earlier."})
+    assert not any("per-share" in w for w in res["warnings"])
+
+
+def test_sentiment_gate_prices_are_known_per_share_values():
+    ctx = _ctx()
+    ctx["sentiment_gate"] = {"triggered": True, "implied_price": 155.14, "threshold_price": 174.3, "current_price": 249.0}
+    res = rv.validate_report(ctx, {"risks": "The implied price of Rs 155 is 38% below Rs 249; the gate is Rs 174."})
+    assert not any("Rs 155" in w or "Rs 174" in w for w in res["warnings"])
+
+
+def test_a_real_unit_slip_is_still_an_error():
+    ctx = _ctx()
+    res = rv.validate_report(ctx, {"news_summary": "Revenue was 93,991 crore."})
+    assert any("10x" in e for e in res["errors"])
