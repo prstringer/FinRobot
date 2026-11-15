@@ -303,8 +303,138 @@ def _row_value(df: pd.DataFrame, metric: str, col: str):
     return vals[0] if len(vals) else None
 
 
-def calculate_growth_and_forecasts(df_historical: pd.DataFrame, forecast_config: dict) -> pd.DataFrame:
-    """Appends growth rates and forecasts to the historical metrics DataFrame."""
+PE_ROW = "PE Ratio (A: FY-avg px, E: current px)"
+"""Row label for the P/E series. Actual years use the fiscal-year average price (FinEdge); forecast years use the
+current price over bridge-derived EPS. Code that looks the row up should match ``startswith("PE Ratio")``."""
+
+
+def build_forecast_pnl_bridge(df_final: pd.DataFrame, income_df: pd.DataFrame, forecast_years: list,
+                              base_year_label: str) -> tuple[pd.DataFrame, dict] | None:
+    """Rebuild forecast EPS from forecast EBITDA: EBITDA -> D&A -> interest -> other income -> tax -> PAT -> EPS.
+
+    Assumptions (all derived from the base fiscal year, returned in the second element so they can be shown):
+      * D&A is the base-year share of revenue,
+      * interest expense and other income are held at their base-year absolute amounts,
+      * exceptional items and share-of-associates are zero in forecast years,
+      * tax is the base-year effective rate on pre-tax profit,
+      * minorities take the base-year share of profit,
+      * the share count is the base-year diluted weighted average.
+    Everything is in the same units as ``df_final`` (absolute currency units; EPS per share).
+    Returns None when the inputs needed for the bridge are not available (banks, missing columns).
+    """
+    try:
+        base_year = int(str(base_year_label)[:4])
+        base = income_df[income_df["year"] == base_year].iloc[0]
+        revenue, dna, interest = base["revenue"], base["depreciationAndAmortization"], base["interestExpense"]
+        other_income, pbt, tax = base["otherIncome"], base["incomeBeforeTax"], base["incomeTaxExpense"]
+        shares = base["weightedAverageShsOutDil"]
+        owners, total = base["netIncome"], base.get("netIncomeIncludingMinority")
+    except (KeyError, IndexError, TypeError):
+        return None
+    needed = [revenue, dna, interest, other_income, pbt, tax, shares, owners]
+    if any(pd.isna(v) for v in needed) or not revenue or not shares or pbt <= 0:
+        return None
+
+    tax_rate = float(np.clip(tax / pbt, 0.0, 0.45))
+    pat_total_base = pbt - tax
+    minority_keep = float(owners / pat_total_base) if pat_total_base > 0 else 1.0
+    minority_keep = float(np.clip(minority_keep, 0.5, 1.0))
+    assumptions = {
+        "base_year": base_year_label,
+        "da_pct_of_revenue": float(dna / revenue),
+        "interest_expense_flat": float(interest),
+        "other_income_flat": float(other_income),
+        "tax_rate": tax_rate,
+        "owners_share_of_pat": minority_keep,
+        "diluted_shares": float(shares),
+        "exceptional_items": 0.0,
+    }
+    rows = []
+    for fy in forecast_years:
+        rev = _row_value(df_final, "Revenue", fy)
+        ebitda = _row_value(df_final, "EBITDA", fy)
+        if rev is None or ebitda is None or pd.isna(rev) or pd.isna(ebitda):
+            continue
+        d_and_a = assumptions["da_pct_of_revenue"] * rev
+        ebit = ebitda - d_and_a
+        pretax = ebit - interest + other_income
+        taxes = max(pretax, 0.0) * tax_rate
+        pat_total_f = pretax - taxes
+        pat_owners = pat_total_f * minority_keep
+        rows.append({"year": fy, "revenue": rev, "ebitda": ebitda, "depreciation": d_and_a, "ebit": ebit,
+                     "interest": interest, "other_income": other_income, "pretax_income": pretax,
+                     "tax": taxes, "pat_total": pat_total_f, "pat_owners": pat_owners,
+                     "shares": float(shares), "eps": pat_owners / shares})
+    if not rows:
+        return None
+    return pd.DataFrame(rows).set_index("year"), assumptions
+
+
+def apply_margin_cap(df_final: pd.DataFrame, actual_years: list, forecast_years: list, trigger: str | None = None) -> dict | None:
+    """Mean-reversion gate: bound each forecast year's EBITDA margin to ``5-year peak margin + 1 standard deviation``.
+
+    The peak and the (sample) standard deviation come from the actual-year EBITDA margins in the table. When a forecast
+    margin exceeds the cap it is set to the cap; the contribution/material margin forecast is kept and the cost bucket
+    (SG&A, which holds other operating expenses) absorbs the difference, so EBITDA = margin x revenue and the P&L bridge
+    still reconciles. A ``trigger`` (a stated fundamental reason, e.g. "capex completion in FY28") lifts the cap and is
+    recorded in the flag. Returns the flag dict (also stored by the caller in ``attrs['margin_cap']``) or None when there
+    is not enough history.
+    """
+    import statistics
+    margins = []
+    for y in actual_years:
+        rev, e = _row_value(df_final, "Revenue", y), _row_value(df_final, "EBITDA", y)
+        try:
+            if rev and pd.notna(rev) and pd.notna(e) and float(rev) != 0:
+                margins.append(float(e) / float(rev) * 100)
+        except (TypeError, ValueError):
+            continue
+    if len(margins) < 3:
+        return None
+    peak, std = max(margins), statistics.stdev(margins)
+    cap = peak + std
+    years, binding = {}, False
+    for f in forecast_years:
+        rev, e, cp = (_row_value(df_final, k, f) for k in ("Revenue", "EBITDA", "Contribution Profit"))
+        if rev is None or e is None or pd.isna(rev) or pd.isna(e) or not rev:
+            continue
+        uncapped = float(e) / float(rev) * 100
+        over = uncapped > cap + 1e-9
+        capped = uncapped
+        if over and not trigger:
+            capped = cap
+            new_e = cap / 100 * float(rev)
+            df_final.loc[df_final["metrics"] == "EBITDA", f] = round(new_e, 2)
+            df_final.loc[df_final["metrics"] == "EBITDA Margin", f] = f"{cap:.1f}%"
+            if cp is not None and pd.notna(cp):
+                new_sga = float(cp) - new_e
+                df_final.loc[df_final["metrics"] == "SG&A", f] = round(new_sga, 2)
+                df_final.loc[df_final["metrics"] == "SG&A Margin", f] = f"{new_sga / float(rev) * 100:.1f}%"
+            binding = True
+        elif over:
+            binding = True
+        years[f] = {"uncapped_margin": uncapped, "capped_margin": capped, "cap": cap, "peak": peak, "std": std, "exceeds_cap": over}
+    info = {"cap": cap, "peak": peak, "std": std, "n_actual_years": len(margins), "trigger": trigger or None,
+            "binding": binding, "lifted": bool(binding and trigger), "years": years, "message": None}
+    if binding and not trigger:
+        worst = max(v["uncapped_margin"] for v in years.values())
+        info["message"] = (f"EBITDA margin forecast capped at {cap:.1f}% = historical peak {peak:.1f}% + 1 sd ({std:.1f} pts); "
+                           f"the uncapped path reached {worst:.1f}%; no fundamental trigger supplied.")
+    elif binding and trigger:
+        info["message"] = (f"EBITDA margin forecast exceeds the historical ceiling of {cap:.1f}% (peak {peak:.1f}% + 1 sd) "
+                           f"and the cap is lifted by a stated trigger: {trigger}.")
+    return info
+
+
+def calculate_growth_and_forecasts(df_historical: pd.DataFrame, forecast_config: dict,
+                                   income_df: pd.DataFrame | None = None,
+                                   current_price: float | None = None) -> pd.DataFrame:
+    """Appends growth rates and forecasts to the historical metrics DataFrame.
+
+    When ``income_df`` (normalised income statement) is given, forecast EPS is rebuilt from forecast EBITDA
+    through a full P&L bridge (see ``build_forecast_pnl_bridge``, stored in ``result.attrs``) and the forecast P/E
+    is ``current_price / EPS``. Without it (banks, legacy callers) the old growth-rate shortcut is kept.
+    """
     df_final = df_historical.copy().astype('object')  # Ensure object dtype for mixed types
     actual_years = sorted([col for col in df_final.columns if isinstance(col, str) and col.endswith('A')])
     forecast_years = sorted(forecast_config.get("revenue_growth_assumptions", {}).keys())
@@ -387,8 +517,9 @@ def calculate_growth_and_forecasts(df_historical: pd.DataFrame, forecast_config:
     # For EPS, assume it grows proportionally with net income/revenue improvement
     base_eps = _row_value(df_final, 'EPS', last_actual_revenue_year)
     base_pe = _row_value(df_final, 'PE Ratio', last_actual_revenue_year)
+    use_bridge = income_df is not None and not income_df.empty
     
-    if pd.notna(base_eps):
+    if not use_bridge and pd.notna(base_eps):
         current_eps = base_eps
         for f_year in forecast_years:
             # Assume EPS grows with revenue growth + margin improvements
@@ -399,7 +530,7 @@ def calculate_growth_and_forecasts(df_historical: pd.DataFrame, forecast_config:
             df_final.loc[df_final['metrics'] == 'EPS', f_year] = round(current_eps, 2)
     
     # For PE Ratio, assume it remains relatively stable or slightly decreases (conservative assumption)
-    if pd.notna(base_pe):
+    if not use_bridge and pd.notna(base_pe):
         current_pe = base_pe
         for i, f_year in enumerate(forecast_years):
             # Slightly decrease PE over time (assuming multiple compression)
@@ -427,6 +558,27 @@ def calculate_growth_and_forecasts(df_historical: pd.DataFrame, forecast_config:
                     ebitda_margin = ebitda / rev
                     df_final.loc[df_final['metrics'] == 'EBITDA Margin', f_year] = f"{ebitda_margin*100:.1f}%"
 
+    # Forecast sanity bound (mean reversion): applied before the EPS bridge so every downstream figure uses it
+    cap_info = apply_margin_cap(df_final, actual_years, forecast_years, forecast_config.get("margin_trigger"))
+    if cap_info:
+        df_final.attrs["margin_cap"] = cap_info
+        if cap_info["message"]:
+            print(f"Warning: {cap_info['message']}")
+
+    if use_bridge:
+        built = build_forecast_pnl_bridge(df_final, income_df, forecast_years, last_actual_revenue_year)
+        if built is None:
+            print("Warning: forecast P&L bridge unavailable (missing D&A/interest/tax inputs); EPS and P/E left blank")
+        else:
+            bridge_df, bridge_assumptions = built
+            for f_year, r in bridge_df.iterrows():
+                df_final.loc[df_final['metrics'] == 'EPS', f_year] = round(float(r["eps"]), 2)
+                if current_price and r["eps"] > 0:
+                    df_final.loc[df_final['metrics'] == 'PE Ratio', f_year] = round(current_price / r["eps"], 1)
+            df_final.attrs["forecast_bridge"] = bridge_df
+            df_final.attrs["forecast_bridge_assumptions"] = bridge_assumptions
+            df_final.attrs["forecast_pe_price"] = current_price
+
     # Calculate CAGR
     cagr_start_year = actual_years[0] if actual_years else None
     cagr_end_year = actual_years[-1] if actual_years else None
@@ -443,7 +595,12 @@ def calculate_growth_and_forecasts(df_historical: pd.DataFrame, forecast_config:
     ordered_cols = ['metrics'] + actual_years + forecast_years
     if 'CAGR' in df_final.columns:
         ordered_cols.append('CAGR')
-    df_final = df_final[ordered_cols]
+    kept_attrs = dict(df_final.attrs)
+    df_final = df_final[ordered_cols].copy()
+    # Label the basis of the P/E series; actuals and forecasts use different prices (see PE_ROW)
+    if use_bridge and (df_final['metrics'] == 'PE Ratio').any():
+        df_final.loc[df_final['metrics'] == 'PE Ratio', 'metrics'] = PE_ROW
+    df_final.attrs.update(kept_attrs)
 
     return df_final
 

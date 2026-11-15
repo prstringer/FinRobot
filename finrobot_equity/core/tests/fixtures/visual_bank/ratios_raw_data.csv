@@ -1,0 +1,6 @@
+date,year,calendarYear,grossProfitMargin,ebitdaMargin,operatingProfitMargin,pretaxProfitMargin,netProfitMargin,effectiveTaxRate,returnOnEquity,returnOnAssets,returnOnCapitalEmployed,netInterestMargin,debtEquityRatio,debtRatio,longTermDebtToCapitalization,financialLeverage,interestCoverage,currentRatio,quickRatio,cashFlowToDebtRatio,assetTurnover,inventoryTurnover,receivablesTurnover,cashConversionCycle,priceEarningsRatio,priceToBookRatio,priceToSalesRatio,priceToFreeCashFlowsRatio
+2026-03-31,2026,2026,,,0.3204,0.2572,0.20178449318229078,0.2154,0.1337,0.0171,,0.0312,5.56,0.71,0.0,7.82,1.53,,,,0.08,,,,19.67,2.63,3.97,12.24
+2025-03-31,2025,2025,,,0.2893,0.2556,0.1945615840008006,0.2388,0.1353,0.0172,,0.0332,5.46,0.69,0.0,7.86,1.5,,,,0.09,,,,18.76,2.54,3.65,8.89
+2024-03-31,2024,2024,,,0.3069,0.2305,0.19771104606241824,0.1422,0.139,0.0168,,0.0319,5.44,0.66,0.0,8.27,1.47,,,,0.09,,,,19.63,2.73,3.88,38.18
+2023-03-31,2023,2023,,,0.3652,0.3033,0.22877916526928008,0.2458,0.1574,0.0179,,0.0376,6.72,0.76,0.0,8.8,1.78,,,,0.08,,,,18.76,2.95,4.29,34.38
+2022-03-31,2022,2022,,,0.4075,0.3117,0.23502875851098107,0.2459,0.1539,0.0179,,0.0364,6.49,0.75,0.0,8.62,1.88,,,,0.08,,,,22.55,3.47,5.3,-51.07

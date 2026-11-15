@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import re
 import pandas as pd
 from typing import Dict, Optional
 from modules.llm_providers import LLMSettings, generate_text, normalize_provider
 
 from modules.retail_sentiment_client import format_retail_sentiment_for_prompt, has_coverage
 from modules import currency
+from modules.report_context import render_table_block
 
 
 def _get_fallback_text(prompt_type: str, company_name: str) -> str:
@@ -27,7 +29,7 @@ def _get_fallback_text(prompt_type: str, company_name: str) -> str:
 # System prompts for each text section
 SYSTEM_PROMPTS = {
     "tagline": "You are an equity research analyst. Create a 3-sentence professional tagline summarizing the company's financial position. Be concise and professional. Do not use markdown.",
-    "company_overview": "You are a financial analyst. Write a comprehensive company overview (300-400 words) covering business model, products/services, market position, and recent performance. Use plain text, no markdown.",
+    "company_overview": "You are a financial analyst. Write a company description of 2 to 3 sentences: what the company does, where its revenue comes from, and its position in its industry. Do not discuss recent financial performance or valuation. Use plain text, no markdown.",
     "investment_overview": "You are an investment analyst. Write an investment update (200-300 words) covering recent financial performance, growth drivers, and outlook. Use plain text, no markdown.",
     "valuation_overview": "You are a valuation analyst. Write a valuation analysis (200-300 words) covering current valuation metrics, peer comparison, and fair value assessment. Use plain text, no markdown.",
     "risks": "You are a risk analyst. List 5 key investment risks in bullet point format. Be specific and concise.",
@@ -44,11 +46,49 @@ BANK_SYSTEM_PROMPTS = {
 BANK_TAKEAWAY_HEADERS = ["Net Interest Income Growth:", "Net Interest Margin:", "Asset Quality:", "Profitability:"]
 
 
-def get_system_prompt(prompt_type: str, is_bank: bool = False) -> str:
-    """System prompt for a section, with bank-specific variants where they differ."""
+FINAL_INSTRUCTIONS = {
+    "company_overview": ("Write 2 or 3 sentences only: what the company does and where its revenue comes from, using the company profile above. "
+                         "Do not mention any financial figure, margin, multiple, peer or forecast."),
+    "tagline": "Write 3 short sentences. Use at most one number, taken exactly from the facts.",
+}
+
+WRITING_RULES = (
+    "\n\nWRITING RULES (apply to every sentence):\n"
+    "- Use only the numbers given in the structured facts. Never compute, round differently or invent a figure; copy each figure exactly as written there.\n"
+    "- Give every number what it is compared against and what it implies for the business or the investor.\n"
+    "- Short sentences and plain language for a non-expert investor. Define a technical term once, on first use.\n"
+    "- Do not use em-dashes or en-dashes.\n"
+    "- Label any general market norm as 'general norm, not company-specific'.\n"
+    "- Where full-year and TTM figures, or the model forecast and the peer-dataset projection, disagree, state the disagreement and its size.\n"
+    "- Prefer the computed verdicts, peer statements and explanations in the facts to your own reading. Make peer claims only from the peer statements given.\n"
+    "- Every key fact is stated in full in one section only. Follow the SECTION GUIDANCE: do not restate facts owned by other sections.\n"
+    "- No filler. Do not write a sentence that would be true of any company; each sentence must cite a specific figure or computed fact."
+)
+
+
+def clean_generated_text(text: str) -> str:
+    """Deterministic clean-up of model output: no em-dashes or en-dashes."""
+    if not isinstance(text, str):
+        return text
+    text = re.sub(r"(?<=\d)\s*[\u2013\u2014]\s*(?=\d)", " to ", text)
+    text = re.sub(r"\s*[\u2014]\s*", ", ", text)
+    return text.replace("\u2013", "-")
+
+
+INDUSTRIAL_SYSTEM_PROMPTS = {
+    "major_takeaways": "You are a financial analyst covering a manufacturer. Provide 4 major takeaways covering: Revenue Growth, Material Margin (revenue less the cost of materials consumed, purchases and inventory change), Operating Cost Ratio (employee cost plus other operating expenses, which include power and fuel, as a share of revenue), and EBITDA Margin. Write each as one paragraph that starts with its label and a colon, then 1-2 sentences, exactly like 'Revenue Growth: ...'. Use the labels 'Revenue Growth:', 'Material Margin:', 'Operating Cost Ratio:' and 'EBITDA Margin:'. Plain text only: no title, no markdown, no bold, no bullets.",
+}
+
+
+def get_system_prompt(prompt_type: str, is_bank: bool = False, taxonomy_kind: str | None = None) -> str:
+    """System prompt for a section, with bank-specific and industrial-taxonomy variants where they differ, plus the shared writing rules."""
     if is_bank and prompt_type in BANK_SYSTEM_PROMPTS:
-        return BANK_SYSTEM_PROMPTS[prompt_type]
-    return SYSTEM_PROMPTS.get(prompt_type, f"You are a financial analyst. Provide {prompt_type.replace('_', ' ')} analysis.")
+        base = BANK_SYSTEM_PROMPTS[prompt_type]
+    elif taxonomy_kind == "industrial" and prompt_type in INDUSTRIAL_SYSTEM_PROMPTS:
+        base = INDUSTRIAL_SYSTEM_PROMPTS[prompt_type]
+    else:
+        base = SYSTEM_PROMPTS.get(prompt_type, f"You are a financial analyst. Provide {prompt_type.replace('_', ' ')} analysis.")
+    return base + WRITING_RULES
 
 
 def _df_to_string(df: Optional[pd.DataFrame], name: str) -> str:
@@ -72,15 +112,24 @@ def _prepare_user_prompt(data: Dict, prompt_type: str, company_name: str, compan
     
     prompt = f"Company: {company_name} ({company_ticker})\n\n"
     
+    facts_block = data.get('facts_block')   # canonical, code-computed facts (modules.report_context)
     if financial_metrics is not None and not financial_metrics.empty:
-        prompt += _df_to_string(financial_metrics, "Financial Metrics")
-    
+        table = _df_to_string(financial_metrics, "Financial Metrics")
+        prompt += render_table_block(table) + "\n" if facts_block else table
+
+    if facts_block:
+        prompt += "\n" + facts_block + "\n\n"
+        ins = (data.get('report_context') or {}).get('insights')
+        if ins:
+            from modules.insights import section_guidance
+            prompt += section_guidance(ins, prompt_type) + "\n\n"
+
     if peer_ebitda is not None and not peer_ebitda.empty:
-        prompt += _df_to_string(peer_ebitda, "Peer EBITDA Comparison")
-        
+        prompt += _df_to_string(peer_ebitda, "Peer EBITDA Comparison (INR crore, actual years only)" if facts_block else "Peer EBITDA Comparison")
+
     if peer_ev_ebitda is not None and not peer_ev_ebitda.empty:
-        prompt += _df_to_string(peer_ev_ebitda, "Peer EV/EBITDA Comparison")
-    
+        prompt += _df_to_string(peer_ev_ebitda, "Peer EV/EBITDA Comparison (fiscal-year average price basis, includes the subject company)" if facts_block else "Peer EV/EBITDA Comparison")
+
     if prompt_type == "news_summary" and company_news:
         prompt += f"\n## Recent News:\n"
         # Headlines first, then routine exchange filings (a stable sort keeps newest-first within each group)
@@ -100,7 +149,11 @@ def _prepare_user_prompt(data: Dict, prompt_type: str, company_name: str, compan
         prompt += ("\nUnits: write rupee amounts in crore or lakh crore (1 crore = 10 million), "
                    "never in millions, billions or trillions.\n")
 
-    prompt += f"\nPlease provide the {prompt_type.replace('_', ' ')} based on the above data."
+    desc = data.get('company_description')
+    if desc and prompt_type in ('company_overview', 'tagline'):
+        prompt += "\nCompany profile from the data provider (use this, not general knowledge):\n" + str(desc)[:900] + "\n"
+    final = FINAL_INSTRUCTIONS.get(prompt_type)
+    prompt += "\n" + (final or f"Please provide the {prompt_type.replace('_', ' ')} based on the above data.")
     return prompt
 
 
@@ -144,7 +197,7 @@ def generate_text_section(data: Dict, prompt_type: str, api_key: str, company_na
     print(f"🤖 Using {settings.label}")
     
     # Get system prompt
-    system_prompt = get_system_prompt(prompt_type, bool(data.get('is_bank')))
+    system_prompt = get_system_prompt(prompt_type, bool(data.get('is_bank')), (data.get('taxonomy') or {}).get('kind'))
     
     # Prepare user prompt with data
     user_prompt = _prepare_user_prompt(data, prompt_type, company_name, company_ticker)
@@ -152,6 +205,7 @@ def generate_text_section(data: Dict, prompt_type: str, api_key: str, company_na
     try:
         generated_text = generate_text(settings, system_prompt, user_prompt, max_tokens=1000, temperature=0.7,
                                       usage_sink=usage_sink, section=prompt_type)
+        generated_text = clean_generated_text(generated_text)
         print(f"✅ Successfully generated '{prompt_type}' ({len(generated_text)} chars)")
         return generated_text
     except Exception as e:

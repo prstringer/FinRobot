@@ -3,6 +3,7 @@
 
 import argparse
 import os
+import sys
 import pandas as pd
 from datetime import datetime
 import pytz
@@ -11,7 +12,7 @@ EASTERN_TZ = pytz.timezone('America/New_York')
 
 from modules.common_utils import load_config, get_api_key
 from modules.report_data_loader import load_analysis_csv, load_text_from_file
-from modules.html_renderer import render_html_report, render_combined_html_report, HTML_TEMPLATE_PAGE_1, HTML_TEMPLATE_PAGE_2_FINANCIAL_SUMMARY, HTML_TEMPLATE_PAGE_3_PEER_COMPARISON, HTML_TEMPLATE_PAGE_4_SENSITIVITY_CATALYST, HTML_TEMPLATE_PAGE_5_NEWS_CHARTS, HTML_TEMPLATE_COMBINED, format_dataframe_to_html_table
+from modules.html_renderer import render_html_report, render_combined_html_report, HTML_TEMPLATE_PAGE_1, HTML_TEMPLATE_PAGE_2_FINANCIAL_SUMMARY, HTML_TEMPLATE_PAGE_3_PEER_COMPARISON, HTML_TEMPLATE_PAGE_4_SENSITIVITY_CATALYST, HTML_TEMPLATE_PAGE_5_NEWS_CHARTS, HTML_TEMPLATE_COMBINED, format_dataframe_to_html_table, format_peer_multiples_html
 from modules.html_template_professional import render_professional_html_report
 from modules.chart_generator import (
     generate_revenue_ebitda_chart, 
@@ -250,6 +251,14 @@ def validate_and_fix_text_content(text_content: str, text_type: str, company_nam
     return text_content
 
 
+from modules import report_context as rctx
+from modules import cost_taxonomy
+from modules import report_extras as rextras
+from modules import report_validation as rval
+
+_TEXT_CTX = None   # canonical context from the analysis step; set in main() so regenerated sections use it
+
+
 def regenerate_text_if_needed(text_content: str, text_type: str, company_name: str, company_ticker: str, 
                              analysis_df: pd.DataFrame, peer_ebitda_df: pd.DataFrame, 
                              peer_ev_ebitda_df: pd.DataFrame, api_key: str = None) -> str:
@@ -264,6 +273,12 @@ def regenerate_text_if_needed(text_content: str, text_type: str, company_name: s
                 "peer_ebitda": peer_ebitda_df,
                 "peer_ev_ebitda": peer_ev_ebitda_df,
             }
+            if _TEXT_CTX is not None:
+                # Same canonical unit (INR crore) and facts block as the original sections
+                data_for_generation = rctx.build_text_data(_TEXT_CTX, analysis_df, None, peer_ev_ebitda_df)
+                actual = _TEXT_CTX["peers"].get("ebitda_actual_cr")
+                data_for_generation["peer_ebitda"] = (pd.DataFrame.from_dict(actual, orient="index").sort_index()
+                                                      if actual else None)
             
             print(f"🤖 Regenerating '{text_type}' using AI...")
             # Call the single, unified text generation function
@@ -425,6 +440,7 @@ def main():
     parser.add_argument("--skip-auto-fetch", action="store_true", help="Skip automatic fetching of market data from FMP API.")
     
     # Text regeneration option
+    parser.add_argument("--strict-validation", action="store_true", help="Stop before building the report if validation finds errors (default: build with a visible warning).")
     parser.add_argument("--enable-text-regeneration", action="store_true", help="Enable AI text regeneration if content quality is poor.")
     parser.add_argument("--llm-provider", type=str, default=None, choices=list(PROVIDERS),
                         help="LLM for text regeneration: openai, anthropic (Claude) or gemini. "
@@ -457,6 +473,10 @@ def main():
                 analysis_summary = json.load(f)
         except Exception as e:
             print(f"Warning: could not read {summary_path}: {e}")
+    global _TEXT_CTX
+    _TEXT_CTX = rctx.load_context(os.path.join(analysis_dir, "report_context.json"), args.company_ticker)
+    if _TEXT_CTX is None:
+        print("Note: no report_context.json found for this ticker; regenerated sections will use the raw tables")
     provider = args.data_provider
     if provider == "auto":
         provider = analysis_summary.get("data_provider") or (
@@ -668,8 +688,40 @@ def main():
     }
 
     is_bank_report = is_bank_analysis(analysis_df, analysis_summary)
+    report_data["report_date_full"] = rctx.format_report_date(_TEXT_CTX)
     if use_finedge:
         report_data["pe_label"] = "P/E (TTM)"
+        report_data["roe_label"] = "ROE (TTM)"
+        report_data["dividend_label"] = "Div. yield (12m)"
+    if _TEXT_CTX is not None:
+        report_data["current_valuation_rows"] = rctx.current_valuation_rows(_TEXT_CTX)
+        report_data["report_context"] = _TEXT_CTX
+        pack = rextras.build_pack(_TEXT_CTX, analysis_dir, output_dir, args.company_ticker)
+        report_data["interpretation_pack"] = pack
+        if pack.get("ratio_bars"):   # the radar chart is replaced by per-ratio bars with benchmarks
+            for _f in ("financial_radar_path",):
+                report_data.pop(_f, None)
+        _val = rval.validate_report(_TEXT_CTX, {k: v for k, v in processed_texts.items() if isinstance(v, str)})
+        rval.write_validation_report(_val, os.path.join(output_dir, "validation_report.md"))
+        print(f"Validation: {len(_val['errors'])} error(s), {len(_val['warnings'])} warning(s), {len(_val['passed'])} check group(s) passed")
+        for _m in _val["errors"][:10]:
+            print(f"  ERROR: {_m}")
+        for _m in _val["warnings"][:10]:
+            print(f"  warning: {_m}")
+        report_data["validation_banner_html"] = rval.banner_html(_val)
+        report_data["validation_banner"] = rval.banner_text(_val)
+        if _val["errors"] and args.strict_validation:
+            print("Strict validation is on and errors were found: stopping before the report is built.")
+            sys.exit(2)
+        # cover price must agree with the price every multiple was computed on
+        ctx_price, cover_price = _TEXT_CTX["market"].get("price"), auto_fetched_metrics.get("share_price")
+        if ctx_price and cover_price and abs(cover_price / ctx_price - 1) > 0.02:
+            print(f"⚠️  Cover price Rs {cover_price} differs from the context price Rs {ctx_price} by more than 2%; "
+                  "re-run the analysis step so multiples and cover use the same price")
+        log_src = os.path.join(analysis_dir, "reconciliation_log.md")
+        if os.path.exists(log_src):
+            import shutil
+            shutil.copy(log_src, os.path.join(output_dir, "reconciliation_log.md"))
     if data_warnings:
         report_data["data_source_text"] = f"{args.data_source_text}. Data notes: " + " ".join(data_warnings)
     if is_bank_report:
@@ -826,7 +878,8 @@ def main():
                     except:
                         pass
             
-            if financial_ratios:
+            _radar_replaced = _TEXT_CTX is not None and (_TEXT_CTX.get('extras') or {}).get('ratio_bars')  # ratio bars replace the radar
+            if financial_ratios and not _radar_replaced:
                 radar_path = os.path.join(output_dir, f"{args.company_ticker}_financial_radar.png")
                 radar_result = generate_financial_radar_chart(
                     financial_ratios, radar_path, args.company_ticker
@@ -1066,12 +1119,17 @@ def main():
 
     summary_metrics = (BANK_SUMMARY_METRICS if is_bank_report else
                        ["Revenue", "Revenue Growth", "EBITDA", "EBITDA Margin", "Contribution Profit", "Contribution Margin", "SG&A", "SG&A Margin"])
-    financial_summary_df = analysis_actual_only[analysis_actual_only["metrics"].isin(summary_metrics)].set_index("metrics")
+    _tax = (_TEXT_CTX or {}).get("taxonomy") or cost_taxonomy.taxonomy_from_table(analysis_df)    # industrial vs generic cost labels
+    if cost_taxonomy.is_industrial(_tax) and not is_bank_report:
+        summary_metrics = summary_metrics + ["Employee Cost", "Other Operating Expenses"]
+    financial_summary_df = cost_taxonomy.rename_rows(
+        analysis_actual_only[analysis_actual_only["metrics"].isin(summary_metrics)].set_index("metrics"), _tax)
     report_data["financial_summary_table_html"] = format_dataframe_to_html_table(financial_summary_df, table_id="financial-summary")
 
     valuation_metrics = (BANK_QUALITY_METRICS if is_bank_report else
                          ["EBITDA Margin", "Contribution Margin", "SG&A Margin", "Revenue Growth"])
-    valuation_metrics_df = analysis_actual_only[analysis_actual_only["metrics"].isin(valuation_metrics)].set_index("metrics")
+    valuation_metrics_df = cost_taxonomy.rename_rows(
+        analysis_actual_only[analysis_actual_only["metrics"].isin(valuation_metrics)].set_index("metrics"), _tax)
     report_data["valuation_metrics_table_html"] = format_dataframe_to_html_table(valuation_metrics_df, table_id="valuation-metrics")
 
     # Load and format Credit & Cashflow metrics from the provided CSV
@@ -1108,7 +1166,11 @@ def main():
         print(f"Peer EBITDA index: {peer_ebitda_df.index.tolist()}")
 
         if not peer_ebitda_df.empty:
-            report_data["peer_ebitda_table_html"] = format_dataframe_to_html_table(peer_ebitda_df.T, table_id="peer-ebitda-summary")
+            _disp = peer_ebitda_df.copy()
+            if _TEXT_CTX is not None and _TEXT_CTX["meta"].get("latest_actual_year"):
+                _la = int(_TEXT_CTX["meta"]["latest_actual_year"][:4])
+                _disp.index = [f"{int(y)}P (trend projection, not consensus)" if str(y).isdigit() and int(y) > _la else y for y in _disp.index]
+            report_data["peer_ebitda_table_html"] = format_dataframe_to_html_table(_disp.T, table_id="peer-ebitda-summary")
             print("✅ Successfully formatted peer EBITDA table")
         else:
             report_data["peer_ebitda_table_html"] = "<p>Peer EBITDA data not available.</p>"
@@ -1143,6 +1205,17 @@ def main():
         report_data["peer_ev_ebitda_table_html"] = "<p>Peer EV/EBITDA data not available.</p>"
         print("❌ No peer EV/EBITDA data provided")
 
+    # Peer multiples on both price bases (fiscal-year average and current), medians computed in code
+    if _TEXT_CTX is not None and not is_bank_report:
+        _pm = rctx.peer_multiples_table(_TEXT_CTX)
+        if _pm:
+            report_data["peer_multiples_table"] = _pm
+            report_data["peer_ev_ebitda_table_html"] = (
+                report_data.get("peer_ev_ebitda_table_html", "") +
+                '<p class="caption" style="font-size:0.7rem; color:#64748b;">The table above is on each company\'s fiscal-year average price. '
+                'The table below adds the current-price snapshot; peer medians exclude the subject company.</p>' +
+                format_peer_multiples_html(_pm))
+
     # --- Generate Professional HTML Report (matching PDF structure) ---
     print("Generating professional HTML report (matching PDF structure)...")
     
@@ -1171,14 +1244,19 @@ def main():
                     revenue_figures[f"{metric} ({latest_year})"] = str(val)
             
             for metric in ['EPS', 'PE Ratio']:
-                row = analysis_df[analysis_df['metrics'] == metric]
+                # the P/E row carries its price basis in its label, so match by prefix
+                row = analysis_df[(analysis_df['metrics'] == metric) | analysis_df['metrics'].astype(str).str.startswith(metric + ' (')]
                 if not row.empty:
                     val = row[latest_year].values[0]
-                    eps_figures[f"{metric} ({latest_year})"] = str(val)
+                    label = f"{metric} ({latest_year}, FY-avg price)" if metric == 'PE Ratio' else f"{metric} ({latest_year})"
+                    eps_figures[label] = str(val)
         
         report_data['revenue_key_figures'] = revenue_figures
         report_data['eps_key_figures'] = eps_figures
     
+    if report_data.get("interpretation_pack"):
+        rextras.drop_superseded_charts(report_data, report_data["interpretation_pack"], output_dir, args.company_ticker)
+
     # Generate professional HTML report
     professional_html_path = os.path.join(output_dir, f"Professional_Equity_Report_{args.company_ticker}.html")
     professional_html_content = render_professional_html_report(report_data)

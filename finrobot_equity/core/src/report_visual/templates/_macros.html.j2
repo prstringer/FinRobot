@@ -1,0 +1,85 @@
+{#- Reusable components. The chip macro is used by BOTH screen and print output, so the markup is identical. -#}
+
+{% macro icon(kind) -%}
+  {%- if kind == 'check' -%}<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 8.5l3.2 3.2L13 4.8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  {%- elif kind == 'dash' -%}<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3.5 8h9" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+  {%- else -%}<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 3.2v5.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="8" cy="12.2" r="1.3" fill="currentColor"/></svg>
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro badge(verdict) -%}
+  <span class="badge badge--{{ verdict }}">{{ icon(verdict_icon[verdict]) }}<span>{{ verdict_word[verdict] }}</span></span>
+{%- endmacro %}
+
+{% macro chip(v, uid) -%}
+{%- set s = v.scale or {} -%}
+{%- set pos = (s | scale_pos(v.value)) -%}
+{%- set peer = (s | scale_pos(s.peer_median)) if s.peer_median is not none else none -%}
+<article class="chip chip--{{ v.verdict }}" tabindex="0" role="group" aria-label="{{ v.label }}: {{ verdict_word[v.verdict] }}" aria-describedby="pop-{{ uid }}" data-metric="{{ v.metric or v.id }}">
+  <header class="chip__head">
+    {{ badge(v.verdict) }}
+    <span class="chip__label">{{ v.label }}</span>
+    <span class="chip__value">{{ v.value_text }}</span>
+    {%- if v.period %}<span class="chip__period">{{ v.period }}</span>{% endif %}
+  </header>
+  {%- if pos is not none %}
+  <div class="scale" role="img" aria-label="{{ s | scale_aria(v) }}">
+    <span class="scale__track"></span>
+    {%- if peer is not none %}<span class="scale__peer" style="left:{{ '%.1f' | format(peer) }}%"></span>{% endif %}
+    <span class="scale__dot" style="left:{{ '%.1f' | format(pos) }}%"></span>
+    <span class="scale__min">{{ s.min | scale_text(v.unit) }}</span><span class="scale__max">{{ s.max | scale_text(v.unit) }}</span>
+  </div>
+  {%- endif %}
+  <p class="chip__sowhat">{{ gl(v.so_what) }}</p>
+  <p class="chip__meta">
+    <span class="tag{% if v.yardstick == 'general_norm' %} tag--general{% endif %}">{{ v.yardstick_text }}</span>
+    {%- if s.higher_is_better is not none %}<span>{{ 'Higher is better' if s.higher_is_better else 'Lower is better' }}</span>{% endif %}
+    {%- if s.peer_median is not none %}<span>Peer median {{ s.peer_median | scale_text(v.unit) }}</span>{% endif %}
+  </p>
+  <div class="popover" id="pop-{{ uid }}" role="tooltip">
+    <b>How this was calculated</b> {{ v.calc or 'No calculation note supplied.' }} <b>Source</b> {{ source_text[v.source] if v.source in source_text else v.source }}
+  </div>
+</article>
+{%- endmacro %}
+
+{% macro chart(panel, c) -%}
+{%- set cid = 'c-' ~ panel.id ~ '-' ~ c.id -%}
+<section class="chart chart--{{ c.role }}" aria-labelledby="t-{{ cid }}">
+  <div class="chart__head">
+    <div>
+      <h3 class="chart__title" id="t-{{ cid }}">{{ c.title }}</h3>
+      {%- if c.subtitle %}<p class="chart__sub">{{ gl(c.subtitle) }}</p>{% endif %}
+    </div>
+    {%- if c.variants and not print_mode %}
+    <div class="seg" role="group" aria-label="{{ c.title }}: choose view" data-toggle-for="{{ cid }}">
+      {%- for v in c.variants %}<button type="button" data-variant="{{ v.key }}" aria-pressed="{{ 'true' if v.key == (c.default_variant or c.variants[0].key) else 'false' }}">{{ v.label }}</button>{% endfor %}
+    </div>
+    {%- endif %}
+  </div>
+  <div class="chart__canvas" id="{{ cid }}" role="img" aria-label="{{ c.alt }}" style="--h:{{ c.height or 260 }}px"></div>
+  {%- if c.static_note %}<p class="static-note">{{ c.static_note }}</p>{% endif %}
+  {%- set dt = c.datatable %}
+  {%- if dt and dt.rows %}
+  {%- set n = dt.rows | length %}
+  {%- set printable = n <= max_print_rows %}
+  <details class="values"{% if print_mode and printable %} open{% endif %} data-rows="{{ n }}">
+    <summary>Values behind this chart ({{ n }} rows)</summary>
+    <div class="tablewrap" tabindex="0" role="region" aria-label="Values for {{ c.title }}">
+      {%- if print_mode and n >= 4 and (dt.columns | length) <= 8 %}
+      <table class="transposed">
+        <thead><tr><th scope="col">{{ dt.columns[0] }}</th>{% for row in dt.rows %}<th scope="col">{{ row[0] }}</th>{% endfor %}</tr></thead>
+        <tbody>{% for ci in range(1, dt.columns | length) %}<tr><th scope="row">{{ dt.columns[ci] }}</th>{% for row in dt.rows %}<td>{{ row[ci] }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+      </table>
+      {%- else %}
+      <table>
+        <caption>{{ c.title }}</caption>
+        <thead><tr>{% for col in dt.columns %}<th scope="col">{{ col }}</th>{% endfor %}</tr></thead>
+        <tbody>{% for row in dt.rows %}<tr>{% for cell in row %}{% if loop.first %}<th scope="row">{{ cell }}</th>{% else %}<td>{{ cell }}</td>{% endif %}{% endfor %}</tr>{% endfor %}</tbody>
+      </table>
+      {%- endif %}
+    </div>
+  </details>
+  {%- if print_mode and not printable %}<p class="static-note">{{ n }} data rows are not printed; they are in the on-screen report.</p>{% endif %}
+  {%- endif %}
+</section>
+{%- endmacro %}

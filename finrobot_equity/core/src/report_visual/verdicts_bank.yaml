@@ -1,0 +1,145 @@
+# Verdict configuration for the BANK variant (merged into verdicts.yaml `metrics` by verdict_engine.load_config).
+# Same format as verdicts.yaml. EBITDA-based measures are replaced by bank measures. `pe` and `fair_value` are reused from verdicts.yaml.
+# Facts available to so_what templates are computed in report_visual/bank/providers.py (nim_move, ci_move, ...).
+metrics:
+  nim:
+    label: Net interest margin
+    unit: "%"
+    higher_is_better: true
+    yardsticks: [own_history, peers]
+    source: report_data
+    so_what:
+      good: "Each rupee lent earns {nim_move:.2f} points more than at the start of the window, which lifts profit without new risk."
+      neutral: "Lending margins are in their usual range, so profit growth has to come from volume."
+      concern: "Each rupee lent earns {nim_move:.2f} points less than at the start of the window, so profit growth has to come from volume."
+    calc: "Net interest income / average earning assets, latest full year, against its own five-year range (peer median shown for context)."
+  cost_to_income:
+    label: Cost to income
+    unit: "%"
+    higher_is_better: false
+    yardsticks: [own_history, peers]
+    source: report_data
+    so_what:
+      good: "The bank spends less to earn each rupee of income than it usually does, which protects profit."
+      neutral: "Cost efficiency is in its usual range."
+      concern: "Costs take more of each rupee of income than usual, which leaves less for profit."
+    calc: "Operating expenses / total income (net interest income + other income), latest full year."
+  credit_cost:
+    label: Credit cost
+    unit: "%"
+    higher_is_better: false
+    yardsticks: [own_history, general_norm]
+    general_norm: {good: 0.5, concern: 1.0}
+    source: report_data
+    so_what:
+      good: "Few loans are going bad enough to need provisions, so credit losses are not eating the profit."
+      neutral: "Provisions for bad loans are in their usual range."
+      concern: "Provisions for bad loans are high, so credit losses are taking a large bite of profit."
+    calc: "Provisions / average advances, latest full year."
+  advances_growth:
+    label: Loan growth
+    unit: "%"
+    higher_is_better: true
+    yardsticks: [own_history]
+    merger_cap_pct: 40
+    source: report_data
+    so_what:
+      good: "Lending is growing faster than the bank's usual pace."
+      neutral: "Lending is growing at about its usual pace."
+      concern: "Lending is growing slower than the bank's usual pace, so income growth depends on margins."
+    calc: "Advances growth, latest full year, against its own range. Years with growth above 40% are treated as merger-affected and left out of the range."
+  profit_growth:
+    label: Profit growth
+    unit: "%"
+    higher_is_better: true
+    yardsticks: [own_history]
+    source: report_data
+    so_what:
+      good: "Profit is growing faster than the bank's usual pace."
+      neutral: "Profit growth is within its normal range."
+      concern: "Profit is growing slower than the bank's usual pace, so the market has to be paying for less growth."
+    calc: "Net profit growth, latest full year, against its own five-year range."
+  credit_deposit_ratio:
+    label: Credit-deposit ratio
+    unit: "%"
+    higher_is_better: false
+    yardsticks: [own_history, general_norm]
+    general_norm: {good: 85.0, concern: 100.0}
+    source: report_data
+    so_what:
+      good: "The bank lends well within the deposits it holds, so funding is comfortable."
+      neutral: "Lending uses most of the deposits, which leaves a moderate funding cushion."
+      concern: "Lending uses almost all deposits, so growth needs more costly funding."
+    calc: "Advances / deposits, latest full year."
+  gnpa:
+    label: Gross NPA
+    unit: "%"
+    higher_is_better: false
+    yardsticks: [peers, own_history, general_norm]
+    general_norm: {good: 1.5, concern: 3.0}
+    source: report_data
+    so_what:
+      good: "A small share of loans has stopped paying, which keeps future credit costs low."
+      neutral: "The share of loans that has stopped paying is typical."
+      concern: "A large share of loans has stopped paying, which points to higher future credit costs."
+    calc: "Gross non-performing loans / gross advances, latest full year (standalone), against peers where available, else its own range."
+  nnpa:
+    label: Net NPA
+    unit: "%"
+    higher_is_better: false
+    yardsticks: [peers, own_history, general_norm]
+    general_norm: {good: 0.5, concern: 1.0}
+    source: report_data
+    so_what:
+      good: "After provisions, very little bad-loan risk is left on the books."
+      neutral: "After provisions, a typical amount of bad-loan risk is left."
+      concern: "After provisions, a large amount of bad-loan risk is still on the books."
+    calc: "Net non-performing loans / net advances, latest full year (standalone)."
+  cet1:
+    label: CET1 capital ratio
+    unit: "%"
+    higher_is_better: true
+    yardsticks: [peers, own_history, general_norm]
+    general_norm: {good: 12.0, concern: 9.0}
+    source: report_data
+    so_what:
+      good: "The capital cushion is thick, so the bank can absorb losses and keep lending."
+      neutral: "The capital cushion is adequate but not generous."
+      concern: "The capital cushion is thin, which limits lending and the room to absorb losses."
+    calc: "Common equity tier 1 capital / risk-weighted assets, latest full year (standalone)."
+  bank_roa:
+    label: Return on assets
+    unit: "%"
+    higher_is_better: true
+    yardsticks: [peers, own_history, general_norm]
+    general_norm: {good: 1.5, concern: 1.0}
+    source: report_data
+    so_what:
+      good: "Each rupee of assets earns well, which signals strong underwriting and low costs."
+      neutral: "Assets earn a typical return."
+      concern: "Assets earn little, which signals weak margins, high costs or credit losses."
+    calc: "Net profit / average total assets, latest full year."
+  bank_roe:
+    label: Return on equity
+    unit: "%"
+    higher_is_better: true
+    yardsticks: [peers, own_history, general_norm]
+    general_norm: {good: 15.0, concern: 10.0}
+    source: report_data
+    so_what:
+      good: "Shareholders' money earns more than at peers, which supports a higher price-to-book multiple."
+      neutral: "Shareholders' money earns a typical return."
+      concern: "Shareholders' money earns less than at peers, which limits the multiple the market will pay."
+    calc: "Net profit to owners / closing equity, latest full year, against peers where available, else its own range."
+  pb:
+    label: P/B (at today's price)
+    unit: "x"
+    higher_is_better: false
+    yardsticks: [peers, own_history]
+    peer: {tol_good: 0.10, tol_bad: 0.15}
+    source: calculated
+    so_what:
+      good: "The market pays less for each rupee of book value than it does for peers."
+      neutral: "The market pays about the same for each rupee of book value as it does for peers."
+      concern: "The market pays a premium for each rupee of book value, so the price already assumes strong returns."
+    calc: "Snapshot price / book value per share (latest balance sheet), against the peer median at today's prices."

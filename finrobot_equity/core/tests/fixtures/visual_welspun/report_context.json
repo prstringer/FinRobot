@@ -1,0 +1,1732 @@
+{
+  "meta": {
+    "ticker": "WELSPUNLIV",
+    "company_name": "Welspun Living Ltd",
+    "as_of": "2026-11-15",
+    "currency": "INR",
+    "unit": "INR crore (1 crore = 10,000,000 rupees); shares in millions; per-share in rupees",
+    "latest_actual_year": "2026A",
+    "fiscal_year_end": "31 March"
+  },
+  "market": {
+    "price": 249.0,
+    "market_cap_cr": 23524.34,
+    "shares_mn": 944.752610441767,
+    "shares_basis": "market cap / price (FinEdge quote)",
+    "price_date": "2026-11-13",
+    "week52_low": 107.4,
+    "week52_high": 267.4,
+    "as_of": "2026-11-15"
+  },
+  "balance_latest": {
+    "date": "2026-09-30",
+    "total_debt_cr": 1904.64,
+    "cash_cr": 1906.19,
+    "net_debt_cr": -1.55,
+    "equity_cr": 5066.02,
+    "minority_interest_cr": 18.92,
+    "definition": "net debt = borrowings - (cash + other bank balances + current investments); minority interest not added to EV"
+  },
+  "current_valuation": {
+    "as_of": "2026-11-15",
+    "price": 249.0,
+    "market_cap_cr": 23524.34,
+    "net_debt_cr": -1.55,
+    "net_debt_date": "2026-09-30",
+    "ev_cr": 23522.79,
+    "ev_definition": "market cap + latest net debt",
+    "ebitda_latest_fy_cr": 793.21,
+    "ebitda_latest_fy_label": "2026A",
+    "ebitda_ttm_cr": 1068.47,
+    "ttm_period_end": "2026-09-30",
+    "ev_ebitda_latest_fy": 29.65518589024344,
+    "ev_ebitda_ttm": 22.015395846397183,
+    "eps_latest_fy": 2.13,
+    "eps_ttm": 4.57,
+    "pe_latest_fy_at_current_price": 116.90140845070422,
+    "pe_ttm_computed": 54.48577680525164,
+    "pe_ttm_api": 54.49,
+    "pe_ttm_basis": "price on 2026-11-13 / TTM EPS (FinEdge daily ratio)",
+    "pb": 4.71,
+    "ev_ebitda_forecast": {
+      "2027E": 24.075626957176382,
+      "2028E": 19.724321985770125,
+      "2029E": 16.76038093603962
+    }
+  },
+  "ttm": {
+    "period_end": "2026-09-30",
+    "quarters": [
+      "2026-09-30",
+      "2026-06-30",
+      "2026-03-31",
+      "2025-12-31"
+    ],
+    "revenue_cr": 10331.2,
+    "ebitda_cr": 1068.47,
+    "depreciation_cr": 408.47,
+    "interest_cr": 143.93,
+    "pretax_cr": 584.64,
+    "pat_cr": 433.74,
+    "eps": 4.57,
+    "shares_mn": 944.752514
+  },
+  "ratios": {
+    "period_definition": "TTM = four quarters to 2026-09-30",
+    "roe_ttm_pct": 8.559999999999999,
+    "roe_ttm_pct_recomputed": 8.561750644490152,
+    "roe_ttm_basis": "TTM net income / latest closing equity (FinEdge TTM ratio)",
+    "roe_latest_fy_pct": 4.157659150856485,
+    "roe_latest_fy_basis": "FY net income to owners / FY closing equity",
+    "pe_ttm": 54.49,
+    "pe_ttm_basis": "price on 2026-11-13 / TTM EPS (FinEdge daily ratio)",
+    "dividend_yield_pct": 0.040160642570281124,
+    "dividend_basis": "dividends with ex-date in the last 365 days / current price",
+    "net_margin_ttm_pct": 4.198350627226266,
+    "net_margin_latest_fy_pct": 2.17509955729851
+  },
+  "latest_fy": {
+    "label": "2026A",
+    "revenue_cr": 9399.11,
+    "ebitda_cr": 793.21,
+    "eps": 2.13,
+    "pat_cr": 204.44,
+    "shares_mn": 959.152514,
+    "closing_equity_cr": 4917.19
+  },
+  "fy_series": {
+    "2022A": {
+      "avg_price": 121.95,
+      "pe": 20.06,
+      "eps": 6.08,
+      "market_cap_cr": 12049.37321238,
+      "net_debt_cr": 2228.91,
+      "ev_cr": 14278.283212379998,
+      "ev_ebitda": 10.508628129695595,
+      "shares_mn": 988.058484
+    },
+    "2023A": {
+      "avg_price": 74.24,
+      "pe": 36.93,
+      "eps": 2.01,
+      "market_cap_cr": 7335.346185215999,
+      "net_debt_cr": 1534.35,
+      "ev_cr": 8869.696185215998,
+      "ev_ebitda": 11.786345158019506,
+      "shares_mn": 988.058484
+    },
+    "2024A": {
+      "avg_price": 124.29,
+      "pe": 17.73,
+      "eps": 7.01,
+      "market_cap_cr": 12078.607647636,
+      "net_debt_cr": 1356.91,
+      "ev_cr": 13435.517647636,
+      "ev_ebitda": 9.814756008529413,
+      "shares_mn": 971.808484
+    },
+    "2025A": {
+      "avg_price": 153.68,
+      "pe": 23.07,
+      "eps": 6.66,
+      "market_cap_cr": 14740.255835152002,
+      "net_debt_cr": 1603.02,
+      "ev_cr": 16343.275835152002,
+      "ev_ebitda": 12.586273265423182,
+      "shares_mn": 959.152514
+    },
+    "2026A": {
+      "avg_price": 129.11,
+      "pe": 60.61,
+      "eps": 2.13,
+      "market_cap_cr": 12383.618108254,
+      "net_debt_cr": 777.77,
+      "ev_cr": 13161.388108254001,
+      "ev_ebitda": 16.59256452673819,
+      "shares_mn": 959.152514
+    }
+  },
+  "fy_series_basis": "fiscal-year AVERAGE price x diluted weighted shares; FY-end net debt (not the current price)",
+  "model_forecast": {
+    "2027E": {
+      "revenue_cr": 9869.0655,
+      "ebitda_cr": 977.0374845,
+      "ebitda_margin_pct": 9.9,
+      "eps": 3.49,
+      "pe_at_current_price": 71.4,
+      "depreciation_cr": 413.7945,
+      "ebit_cr": 563.2429845,
+      "interest_cr": 161.48,
+      "other_income_cr": 68.8,
+      "pretax_cr": 470.5629845,
+      "tax_cr": 122.08086890461614,
+      "pat_owners_cr": 334.6502123740912,
+      "shares_mn": 959.152514
+    },
+    "2028E": {
+      "revenue_cr": 10461.20943,
+      "ebitda_cr": 1192.57787502,
+      "ebitda_margin_pct": 11.4,
+      "eps": 4.9,
+      "pe_at_current_price": 50.8,
+      "depreciation_cr": 438.62217,
+      "ebit_cr": 753.9557050200001,
+      "interest_cr": 161.48,
+      "other_income_cr": 68.8,
+      "pretax_cr": 661.27570502,
+      "tax_cr": 171.55856986952242,
+      "pat_owners_cr": 470.2793513559286,
+      "shares_mn": 959.152514
+    },
+    "2029E": {
+      "revenue_cr": 10879.6578072,
+      "ebitda_cr": 1403.4758571280001,
+      "ebitda_margin_pct": 12.9,
+      "eps": 6.34,
+      "pe_at_current_price": 39.3,
+      "depreciation_cr": 456.1670568,
+      "ebit_cr": 947.3088003280001,
+      "interest_cr": 161.48,
+      "other_income_cr": 68.8,
+      "pretax_cr": 854.6288003280001,
+      "tax_cr": 221.72127849327669,
+      "pat_owners_cr": 607.7862453092717,
+      "shares_mn": 959.152514
+    }
+  },
+  "model_forecast_assumptions": {
+    "base_year": "2026A",
+    "da_pct_of_revenue": 0.041928437905291036,
+    "interest_expense_flat": 1614800000.0,
+    "other_income_flat": 688000000.0,
+    "tax_rate": 0.25943576721049155,
+    "owners_share_of_pat": 0.9603081403541736,
+    "diluted_shares": 959152514.0,
+    "exceptional_items": 0.0
+  },
+  "model_forecast_note": "our own driver-based projection; it is NOT analyst consensus",
+  "peers": {
+    "ev_ebitda": {
+      "year": "2026A",
+      "values": {
+        "WELSPUNLIV": 16.59256452673819,
+        "KPRMILL": 26.94844876901711,
+        "VTL": 11.360867034982762,
+        "TRIDENT": 17.78672011363584,
+        "ICIL": 15.992760338790886,
+        "GARFIBRES": 25.65859220291191
+      },
+      "subject": 16.59256452673819,
+      "median_excl_subject": 17.78672011363584,
+      "median_incl_subject": 17.189642320187016,
+      "median_peer_name": "TRIDENT",
+      "n_peers": 5,
+      "policy": "peer median EXCLUDES the subject company; median incl. subject is shown only for reference",
+      "basis": "fiscal-year AVERAGE price for every company in the table (not current prices)"
+    },
+    "trend_projection": {
+      "year": 2027,
+      "ebitda_cr": {
+        "WELSPUNLIV": 779.7935714117435,
+        "KPRMILL": 1280.1781789489507,
+        "VTL": 1113.4188294932587,
+        "TRIDENT": 769.6941255182652,
+        "ICIL": 388.6622965571773,
+        "GARFIBRES": 303.2027654101381
+      },
+      "method": "each company's EBITDA extrapolated one year at its own mean historical YoY growth",
+      "is_consensus": false,
+      "subject_gap_cr": 197.24391308825648,
+      "note": "mechanical extrapolation, NOT analyst consensus; no analyst consensus is available from FinEdge"
+    },
+    "ebitda_actual_cr": {
+      "2022": {
+        "WELSPUNLIV": 1358.72,
+        "KPRMILL": 1218.71,
+        "VTL": 2273.91,
+        "TRIDENT": 1512.31,
+        "ICIL": 434.1,
+        "GARFIBRES": 222.90597
+      },
+      "2023": {
+        "WELSPUNLIV": 752.54,
+        "KPRMILL": 1274.39,
+        "VTL": 1323.99,
+        "TRIDENT": 946.71,
+        "ICIL": 454.27,
+        "GARFIBRES": 229.53413
+      },
+      "2024": {
+        "WELSPUNLIV": 1368.91,
+        "KPRMILL": 1236.69,
+        "VTL": 973.21,
+        "TRIDENT": 940.29,
+        "ICIL": 559.0179,
+        "GARFIBRES": 271.61561
+      },
+      "2025": {
+        "WELSPUNLIV": 1298.5,
+        "KPRMILL": 1246.04,
+        "VTL": 1262.75,
+        "TRIDENT": 910.78,
+        "ICIL": 533.8032,
+        "GARFIBRES": 318.7659
+      },
+      "2026": {
+        "WELSPUNLIV": 793.21,
+        "KPRMILL": 1267.28,
+        "VTL": 1238.61,
+        "TRIDENT": 869.18,
+        "ICIL": 391.9704,
+        "GARFIBRES": 283.6078
+      }
+    },
+    "current": {
+      "as_of": "2026-11-15",
+      "rows": {
+        "WELSPUNLIV": {
+          "price": 249.0,
+          "market_cap_cr": 23524.34,
+          "net_debt_cr": -1.55,
+          "net_debt_date": "2026-09-30",
+          "ev_cr": 23522.79,
+          "fy_label": "2026A",
+          "ebitda_fy_cr": 793.21,
+          "ev_ebitda_fy": 29.65518589024344,
+          "ebitda_ttm_cr": 1068.47,
+          "ttm_period_end": "2026-09-30",
+          "ev_ebitda_ttm": 22.015395846397183
+        },
+        "KPRMILL": {
+          "price": 1150.3,
+          "market_cap_cr": 39318.87,
+          "net_debt_cr": -2182.13,
+          "net_debt_date": "2026-09-30",
+          "ev_cr": 37136.740000000005,
+          "fy_label": "2026A",
+          "ebitda_fy_cr": 1267.28,
+          "ev_ebitda_fy": 29.30428950192539,
+          "ebitda_ttm_cr": 1515.32,
+          "ttm_period_end": "2026-09-30",
+          "ev_ebitda_ttm": 24.50752316342423
+        },
+        "VTL": {
+          "price": 528.0,
+          "market_cap_cr": 15289.66,
+          "net_debt_cr": 92.6,
+          "net_debt_date": "2026-09-30",
+          "ev_cr": 15382.26,
+          "fy_label": "2026A",
+          "ebitda_fy_cr": 1238.61,
+          "ev_ebitda_fy": 12.418969651464142,
+          "ebitda_ttm_cr": 1613.21,
+          "ttm_period_end": "2026-09-30",
+          "ev_ebitda_ttm": 9.535187607317088
+        },
+        "TRIDENT": {
+          "price": 23.57,
+          "market_cap_cr": 12011.17,
+          "net_debt_cr": 712.58,
+          "net_debt_date": "2026-09-30",
+          "ev_cr": 12723.75,
+          "fy_label": "2026A",
+          "ebitda_fy_cr": 869.18,
+          "ev_ebitda_fy": 14.638797487286869,
+          "ebitda_ttm_cr": 976.71,
+          "ttm_period_end": "2026-09-30",
+          "ev_ebitda_ttm": 13.02715237890469
+        },
+        "ICIL": {
+          "price": 547.6,
+          "market_cap_cr": 10845.46,
+          "net_debt_cr": 518.4079,
+          "net_debt_date": "2026-09-30",
+          "ev_cr": 11363.8679,
+          "fy_label": "2026A",
+          "ebitda_fy_cr": 391.9704,
+          "ev_ebitda_fy": 28.991648093835657,
+          "ebitda_ttm_cr": 553.6804,
+          "ttm_period_end": "2026-09-30",
+          "ev_ebitda_ttm": 20.524237267564466
+        },
+        "GARFIBRES": {
+          "price": 719.1,
+          "market_cap_cr": 7021.89,
+          "net_debt_cr": -297.5708,
+          "net_debt_date": "2026-09-30",
+          "ev_cr": 6724.3192,
+          "fy_label": "2026A",
+          "ebitda_fy_cr": 283.6078,
+          "ev_ebitda_fy": 23.709923351896528,
+          "ebitda_ttm_cr": 337.1561,
+          "ttm_period_end": "2026-09-30",
+          "ev_ebitda_ttm": 19.944231173631444
+        }
+      },
+      "median_excl_subject_fy": 23.709923351896528,
+      "median_incl_subject_fy": 26.350785722866092,
+      "median_excl_subject_ttm": 19.944231173631444,
+      "median_incl_subject_ttm": 20.234234220597955,
+      "basis": "current price (latest quote) x shares + latest net debt, over latest-FY EBITDA and over TTM EBITDA",
+      "policy": "medians EXCLUDE the subject company"
+    }
+  },
+  "fair_value": {
+    "ebitda_year": "2027E",
+    "ebitda_cr": 977.0374845,
+    "current_ev_cr": 23522.79,
+    "grid": [
+      {
+        "multiple": 12,
+        "ev_cr": 11724.449814,
+        "vs_current_ev_pct": -50.157061241459886,
+        "implied_price": 124.1171464825793,
+        "vs_current_price_pct": -50.15375643269908
+      },
+      {
+        "multiple": 14,
+        "ev_cr": 13678.524783,
+        "vs_current_ev_pct": -41.84990478170319,
+        "implied_price": 144.80060316110888,
+        "vs_current_price_pct": -41.84714732485587
+      },
+      {
+        "multiple": 16,
+        "ev_cr": 15632.599752,
+        "vs_current_ev_pct": -33.542748321946505,
+        "implied_price": 165.48405983963843,
+        "vs_current_price_pct": -33.540538217012674
+      },
+      {
+        "multiple": 18,
+        "ev_cr": 17586.674721,
+        "vs_current_ev_pct": -25.23559186218982,
+        "implied_price": 186.167516518168,
+        "vs_current_price_pct": -25.233929109169484
+      }
+    ],
+    "note": "implied EV = multiple x model FY EBITDA; compared with CURRENT EV, not the FY-end EV"
+  },
+  "derived": {
+    "unavailable": [],
+    "shares_outstanding_mn": 944.752610441767,
+    "fcf_cr": {
+      "2022A": -527.43,
+      "2023A": 480.89,
+      "2024A": -9.0,
+      "2025A": -24.72,
+      "2026A": 376.38
+    },
+    "capex_cr": {
+      "2022A": -1114.11,
+      "2023A": -275.08,
+      "2024A": -541.84,
+      "2025A": -712.7,
+      "2026A": -798.6
+    },
+    "cfo_cr": {
+      "2022A": 586.68,
+      "2023A": 755.97,
+      "2024A": 532.84,
+      "2025A": 687.98,
+      "2026A": 1174.98
+    },
+    "interest_coverage_ebit_x": {
+      "2022A": 7.148571428571429,
+      "2023A": 2.389898367724053,
+      "2024A": 6.351737174890816,
+      "2025A": 4.253966064284729,
+      "2026A": 2.471637354471142
+    },
+    "working_capital_days": {
+      "2022A": {
+        "inventory_days": 141.71822334596894,
+        "receivable_days": 39.171135169849656,
+        "payable_days": 66.67499661370967,
+        "cash_conversion_days": 114.21436190210893
+      },
+      "2023A": {
+        "inventory_days": 159.27850501658162,
+        "receivable_days": 43.31335497963863,
+        "payable_days": 70.32308159228006,
+        "cash_conversion_days": 132.2687784039402
+      },
+      "2024A": {
+        "inventory_days": 147.98847526752095,
+        "receivable_days": 47.3142002884524,
+        "payable_days": 66.93800050099024,
+        "cash_conversion_days": 128.36467505498308
+      },
+      "2025A": {
+        "inventory_days": 140.41484158335595,
+        "receivable_days": 56.93639883585631,
+        "payable_days": 72.21553367609073,
+        "cash_conversion_days": 125.13570674312155
+      },
+      "2026A": {
+        "inventory_days": 156.79303288826617,
+        "receivable_days": 50.95882482490364,
+        "payable_days": 99.44091530662931,
+        "cash_conversion_days": 108.3109424065405
+      }
+    },
+    "revenue_cagr_pct": 0.2344752237183112,
+    "revenue_growth_pct": [
+      -13.077526964056164,
+      19.588917882418055,
+      8.945433732400488,
+      -10.867427399860974
+    ]
+  },
+  "technicals": {
+    "sma20": 232.76,
+    "sma50": 224.38,
+    "sma200": 163.43,
+    "rsi14": 67.8,
+    "high_52w": 267.4,
+    "low_52w": 107.1,
+    "as_of_date": "2026-11-13",
+    "macd": 9.36,
+    "macd_signal": 8.11,
+    "macd_histogram": 1.24,
+    "avg_volume_20d": 643743,
+    "latest_volume": 151589,
+    "price": 249.0,
+    "ma_signal": "Bullish",
+    "rsi_signal": "Bullish",
+    "macd_signal_label": "Bullish",
+    "volume_signal": "Low Activity",
+    "overall_signal": "Bullish",
+    "price_vs_sma20_pct": 6.977143839147626,
+    "price_vs_sma50_pct": 10.972457438274352,
+    "price_vs_sma200_pct": 52.35880805237716,
+    "week52_low": 107.4,
+    "week52_high": 267.4,
+    "pct_below_52w_high": -6.881077038145089
+  },
+  "insights": {
+    "verdicts": {
+      "contribution_margin": {
+        "key": "contribution_margin",
+        "label": "Contribution margin",
+        "unit": "%",
+        "direction": "higher_is_better",
+        "verdict": "good",
+        "yardstick": "own_history",
+        "scale": {
+          "value": 46.23778208787853,
+          "range_min": 44.22826967935792,
+          "range_max": 47.20783863195871,
+          "peer_median": null
+        },
+        "so_what": "Pricing and product mix are holding up, so any profit squeeze comes from costs further down.",
+        "source_note": "report data (own five-year range)"
+      },
+      "ebitda_margin": {
+        "key": "ebitda_margin",
+        "label": "EBITDA margin",
+        "unit": "%",
+        "direction": "higher_is_better",
+        "verdict": "concern",
+        "yardstick": "peers",
+        "scale": {
+          "value": 8.439203286268594,
+          "range_min": 8.439203286268594,
+          "range_max": 14.591895801629603,
+          "peer_median": 12.970803083098916
+        },
+        "so_what": "Operations keep little of each sale as profit, so earnings are fragile.",
+        "source_note": "report data (peer median, latest year)"
+      },
+      "sga_pct": {
+        "key": "sga_pct",
+        "label": "SG&A as % of revenue",
+        "unit": "%",
+        "direction": "lower_is_better",
+        "verdict": "neutral",
+        "yardstick": "peers",
+        "scale": {
+          "value": 37.79857880160994,
+          "range_min": 30.700630512690264,
+          "range_max": 37.79857880160994,
+          "peer_median": 35.687989195723056
+        },
+        "so_what": "Overheads take a typical share of sales.",
+        "source_note": "report data (peer median, latest year)"
+      },
+      "revenue_growth": {
+        "key": "revenue_growth",
+        "label": "Revenue growth",
+        "unit": "%",
+        "direction": "higher_is_better",
+        "verdict": "concern",
+        "yardstick": "own_history",
+        "scale": {
+          "value": -10.9,
+          "range_min": -13.1,
+          "range_max": 19.6,
+          "peer_median": null
+        },
+        "so_what": "Sales are shrinking or growing well below the company's usual pace, which exposes fixed costs.",
+        "source_note": "report data (own five-year range)"
+      },
+      "net_margin": {
+        "key": "net_margin",
+        "label": "Net margin",
+        "unit": "%",
+        "direction": "higher_is_better",
+        "verdict": "concern",
+        "yardstick": "peers",
+        "scale": {
+          "value": 2.1750995572985103,
+          "range_min": 2.1750995572985103,
+          "range_max": 7.036709493720582,
+          "peer_median": 7.551385391704368
+        },
+        "so_what": "Very little of each sale reaches owners, so small shocks can erase profit.",
+        "source_note": "report data (peer median, latest year)"
+      },
+      "roe": {
+        "key": "roe",
+        "label": "Return on equity",
+        "unit": "%",
+        "direction": "higher_is_better",
+        "verdict": "concern",
+        "yardstick": "peers",
+        "scale": {
+          "value": 4.16,
+          "range_min": 4.16,
+          "range_max": 15.14,
+          "peer_median": 7.9
+        },
+        "so_what": "Owners' money earns a weak return, which does not justify a premium price.",
+        "source_note": "report data (peer median, latest year)"
+      },
+      "roa": {
+        "key": "roa",
+        "label": "Return on assets",
+        "unit": "%",
+        "direction": "higher_is_better",
+        "verdict": "concern",
+        "yardstick": "peers",
+        "scale": {
+          "value": 1.96,
+          "range_min": 1.96,
+          "range_max": 7.13,
+          "peer_median": 5.37
+        },
+        "so_what": "Assets earn little, so the business is capital heavy for its profit.",
+        "source_note": "report data (peer median, latest year)"
+      },
+      "debt_equity": {
+        "key": "debt_equity",
+        "label": "Debt to equity",
+        "unit": "x",
+        "direction": "lower_is_better",
+        "verdict": "concern",
+        "yardstick": "peers",
+        "scale": {
+          "value": 0.37,
+          "range_min": 0.37,
+          "range_max": 0.8,
+          "peer_median": 0.18
+        },
+        "so_what": "Borrowing relative to owners' funds is above the benchmark, which adds risk if earnings fall.",
+        "source_note": "report data (peer median, latest year)"
+      },
+      "current_ratio": {
+        "key": "current_ratio",
+        "label": "Current ratio",
+        "unit": "x",
+        "direction": "higher_is_better",
+        "verdict": "concern",
+        "yardstick": "peers",
+        "scale": {
+          "value": 1.58,
+          "range_min": 1.37,
+          "range_max": 1.72,
+          "peer_median": 2.74
+        },
+        "so_what": "Short-term assets barely cover short-term bills, so liquidity is tight.",
+        "source_note": "report data (peer median, latest year)"
+      },
+      "interest_coverage": {
+        "key": "interest_coverage",
+        "label": "Interest coverage (EBIT / interest)",
+        "unit": "x",
+        "direction": "higher_is_better",
+        "verdict": "concern",
+        "yardstick": "peers",
+        "scale": {
+          "value": 2.78,
+          "range_min": 2.78,
+          "range_max": 7.65,
+          "peer_median": 10.79
+        },
+        "so_what": "Profit covers interest only thinly, so a downturn puts debt service at risk.",
+        "source_note": "report data (peer median, latest year)"
+      },
+      "ev_ebitda": {
+        "key": "ev_ebitda",
+        "label": "EV/EBITDA (TTM, current price)",
+        "unit": "x",
+        "direction": "lower_is_better",
+        "verdict": "neutral",
+        "yardstick": "peers",
+        "scale": {
+          "value": 22.015395846397183,
+          "range_min": 9.814756008529413,
+          "range_max": 16.59256452673819,
+          "peer_median": 19.944231173631444
+        },
+        "so_what": "The market pays about the same for operating profit as it does for peers.",
+        "source_note": "report data (peer median at current prices)"
+      },
+      "pe": {
+        "key": "pe",
+        "label": "P/E (TTM, current price)",
+        "unit": "x",
+        "direction": "lower_is_better",
+        "verdict": "concern",
+        "yardstick": "own_history",
+        "scale": {
+          "value": 54.49,
+          "range_min": 17.73,
+          "range_max": 60.61,
+          "peer_median": null
+        },
+        "so_what": "The price is high against earnings, so it relies on profits recovering fast.",
+        "source_note": "report data (own five-year range)"
+      },
+      "gross_margin": {
+        "key": "gross_margin",
+        "label": "Gross margin",
+        "unit": "%",
+        "direction": "higher_is_better",
+        "verdict": "neutral",
+        "yardstick": "peers",
+        "scale": {
+          "value": 46.63,
+          "range_min": 45.050000000000004,
+          "range_max": 47.99,
+          "peer_median": 49.220000000000006
+        },
+        "so_what": "Pricing power is neither improving nor eroding, so profit depends on cost control.",
+        "source_note": "report data (peer median, latest year)"
+      }
+    },
+    "margin_bridge": {
+      "from": "2022A",
+      "to": "2026A",
+      "ebitda_margin_from": 14.591895801629603,
+      "ebitda_margin_to": 8.439203286268594,
+      "d_ebitda_margin_pts": -6.152692515361009,
+      "d_contribution_margin_pts": 0.9452557735586637,
+      "d_sga_pct_pts": 7.097948288919678,
+      "residual_pts": 5.329070518200751e-15,
+      "text": "EBITDA margin moved -6.2 points from 2022A to 2026A (14.6% to 8.4%): contribution margin +0.9 points, SG&A as % of revenue +7.1 points."
+    },
+    "operating_leverage": {
+      "from": "2025A",
+      "to": "2026A",
+      "d_revenue_cr": -1145.98,
+      "d_ebitda_cr": -505.29,
+      "ebitda_per_100_revenue": 44.092392537391575,
+      "text": "From 2025A to 2026A, revenue fell by Rs 1,146 Cr and EBITDA fell by Rs 505 Cr, so about Rs 44 of EBITDA was lost for every Rs 100 of revenue lost."
+    },
+    "volatility": {
+      "revenue_growth": {
+        "min": -13.1,
+        "max": 19.6,
+        "range_pts": 32.7
+      },
+      "contribution_margin": {
+        "min": 44.22826967935792,
+        "max": 47.20783863195871,
+        "range_pts": 2.9795689526007862
+      },
+      "sga_pct": {
+        "min": 30.700630512690264,
+        "max": 37.79857880160994,
+        "range_pts": 7.097948288919678
+      },
+      "ebitda_margin": {
+        "min": 8.439203286268594,
+        "max": 14.591895801629603,
+        "range_pts": 6.152692515361009
+      },
+      "text": "Revenue growth swung 33 points over the window; Contribution margin moved 3.0; SG&A as % of revenue moved 7.1; EBITDA margin moved 6.2 points."
+    },
+    "range_positions": {
+      "contribution_margin": {
+        "value": 46.23778208787853,
+        "min": 44.22826967935792,
+        "max": 47.20783863195871,
+        "position_pct": 67.44305772036444
+      },
+      "ebitda_margin": {
+        "value": 8.439203286268594,
+        "min": 8.439203286268594,
+        "max": 14.591895801629603,
+        "position_pct": 0.0
+      },
+      "sga_pct": {
+        "value": 37.79857880160994,
+        "min": 30.700630512690264,
+        "max": 37.79857880160994,
+        "position_pct": 100.0
+      }
+    },
+    "peer_statements": {
+      "sentences": [
+        "On 2026A EV/EBITDA at fiscal-year average prices, WELSPUNLIV is 16.6x, the 3rd lowest of 6 companies. The peer median excluding WELSPUNLIV is 17.8x, so WELSPUNLIV is 1.2x (7%) below the median. The closest peer is ICIL at 16.0x.",
+        "At current prices on 2026A EBITDA, WELSPUNLIV trades at 29.7x, the 6th lowest of 6. The peer median excluding WELSPUNLIV is 23.7x, so WELSPUNLIV is 5.9x (25%) above the median.",
+        "At current prices on TTM EBITDA, WELSPUNLIV trades at 22.0x, the 5th lowest of 6. The peer median excluding WELSPUNLIV is 19.9x, so WELSPUNLIV is 2.1x (10%) above the median.",
+        "On 2026 EBITDA, WELSPUNLIV (Rs 793 Cr) ranks 4th of 6 by size; larger: KPRMILL (Rs 1,267 Cr), VTL (Rs 1,239 Cr), TRIDENT (Rs 869 Cr)."
+      ],
+      "rank": {
+        "ev_ebitda_fy_avg": {
+          "rank_lowest_first": 3,
+          "of": 6,
+          "relation": "below",
+          "diff_x": 1.1941555868976508,
+          "diff_pct": 6.713748118081504,
+          "nearest": "ICIL"
+        },
+        "ev_ebitda_fy": {
+          "rank_lowest_first": 6,
+          "of": 6,
+          "relation": "above",
+          "diff_x": 5.945262538346913,
+          "diff_pct": 25.07499686991337
+        },
+        "ev_ebitda_ttm": {
+          "rank_lowest_first": 5,
+          "of": 6,
+          "relation": "above",
+          "diff_x": 2.0711646727657396,
+          "diff_pct": 10.384780715458493
+        },
+        "ebitda": {
+          "rank_highest_first": 4,
+          "of": 6
+        }
+      }
+    },
+    "ttm_comparison": {
+      "fy_label": "2026A",
+      "ttm_period_end": "2026-09-30",
+      "rows": [
+        {
+          "label": "Revenue",
+          "fy": 9399.11,
+          "ttm": 10331.2,
+          "change_pct": 9.916789993946228,
+          "unit": "Cr"
+        },
+        {
+          "label": "EBITDA",
+          "fy": 793.21,
+          "ttm": 1068.47,
+          "change_pct": 34.70203350941112,
+          "unit": "Cr"
+        },
+        {
+          "label": "Net income",
+          "fy": 204.44,
+          "ttm": 433.74,
+          "change_pct": 112.16004695754256,
+          "unit": "Cr"
+        },
+        {
+          "label": "EPS (Rs)",
+          "fy": 2.13,
+          "ttm": 4.57,
+          "change_pct": 114.55399061032865,
+          "unit": "Rs"
+        },
+        {
+          "label": "EBITDA margin (%)",
+          "fy": 8.439203286268594,
+          "ttm": 10.3421674152083,
+          "change_pct": 1.902964128939706,
+          "unit": "pts"
+        }
+      ],
+      "text": "Full year and TTM tell different stories: against 2026A, trailing four quarters to 2026-09-30 show EBITDA +35%, Net income +112%, EPS +115%. The 2026A figures describe the downturn; the TTM figures include the recovery."
+    },
+    "summary_panel": [
+      {
+        "q": "Is the core business healthy?",
+        "light": "red",
+        "answer": "Contribution margin is good; interest coverage (ebit / interest) is a concern; revenue growth is a concern.",
+        "evidence": [
+          "Pricing and product mix are holding up, so any profit squeeze comes from costs further down."
+        ]
+      },
+      {
+        "q": "Why did profit change?",
+        "light": "red",
+        "answer": "EBITDA margin moved -6.2 points from 2022A to 2026A (14.6% to 8.4%): contribution margin +0.9 points, SG&A as % of revenue +7.1 points. From 2025A to 2026A, revenue fell by Rs 1,146 Cr and EBITDA fell by Rs 505 Cr, so about Rs 44 of EBITDA was lost for every Rs 100 of revenue lost.",
+        "evidence": []
+      },
+      {
+        "q": "Is the price justified?",
+        "light": "amber",
+        "answer": "At Rs 249 (as of 2026-11-15) the stock trades at 22.0x TTM EV/EBITDA against a peer median of 19.9x at current prices. 16x our 2027E EBITDA implies Rs 165 per share, 34% below the price.",
+        "evidence": []
+      },
+      {
+        "q": "What should I watch?",
+        "light": "amber",
+        "answer": "SG&A as % of revenue (neutral against its own history). Whether TTM earnings hold; full-year and TTM figures disagree. Uptrend intact, but late, stretched and thinly traded, with momentum fading against price.",
+        "evidence": []
+      }
+    ],
+    "fact_cards": {
+      "revenue_change": {
+        "owner": "investment_overview",
+        "text": "2026A revenue and its change against the prior year"
+      },
+      "margin_bridge": {
+        "owner": "major_takeaways",
+        "text": "EBITDA margin moved -6.2 points from 2022A to 2026A (14.6% to 8.4%): contribution margin +0.9 points, SG&A as % of revenue +7.1 points."
+      },
+      "operating_leverage": {
+        "owner": "major_takeaways",
+        "text": "From 2025A to 2026A, revenue fell by Rs 1,146 Cr and EBITDA fell by Rs 505 Cr, so about Rs 44 of EBITDA was lost for every Rs 100 of revenue lost."
+      },
+      "valuation_multiples": {
+        "owner": "valuation_overview",
+        "text": "current EV, EV/EBITDA, P/E, fair-value grid and implied price"
+      },
+      "forecast_gap": {
+        "owner": "valuation_overview",
+        "text": "model forecast versus the peer-dataset trend projection, and the size of the gap"
+      },
+      "sga_and_margin_levels": {
+        "owner": "major_takeaways",
+        "text": "SG&A as % of revenue, contribution margin and EBITDA margin levels and their change"
+      },
+      "cash_conversion": {
+        "owner": "investment_overview",
+        "text": "operating cash flow, free cash flow, cash conversion and working-capital release"
+      },
+      "profitability_vs_peers": {
+        "owner": "competitor_analysis",
+        "text": "margins, returns, coverage and leverage against peer medians"
+      },
+      "peer_comparison": {
+        "owner": "competitor_analysis",
+        "text": "peer ranks, medians and above/below statements"
+      },
+      "ttm_vs_fy": {
+        "owner": "investment_overview",
+        "text": "Full year and TTM tell different stories: against 2026A, trailing four quarters to 2026-09-30 show EBITDA +35%, Net income +112%, EPS +115%. The 2026A figures describe the downturn; the TTM figures include the recovery."
+      },
+      "news_events": {
+        "owner": "news_summary",
+        "text": "recent news, results announcements and price reaction"
+      },
+      "risks_list": {
+        "owner": "risks",
+        "text": "specific downside risks"
+      }
+    }
+  },
+  "extras": {
+    "fact_blocks": [
+      "TECHNICAL READINGS (computed):\n  Price: 249.0 (close on 2026-11-13)\n  52-week high / low: 267.4 / 107.1 (52-week range uses the last 250 sessions)\n  Position in 52-week range: 88.5% (-6.9% from the high)\n  20-day average: 232.77 (price +7.0%)\n  50-day average: 224.38 (price +11.0%)\n  200-day average: 163.43 (price +52.4%)\n  Last 50/200 crossover: Golden cross on 2026-06-01 (113 sessions ago)\n  RSI (14): 58.9 (neutral; 90-day peak 82.1; 29 days above 70)\n  MACD / signal / histogram: 9.36 / 8.11 / 1.24 (90-day MACD peak 11.77 on 2026-10-06)\n  Volume latest / 20-day average: 151,589 / 643,743 (latest is 0.24x the average)\n  Volume: trend vs prior base: 244,145 vs 1,340,561 (0.18x; median daily volume over 69 sessions, since the last close above the 50-day average (2026-08-04); base = median over the 69 sessions before it)\n  Divergence: yes (Bearish divergence: price made a higher high (239.05 on 2026-10-01 to 264.5 on 2026-11-04) while MACD and RSI made a lower high (MACD 11.77 to 9.07; RSI 82.11 to 75.67).)\n  Four independent tests: Trend Up (price 249.0 vs 50-day 224.38 and 200-day 163.43; last golden cross 2026-06-01); Momentum Up, fading (bearish divergence) (RSI 58.9 (neutral); MACD 9.36 vs signal 8.11); Participation Weak (median volume in the trend is 0.18x the prior base; latest session 0.24x the 20-day average); Stretch Very high (price is 52.4% above the 200-day average and 6.9% below the 52-week high)\n  Uptrend intact, but late, stretched and thinly traded, with momentum fading against price.\n  Bearish divergence: price made a higher high (239.05 on 2026-10-01 to 264.5 on 2026-11-04) while MACD and RSI made a lower high (MACD 11.77 to 9.07; RSI 82.11 to 75.67).\n  Price versus earnings: The share price moved +82% in a year while TTM EPS (against the last full year) moved +115%, so the price is behind earnings (-32 points).",
+      "CASH FLOW DIAGNOSTICS (Cr, computed):\n  CASH FLOW (INR crore; money out in brackets):\n    2022A: CFO 587, capex (1,114), FCF (527), other investing 514, dividends (15), buybacks 0, net debt 346, change in cash (68), EBITDA 1,359, cash conversion 43%\n    2023A: CFO 756, capex (275), FCF 481, other investing 518, dividends (15), buybacks 0, net debt (851), change in cash (87), EBITDA 753, cash conversion 100%\n    2024A: CFO 533, capex (542), FCF (9), other investing 333, dividends (12), buybacks (242), net debt 170, change in cash 55, EBITDA 1,369, cash conversion 39%\n    2025A: CFO 688, capex (713), FCF (25), other investing 770, dividends (12), buybacks (346), net debt (58), change in cash 83, EBITDA 1,298, cash conversion 53%\n    2026A: CFO 1,175, capex (799), FCF 376, other investing 451, dividends (208), buybacks 0, net debt (667), change in cash (146), EBITDA 793, cash conversion 148%\n    TTM: CFO 1,910, capex (858), FCF 1,052, other investing 449, dividends (26), buybacks (254), net debt (487), change in cash 660, EBITDA 1,068, cash conversion 179%\n    Five-year cash conversion (total CFO / total EBITDA): 67%\n    Five-year uses of cash: capex (3,442), gross debt repaid (2,164), dividends (263), buybacks (587), cash retained (163)\n    Working-capital days (inventory / receivable / payable / cycle): 2022A 142/39/67/114; 2023A 159/43/70/132; 2024A 148/47/67/128; 2025A 140/57/72/125; 2026A 157/51/99/108\n    Cyclicality: Cash conversion rises when revenue falls: cash is released from working capital in downturns and absorbed in recoveries, so a strong cash year in a downturn is partly one-off.\n    Capex basis: capex = purchase of fixed and intangible assets as reported; treasury investments, grants and other investing flows are shown separately\n    Does profit turn into cash? [neutral, vs general norm] Only part of reported profit reaches the bank, and the share swings widely from year to year. (general norm, not company-specific (about 80% or more of EBITDA reaching operating cash flow is healthy))\n    Does the business fund itself? [neutral, vs own history] Free cash flow is positive in some years but does not reliably cover payouts and debt service. (report data (own five-year totals))\n    Is cash flattered by one-offs? [concern, vs own history] The latest cash year is partly one-off: working capital was released in a downturn and may be absorbed again in recovery. (report data (own five-year history))",
+      "RATIO YARDSTICKS (computed):\n  RATIO BENCHMARKS (value; own five-year range; peer median; verdict vs yardstick):\n    Gross margin (higher is better): 46.6%; range 45.1% to 48.0%; peer median 49.2%; neutral vs peers. Pricing power is neither improving nor eroding, so profit depends on cost control. (report data (peer median, latest year))\n    EBITDA margin (higher is better): 8.4%; range 8.4% to 14.6%; peer median 13.0%; concern vs peers. Operations keep little of each sale as profit, so earnings are fragile. (report data (peer median, latest year))\n    Net margin (higher is better): 2.2%; range 2.2% to 7.0%; peer median 7.6%; concern vs peers. Very little of each sale reaches owners, so small shocks can erase profit. (report data (peer median, latest year))\n    Return on equity (higher is better): 4.2%; range 4.2% to 15.1%; peer median 7.9%; concern vs peers. Owners' money earns a weak return, which does not justify a premium price. (report data (peer median, latest year))\n    Return on assets (higher is better): 2.0%; range 2.0% to 7.1%; peer median 5.4%; concern vs peers. Assets earn little, so the business is capital heavy for its profit. (report data (peer median, latest year))\n    Current ratio (higher is better): 1.58x; range 1.37x to 1.72x; peer median 2.74x; concern vs peers. Short-term assets barely cover short-term bills, so liquidity is tight. (report data (peer median, latest year))\n    Interest coverage (higher is better): 2.78x; range 2.78x to 7.65x; peer median 10.79x; concern vs peers. Profit covers interest only thinly, so a downturn puts debt service at risk. (report data (peer median, latest year))\n    Debt to equity (lower is better): 0.37x; range 0.37x to 0.80x; peer median 0.18x; concern vs peers. Borrowing relative to owners' funds is above the benchmark, which adds risk if earnings fall. (report data (peer median, latest year))\n    SG&A % of revenue (lower is better): 37.8%; range 30.7% to 37.8%; peer median 35.7%; neutral vs peers. Overheads take a typical share of sales. (report data (peer median, latest year))"
+    ],
+    "technical": {
+      "available": true,
+      "as_of_date": "2026-11-13",
+      "sessions": 460,
+      "price": 249.0,
+      "week52_high": 267.4,
+      "week52_low": 107.1,
+      "week52_position_pct": 88.5,
+      "pct_below_52w_high": -6.9,
+      "window_note": "52-week range uses the last 250 sessions",
+      "sma20": 232.77,
+      "price_vs_sma20_pct": 7.0,
+      "sma50": 224.38,
+      "price_vs_sma50_pct": 11.0,
+      "sma200": 163.43,
+      "price_vs_sma200_pct": 52.4,
+      "crossover_50_200": {
+        "date": "2026-06-01",
+        "direction": "golden",
+        "sessions_ago": 113
+      },
+      "rsi14": 58.9,
+      "rsi_zone": "neutral",
+      "rsi_peak_90d": 82.1,
+      "rsi_days_above_70_90d": 29,
+      "macd": 9.36,
+      "macd_signal": 8.11,
+      "macd_histogram": 1.24,
+      "macd_peak_90d": 11.77,
+      "macd_peak_90d_date": "2026-10-06",
+      "volume_latest": 151589.0,
+      "volume_avg_20d": 643743.0,
+      "volume_latest_vs_20d": 0.24,
+      "volume_trend_avg": 244145.0,
+      "volume_base_avg": 1340561.0,
+      "volume_trend_vs_base": 0.18,
+      "volume_trend_window": "median daily volume over 69 sessions, since the last close above the 50-day average (2026-08-04); base = median over the 69 sessions before it",
+      "divergence": {
+        "bearish": [
+          {
+            "indicator": "MACD",
+            "kind": "bearish",
+            "price_date_1": "2026-10-01",
+            "price_1": 239.05,
+            "price_date_2": "2026-11-04",
+            "price_2": 264.5,
+            "indicator_date_1": "2026-10-06",
+            "indicator_1": 11.77,
+            "indicator_date_2": "2026-11-08",
+            "indicator_2": 9.07
+          },
+          {
+            "indicator": "RSI",
+            "kind": "bearish",
+            "price_date_1": "2026-10-01",
+            "price_1": 239.05,
+            "price_date_2": "2026-11-04",
+            "price_2": 264.5,
+            "indicator_date_1": "2026-10-01",
+            "indicator_1": 82.11,
+            "indicator_date_2": "2026-11-04",
+            "indicator_2": 75.67
+          }
+        ],
+        "bullish": [],
+        "rule": "last two swing points in price (+/-5 sessions, at least 10 apart, within the last 160 sessions); indicator extreme within +/-3 sessions of each"
+      },
+      "divergence_sentence": "Bearish divergence: price made a higher high (239.05 on 2026-10-01 to 264.5 on 2026-11-04) while MACD and RSI made a lower high (MACD 11.77 to 9.07; RSI 82.11 to 75.67).",
+      "tests": [
+        {
+          "test": "Trend",
+          "measures": "price vs 50/200-day averages, crossover",
+          "state": "Up",
+          "evidence": "price 249.0 vs 50-day 224.38 and 200-day 163.43; last golden cross 2026-06-01"
+        },
+        {
+          "test": "Momentum",
+          "measures": "RSI and MACD together",
+          "state": "Up, fading (bearish divergence)",
+          "evidence": "RSI 58.9 (neutral); MACD 9.36 vs signal 8.11"
+        },
+        {
+          "test": "Participation",
+          "measures": "volume vs average, trend vs base",
+          "state": "Weak",
+          "evidence": "median volume in the trend is 0.18x the prior base; latest session 0.24x the 20-day average"
+        },
+        {
+          "test": "Stretch",
+          "measures": "% above the 200-day average",
+          "state": "Very high",
+          "evidence": "price is 52.4% above the 200-day average and 6.9% below the 52-week high"
+        }
+      ],
+      "verdict_sentence": "Uptrend intact, but late, stretched and thinly traded, with momentum fading against price.",
+      "price_vs_earnings": {
+        "price_change_1y_pct": 82.3,
+        "eps_fy_now": 2.13,
+        "eps_fy_prev": 6.66,
+        "eps_fy_change_pct": -68.0,
+        "eps_ttm": 4.57,
+        "eps_ttm_base": 2.13,
+        "eps_ttm_base_label": "last full year",
+        "eps_ttm_change_pct": 114.7,
+        "price_vs_earnings": "behind",
+        "sentence": "The share price moved +82% in a year while TTM EPS (against the last full year) moved +115%, so the price is behind earnings (-32 points)."
+      }
+    },
+    "cashflow": {
+      "available": true,
+      "unit": "INR crore; money out is negative",
+      "years": [
+        "2022A",
+        "2023A",
+        "2024A",
+        "2025A",
+        "2026A"
+      ],
+      "ttm_label": "TTM",
+      "per_year": {
+        "2022A": {
+          "cfo": 586.68,
+          "capex": -1114.11,
+          "other_investing": 513.94,
+          "fcf": -527.43,
+          "dividends": -15.07,
+          "buybacks": -0.0,
+          "debt_net": 346.41,
+          "debt_repaid_gross": -126.65,
+          "net_change": -67.61,
+          "ebitda": 1358.72,
+          "conversion": 0.4317887423457371,
+          "revenue_growth": null
+        },
+        "2023A": {
+          "cfo": 755.97,
+          "capex": -275.08,
+          "other_investing": 517.84,
+          "fcf": 480.89,
+          "dividends": -14.82,
+          "buybacks": -0.0,
+          "debt_net": -850.77,
+          "debt_repaid_gross": -938.88,
+          "net_change": -87.22,
+          "ebitda": 752.54,
+          "conversion": 1.004557897254631,
+          "revenue_growth": -0.13077526964056163
+        },
+        "2024A": {
+          "cfo": 532.84,
+          "capex": -541.84,
+          "other_investing": 332.63,
+          "fcf": -9.0,
+          "dividends": -12.34,
+          "buybacks": -241.73,
+          "debt_net": 169.88,
+          "debt_repaid_gross": -162.39,
+          "net_change": 54.71,
+          "ebitda": 1368.91,
+          "conversion": 0.3892439970487468,
+          "revenue_growth": 0.19588917882418055
+        },
+        "2025A": {
+          "cfo": 687.98,
+          "capex": -712.7,
+          "other_investing": 770.02,
+          "fcf": -24.72,
+          "dividends": -12.34,
+          "buybacks": -345.55,
+          "debt_net": -58.18,
+          "debt_repaid_gross": -111.27,
+          "net_change": 82.74,
+          "ebitda": 1298.5,
+          "conversion": 0.529826723142087,
+          "revenue_growth": 0.08945433732400487
+        },
+        "2026A": {
+          "cfo": 1174.98,
+          "capex": -798.6,
+          "other_investing": 450.68,
+          "fcf": 376.38,
+          "dividends": -208.49,
+          "buybacks": -0.0,
+          "debt_net": -667.06,
+          "debt_repaid_gross": -824.88,
+          "net_change": -145.5,
+          "ebitda": 793.21,
+          "conversion": 1.4812975126385195,
+          "revenue_growth": -0.10867427399860974
+        },
+        "TTM": {
+          "cfo": 1910.31,
+          "capex": -858.2,
+          "other_investing": 448.89,
+          "fcf": 1052.11,
+          "dividends": -25.92,
+          "buybacks": -254.5,
+          "debt_net": -486.93,
+          "debt_repaid_gross": -754.21,
+          "net_change": 659.68,
+          "ebitda": 1068.47,
+          "conversion": 1.7878929684502138,
+          "revenue_growth": null
+        }
+      },
+      "aggregate": {
+        "cfo": 3738.45,
+        "ebitda": 5571.88,
+        "capex": -3442.33,
+        "fcf": 296.12,
+        "conversion": 0.6709494820419678,
+        "years": [
+          "2022A",
+          "2023A",
+          "2024A",
+          "2025A",
+          "2026A"
+        ]
+      },
+      "uses_of_cash": {
+        "capex": -3442.33,
+        "debt_repaid_gross": -2164.07,
+        "debt_net": -1059.7199999999998,
+        "dividends": -263.06,
+        "buybacks": -587.28,
+        "cash_retained": -162.88,
+        "years": [
+          "2022A",
+          "2023A",
+          "2024A",
+          "2025A",
+          "2026A"
+        ]
+      },
+      "working_capital_days": {
+        "2022A": {
+          "inventory_days": 141.71822334596894,
+          "receivable_days": 39.171135169849656,
+          "payable_days": 66.67499661370967,
+          "cash_conversion_days": 114.21436190210893
+        },
+        "2023A": {
+          "inventory_days": 159.27850501658162,
+          "receivable_days": 43.31335497963863,
+          "payable_days": 70.32308159228006,
+          "cash_conversion_days": 132.2687784039402
+        },
+        "2024A": {
+          "inventory_days": 147.98847526752095,
+          "receivable_days": 47.3142002884524,
+          "payable_days": 66.93800050099024,
+          "cash_conversion_days": 128.36467505498308
+        },
+        "2025A": {
+          "inventory_days": 140.41484158335595,
+          "receivable_days": 56.93639883585631,
+          "payable_days": 72.21553367609073,
+          "cash_conversion_days": 125.13570674312155
+        },
+        "2026A": {
+          "inventory_days": 156.79303288826617,
+          "receivable_days": 50.95882482490364,
+          "payable_days": 99.44091530662931,
+          "cash_conversion_days": 108.3109424065405
+        }
+      },
+      "cyclicality": {
+        "correlation": -0.8850188793838701,
+        "n_years": 4,
+        "flag": true,
+        "avg_conversion_when_revenue_fell": 1.2429277049465752,
+        "avg_conversion_when_revenue_grew": 0.4595353600954169,
+        "years_revenue_fell": [
+          "2023A",
+          "2026A"
+        ],
+        "statement": "Cash conversion rises when revenue falls: cash is released from working capital in downturns and absorbed in recoveries, so a strong cash year in a downturn is partly one-off."
+      },
+      "capex_basis": "capex = purchase of fixed and intangible assets as reported; treasury investments, grants and other investing flows are shown separately",
+      "capex_available": true,
+      "unavailable": [],
+      "answers": {
+        "profit_to_cash": {
+          "verdict": "neutral",
+          "yardstick": "general_norm",
+          "so_what": "Only part of reported profit reaches the bank, and the share swings widely from year to year.",
+          "source_note": "general norm, not company-specific (about 80% or more of EBITDA reaching operating cash flow is healthy)"
+        },
+        "funds_itself": {
+          "verdict": "neutral",
+          "yardstick": "own_history",
+          "so_what": "Free cash flow is positive in some years but does not reliably cover payouts and debt service.",
+          "source_note": "report data (own five-year totals)"
+        },
+        "flattered_by_one_offs": {
+          "verdict": "concern",
+          "yardstick": "own_history",
+          "so_what": "The latest cash year is partly one-off: working capital was released in a downturn and may be absorbed again in recovery.",
+          "source_note": "report data (own five-year history)"
+        }
+      }
+    },
+    "ratio_bars": {
+      "gross_margin": {
+        "label": "Gross margin",
+        "unit": "%",
+        "higher_is_better": true,
+        "direction": "higher is better",
+        "latest_year": 2026,
+        "history": {
+          "2022": 45.68,
+          "2023": 45.050000000000004,
+          "2024": 47.99,
+          "2025": 46.94,
+          "2026": 46.63
+        },
+        "verdict": "neutral",
+        "yardstick": "peers",
+        "so_what": "Pricing power is neither improving nor eroding, so profit depends on cost control.",
+        "source_note": "report data (peer median, latest year)",
+        "scale": {
+          "value": 46.63,
+          "range_min": 45.050000000000004,
+          "range_max": 47.99,
+          "peer_median": 49.220000000000006
+        },
+        "position_in_own_range_pct": 53.741496598639436
+      },
+      "ebitda_margin": {
+        "label": "EBITDA margin",
+        "unit": "%",
+        "higher_is_better": true,
+        "direction": "higher is better",
+        "latest_year": 2026,
+        "history": {
+          "2022": 14.591895801629603,
+          "2023": 9.29778001818685,
+          "2024": 14.142742612023257,
+          "2025": 12.31378774386942,
+          "2026": 8.439203286268594
+        },
+        "verdict": "concern",
+        "yardstick": "peers",
+        "so_what": "Operations keep little of each sale as profit, so earnings are fragile.",
+        "source_note": "report data (peer median, latest year)",
+        "scale": {
+          "value": 8.439203286268594,
+          "range_min": 8.439203286268594,
+          "range_max": 14.591895801629603,
+          "peer_median": 12.970803083098916
+        },
+        "position_in_own_range_pct": 0.0
+      },
+      "net_margin": {
+        "label": "Net margin",
+        "unit": "%",
+        "higher_is_better": true,
+        "direction": "higher is better",
+        "latest_year": 2026,
+        "history": {
+          "2022": 6.4561879058838185,
+          "2023": 2.4565838374253746,
+          "2024": 7.036709493720582,
+          "2025": 6.061209529743226,
+          "2026": 2.1750995572985103
+        },
+        "verdict": "concern",
+        "yardstick": "peers",
+        "so_what": "Very little of each sale reaches owners, so small shocks can erase profit.",
+        "source_note": "report data (peer median, latest year)",
+        "scale": {
+          "value": 2.1750995572985103,
+          "range_min": 2.1750995572985103,
+          "range_max": 7.036709493720582,
+          "peer_median": 7.551385391704368
+        },
+        "position_in_own_range_pct": 0.0
+      },
+      "roe": {
+        "label": "Return on equity",
+        "unit": "%",
+        "higher_is_better": true,
+        "direction": "higher is better",
+        "latest_year": 2026,
+        "history": {
+          "2022": 15.14,
+          "2023": 4.859999999999999,
+          "2024": 15.079999999999998,
+          "2025": 13.26,
+          "2026": 4.16
+        },
+        "verdict": "concern",
+        "yardstick": "peers",
+        "so_what": "Owners' money earns a weak return, which does not justify a premium price.",
+        "source_note": "report data (peer median, latest year)",
+        "scale": {
+          "value": 4.16,
+          "range_min": 4.16,
+          "range_max": 15.14,
+          "peer_median": 7.9
+        },
+        "position_in_own_range_pct": 0.0
+      },
+      "roa": {
+        "label": "Return on assets",
+        "unit": "%",
+        "higher_is_better": true,
+        "direction": "higher is better",
+        "latest_year": 2026,
+        "history": {
+          "2022": 6.370000000000001,
+          "2023": 2.3,
+          "2024": 7.13,
+          "2025": 6.2,
+          "2026": 1.96
+        },
+        "verdict": "concern",
+        "yardstick": "peers",
+        "so_what": "Assets earn little, so the business is capital heavy for its profit.",
+        "source_note": "report data (peer median, latest year)",
+        "scale": {
+          "value": 1.96,
+          "range_min": 1.96,
+          "range_max": 7.13,
+          "peer_median": 5.37
+        },
+        "position_in_own_range_pct": 0.0
+      },
+      "current_ratio": {
+        "label": "Current ratio",
+        "unit": "x",
+        "higher_is_better": true,
+        "direction": "higher is better",
+        "latest_year": 2026,
+        "history": {
+          "2022": 1.37,
+          "2023": 1.66,
+          "2024": 1.72,
+          "2025": 1.68,
+          "2026": 1.58
+        },
+        "verdict": "concern",
+        "yardstick": "peers",
+        "so_what": "Short-term assets barely cover short-term bills, so liquidity is tight.",
+        "source_note": "report data (peer median, latest year)",
+        "scale": {
+          "value": 1.58,
+          "range_min": 1.37,
+          "range_max": 1.72,
+          "peer_median": 2.74
+        },
+        "position_in_own_range_pct": 60.00000000000001
+      },
+      "interest_coverage": {
+        "label": "Interest coverage",
+        "unit": "x",
+        "higher_is_better": true,
+        "direction": "higher is better",
+        "latest_year": 2026,
+        "history": {
+          "2022": 7.65,
+          "2023": 3.32,
+          "2024": 7.3,
+          "2025": 4.95,
+          "2026": 2.78
+        },
+        "verdict": "concern",
+        "yardstick": "peers",
+        "so_what": "Profit covers interest only thinly, so a downturn puts debt service at risk.",
+        "source_note": "report data (peer median, latest year)",
+        "scale": {
+          "value": 2.78,
+          "range_min": 2.78,
+          "range_max": 7.65,
+          "peer_median": 10.79
+        },
+        "position_in_own_range_pct": 0.0
+      },
+      "debt_equity": {
+        "label": "Debt to equity",
+        "unit": "x",
+        "higher_is_better": false,
+        "direction": "lower is better",
+        "latest_year": 2026,
+        "history": {
+          "2022": 0.8,
+          "2023": 0.57,
+          "2024": 0.56,
+          "2025": 0.51,
+          "2026": 0.37
+        },
+        "verdict": "concern",
+        "yardstick": "peers",
+        "so_what": "Borrowing relative to owners' funds is above the benchmark, which adds risk if earnings fall.",
+        "source_note": "report data (peer median, latest year)",
+        "scale": {
+          "value": 0.37,
+          "range_min": 0.37,
+          "range_max": 0.8,
+          "peer_median": 0.18
+        },
+        "position_in_own_range_pct": 0.0
+      },
+      "sga_pct": {
+        "label": "SG&A % of revenue",
+        "unit": "%",
+        "higher_is_better": false,
+        "direction": "lower is better",
+        "latest_year": 2026,
+        "history": {
+          "2022": 30.700630512690264,
+          "2023": 34.93048966117108,
+          "2024": 33.065096019935446,
+          "2025": 33.86457583576812,
+          "2026": 37.79857880160994
+        },
+        "verdict": "neutral",
+        "yardstick": "peers",
+        "so_what": "Overheads take a typical share of sales.",
+        "source_note": "report data (peer median, latest year)",
+        "scale": {
+          "value": 37.79857880160994,
+          "range_min": 30.700630512690264,
+          "range_max": 37.79857880160994,
+          "peer_median": 35.687989195723056
+        },
+        "position_in_own_range_pct": 100.0
+      }
+    }
+  },
+  "checks": [
+    {
+      "name": "price x shares = market cap (Cr)",
+      "expected": 23524.34,
+      "actual": 23524.34,
+      "tolerance": 0.015,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "EV = market cap + net debt (Cr)",
+      "expected": 23522.79,
+      "actual": 23522.79,
+      "tolerance": 1e-06,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "EPS x shares = PAT (2026A)",
+      "expected": 204.44,
+      "actual": 204.299485482,
+      "tolerance": 0.01,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "EPS x shares = PAT (TTM)",
+      "expected": 433.74,
+      "actual": 431.75189889800004,
+      "tolerance": 0.03,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "P/E TTM = price / TTM EPS (API vs computed)",
+      "expected": 54.49,
+      "actual": 54.48577680525164,
+      "tolerance": 0.02,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "P/E latest FY at current price = price / EPS",
+      "expected": 116.90140845070422,
+      "actual": 116.90140845070422,
+      "tolerance": 1e-06,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "P/E 2022A = FY-avg price / EPS",
+      "expected": 20.06,
+      "actual": 20.057565789473685,
+      "tolerance": 0.01,
+      "ok": true,
+      "detail": "avg price 121.95"
+    },
+    {
+      "name": "P/E 2023A = FY-avg price / EPS",
+      "expected": 36.93,
+      "actual": 36.93532338308458,
+      "tolerance": 0.01,
+      "ok": true,
+      "detail": "avg price 74.24"
+    },
+    {
+      "name": "P/E 2024A = FY-avg price / EPS",
+      "expected": 17.73,
+      "actual": 17.730385164051356,
+      "tolerance": 0.01,
+      "ok": true,
+      "detail": "avg price 124.29"
+    },
+    {
+      "name": "P/E 2025A = FY-avg price / EPS",
+      "expected": 23.07,
+      "actual": 23.075075075075077,
+      "tolerance": 0.01,
+      "ok": true,
+      "detail": "avg price 153.68"
+    },
+    {
+      "name": "P/E 2026A = FY-avg price / EPS",
+      "expected": 60.61,
+      "actual": 60.615023474178415,
+      "tolerance": 0.01,
+      "ok": true,
+      "detail": "avg price 129.11"
+    },
+    {
+      "name": "EV/EBITDA 2026A = FY EV / FY EBITDA",
+      "expected": 16.59256452673819,
+      "actual": 16.59256452673819,
+      "tolerance": 0.01,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "ROE TTM: API vs TTM PAT / closing equity (pp)",
+      "expected": 8.559999999999999,
+      "actual": 8.561750644490152,
+      "tolerance": 0.5,
+      "ok": true,
+      "detail": "tolerance in percentage points"
+    },
+    {
+      "name": "forecast 2027E: EBITDA - D&A - interest + other income = PBT (Cr)",
+      "expected": 470.5629845,
+      "actual": 470.5629844999999,
+      "tolerance": 1e-06,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "forecast 2027E: EPS x shares = PAT (Cr)",
+      "expected": 334.6502123740912,
+      "actual": 334.74422738600003,
+      "tolerance": 0.01,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "forecast 2027E: P/E = current price / EPS",
+      "expected": 71.4,
+      "actual": 71.34670487106017,
+      "tolerance": 0.01,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "forecast 2028E: EBITDA - D&A - interest + other income = PBT (Cr)",
+      "expected": 661.27570502,
+      "actual": 661.2757050199999,
+      "tolerance": 1e-06,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "forecast 2028E: EPS x shares = PAT (Cr)",
+      "expected": 470.2793513559286,
+      "actual": 469.98473186,
+      "tolerance": 0.01,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "forecast 2028E: P/E = current price / EPS",
+      "expected": 50.8,
+      "actual": 50.816326530612244,
+      "tolerance": 0.01,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "forecast 2029E: EBITDA - D&A - interest + other income = PBT (Cr)",
+      "expected": 854.6288003280001,
+      "actual": 854.6288003280001,
+      "tolerance": 1e-06,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "forecast 2029E: EPS x shares = PAT (Cr)",
+      "expected": 607.7862453092717,
+      "actual": 608.102693876,
+      "tolerance": 0.01,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "forecast 2029E: P/E = current price / EPS",
+      "expected": 39.3,
+      "actual": 39.27444794952682,
+      "tolerance": 0.01,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "peer median (excl. subject) recomputed",
+      "expected": 17.78672011363584,
+      "actual": 17.78672011363584,
+      "tolerance": 1e-09,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "current-price peer median (ev_ebitda_fy) recomputed",
+      "expected": 23.709923351896528,
+      "actual": 23.709923351896528,
+      "tolerance": 1e-09,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "current-price peer median (ev_ebitda_ttm) recomputed",
+      "expected": 19.944231173631444,
+      "actual": 19.944231173631444,
+      "tolerance": 1e-09,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "WELSPUNLIV: current EV = market cap + net debt (Cr)",
+      "expected": 23522.79,
+      "actual": 23522.79,
+      "tolerance": 1e-06,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "KPRMILL: current EV = market cap + net debt (Cr)",
+      "expected": 37136.740000000005,
+      "actual": 37136.740000000005,
+      "tolerance": 1e-06,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "VTL: current EV = market cap + net debt (Cr)",
+      "expected": 15382.26,
+      "actual": 15382.26,
+      "tolerance": 1e-06,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "TRIDENT: current EV = market cap + net debt (Cr)",
+      "expected": 12723.75,
+      "actual": 12723.75,
+      "tolerance": 1e-06,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "ICIL: current EV = market cap + net debt (Cr)",
+      "expected": 11363.8679,
+      "actual": 11363.8679,
+      "tolerance": 1e-06,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "GARFIBRES: current EV = market cap + net debt (Cr)",
+      "expected": 6724.3192,
+      "actual": 6724.3192,
+      "tolerance": 1e-06,
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "subject current EV/EBITDA: peer table = current-valuation block",
+      "expected": 29.65518589024344,
+      "actual": 29.65518589024344,
+      "tolerance": 0.01,
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "prompt_block": "=== CANONICAL FACTS (computed in code) ===\nUnit: INR crore (1 crore = 10,000,000 rupees); shares in millions; per-share in rupees. Report date 2026-11-15. Fiscal year ends 31 March (2026A = FY2025-26).\nUse these figures exactly as written; do not convert, rescale or recompute them.\n\nCURRENT MARKET: price Rs 249.0 (close 2026-11-13) | shares 944.75 mn | market cap 23,524 Cr\nLATEST BALANCE SHEET (2026-09-30): total debt 1,905 Cr; cash and investments 1,906 Cr; net debt -1.6 Cr (net cash)\nCURRENT EV (market cap + latest net debt): 23,523 Cr\nCURRENT EV/EBITDA: 29.7x on 2026A EBITDA 793 Cr; 22.0x on TTM EBITDA 1,068 Cr (TTM to 2026-09-30)\nCURRENT P/E: 54.5x on TTM EPS Rs 4.57; 116.9x on 2026A EPS Rs 2.13 (both at the current price)\nPERIOD BASIS: ROE TTM 8.56% (TTM net income / closing equity); ROE 2026A 4.16% (FY net income / FY closing equity); net margin TTM 4.2% vs FY 2.2%; dividend yield 0.040160642570281124% (last 365 days / current price)\n\nHISTORICAL MULTIPLES (price basis = fiscal-year AVERAGE price x diluted weighted shares; FY-end net debt (not the current price); they are NOT at today's price):\n  2022A: avg price Rs 121.95, P/E 20.1x (EPS Rs 6.08), EV 14,278 Cr, EV/EBITDA 10.5x\n  2023A: avg price Rs 74.24, P/E 36.9x (EPS Rs 2.01), EV 8,870 Cr, EV/EBITDA 11.8x\n  2024A: avg price Rs 124.29, P/E 17.7x (EPS Rs 7.01), EV 13,436 Cr, EV/EBITDA 9.8x\n  2025A: avg price Rs 153.68, P/E 23.1x (EPS Rs 6.66), EV 16,343 Cr, EV/EBITDA 12.6x\n  2026A: avg price Rs 129.11, P/E 60.6x (EPS Rs 2.13), EV 13,161 Cr, EV/EBITDA 16.6x\n\nMODEL FORECAST (our own projection, NOT analyst consensus; P/E uses the current price):\n  2027E: revenue 9,869 Cr, EBITDA 977 Cr (9.9% margin), EPS Rs 3.49, P/E 71.4x\n  2028E: revenue 10,461 Cr, EBITDA 1,193 Cr (11.4% margin), EPS Rs 4.9, P/E 50.8x\n  2029E: revenue 10,880 Cr, EBITDA 1,403 Cr (12.9% margin), EPS Rs 6.34, P/E 39.3x\n  EPS bridge: EBITDA - D&A (4.2% of revenue) - interest (161 Cr flat) + other income (69 Cr flat) - tax (25.9%) - minorities, over 959.2 mn shares\n\nPEER EV/EBITDA 2026A (fiscal-year AVERAGE price for every company in the table (not current prices)): VTL 11.4x, ICIL 16.0x, WELSPUNLIV 16.6x, TRIDENT 17.8x, GARFIBRES 25.7x, KPRMILL 26.9x\n  Peer median EXCLUDING WELSPUNLIV: 17.8x (TRIDENT); including it: 17.2x. Use the excluding figure.\n\nPEER EV/EBITDA AT CURRENT PRICES (2026-11-15; current price (latest quote) x shares + latest net debt, over latest-FY EBITDA and over TTM EBITDA): VTL 12.4x FY / 9.5x TTM, TRIDENT 14.6x FY / 13.0x TTM, GARFIBRES 23.7x FY / 19.9x TTM, ICIL 29.0x FY / 20.5x TTM, KPRMILL 29.3x FY / 24.5x TTM, WELSPUNLIV 29.7x FY / 22.0x TTM\n  Medians excluding WELSPUNLIV: 23.7x on latest-FY EBITDA, 19.9x on TTM EBITDA. Compare the subject's CURRENT multiples with these, and its fiscal-year-average multiples with the fiscal-year-average peer figures above; do not cross the two bases.\n\nPEER-DATASET TREND PROJECTION FY2027 EBITDA (mechanical extrapolation, NOT consensus; separate from the model forecast): WELSPUNLIV 780 Cr, KPRMILL 1,280 Cr, VTL 1,113 Cr, TRIDENT 770 Cr, ICIL 389 Cr, GARFIBRES 303 Cr\n  Gap: our model FY2027 EBITDA is 197 Cr above the peer-dataset projection for WELSPUNLIV.\n\nFAIR-VALUE GRID on model 2027E EBITDA 977 Cr; current EV 23,523 Cr:\n  12x -> EV 11,724 Cr (-50% vs current EV); implied price Rs 124 (-50% vs Rs 249.0)\n  14x -> EV 13,679 Cr (-42% vs current EV); implied price Rs 145 (-42% vs Rs 249.0)\n  16x -> EV 15,633 Cr (-34% vs current EV); implied price Rs 165 (-34% vs Rs 249.0)\n  18x -> EV 17,587 Cr (-25% vs current EV); implied price Rs 186 (-25% vs Rs 249.0)\n\nCASH FLOW (Cr): 2022A CFO 587 Cr, capex -1,114 Cr, FCF -527 Cr; 2023A CFO 756 Cr, capex -275 Cr, FCF 481 Cr; 2024A CFO 533 Cr, capex -542 Cr, FCF -9 Cr; 2025A CFO 688 Cr, capex -713 Cr, FCF -25 Cr; 2026A CFO 1,175 Cr, capex -799 Cr, FCF 376 Cr\nINTEREST COVERAGE (EBIT / interest): 2022A 7.1x, 2023A 2.4x, 2024A 6.4x, 2025A 4.3x, 2026A 2.5x\nCASH CONVERSION DAYS: 2022A 114, 2023A 132, 2024A 128, 2025A 125, 2026A 108\n\nEXPLANATORY FACTS (computed in code):\n  margin bridge: EBITDA margin moved -6.2 points from 2022A to 2026A (14.6% to 8.4%): contribution margin +0.9 points, SG&A as % of revenue +7.1 points.\n  operating leverage: From 2025A to 2026A, revenue fell by Rs 1,146 Cr and EBITDA fell by Rs 505 Cr, so about Rs 44 of EBITDA was lost for every Rs 100 of revenue lost.\n  volatility: Revenue growth swung 33 points over the window; Contribution margin moved 3.0; SG&A as % of revenue moved 7.1; EBITDA margin moved 6.2 points.\n  FY vs TTM: Revenue 9,399.1 -> 10,331.2 (+10%); EBITDA 793.2 -> 1,068.5 (+35%); Net income 204.4 -> 433.7 (+112%); EPS (Rs) 2.13 -> 4.57 (+115%); EBITDA margin (%) 8.4 -> 10.3 (+1.9 pts)\n  Full year and TTM tell different stories: against 2026A, trailing four quarters to 2026-09-30 show EBITDA +35%, Net income +112%, EPS +115%. The 2026A figures describe the downturn; the TTM figures include the recovery.\n  Contribution margin sits at 67% of its own five-year range (44.2 to 47.2).\n  EBITDA margin sits at 0% of its own five-year range (8.4 to 14.6).\n  SG&A as % of revenue sits at 100% of its own five-year range (30.7 to 37.8).\nTECHNICAL READINGS (computed):\n  Price: 249.0 (close on 2026-11-13)\n  52-week high / low: 267.4 / 107.1 (52-week range uses the last 250 sessions)\n  Position in 52-week range: 88.5% (-6.9% from the high)\n  20-day average: 232.77 (price +7.0%)\n  50-day average: 224.38 (price +11.0%)\n  200-day average: 163.43 (price +52.4%)\n  Last 50/200 crossover: Golden cross on 2026-06-01 (113 sessions ago)\n  RSI (14): 58.9 (neutral; 90-day peak 82.1; 29 days above 70)\n  MACD / signal / histogram: 9.36 / 8.11 / 1.24 (90-day MACD peak 11.77 on 2026-10-06)\n  Volume latest / 20-day average: 151,589 / 643,743 (latest is 0.24x the average)\n  Volume: trend vs prior base: 244,145 vs 1,340,561 (0.18x; median daily volume over 69 sessions, since the last close above the 50-day average (2026-08-04); base = median over the 69 sessions before it)\n  Divergence: yes (Bearish divergence: price made a higher high (239.05 on 2026-10-01 to 264.5 on 2026-11-04) while MACD and RSI made a lower high (MACD 11.77 to 9.07; RSI 82.11 to 75.67).)\n  Four independent tests: Trend Up (price 249.0 vs 50-day 224.38 and 200-day 163.43; last golden cross 2026-06-01); Momentum Up, fading (bearish divergence) (RSI 58.9 (neutral); MACD 9.36 vs signal 8.11); Participation Weak (median volume in the trend is 0.18x the prior base; latest session 0.24x the 20-day average); Stretch Very high (price is 52.4% above the 200-day average and 6.9% below the 52-week high)\n  Uptrend intact, but late, stretched and thinly traded, with momentum fading against price.\n  Bearish divergence: price made a higher high (239.05 on 2026-10-01 to 264.5 on 2026-11-04) while MACD and RSI made a lower high (MACD 11.77 to 9.07; RSI 82.11 to 75.67).\n  Price versus earnings: The share price moved +82% in a year while TTM EPS (against the last full year) moved +115%, so the price is behind earnings (-32 points).\nCASH FLOW DIAGNOSTICS (Cr, computed):\n  CASH FLOW (INR crore; money out in brackets):\n    2022A: CFO 587, capex (1,114), FCF (527), other investing 514, dividends (15), buybacks 0, net debt 346, change in cash (68), EBITDA 1,359, cash conversion 43%\n    2023A: CFO 756, capex (275), FCF 481, other investing 518, dividends (15), buybacks 0, net debt (851), change in cash (87), EBITDA 753, cash conversion 100%\n    2024A: CFO 533, capex (542), FCF (9), other investing 333, dividends (12), buybacks (242), net debt 170, change in cash 55, EBITDA 1,369, cash conversion 39%\n    2025A: CFO 688, capex (713), FCF (25), other investing 770, dividends (12), buybacks (346), net debt (58), change in cash 83, EBITDA 1,298, cash conversion 53%\n    2026A: CFO 1,175, capex (799), FCF 376, other investing 451, dividends (208), buybacks 0, net debt (667), change in cash (146), EBITDA 793, cash conversion 148%\n    TTM: CFO 1,910, capex (858), FCF 1,052, other investing 449, dividends (26), buybacks (254), net debt (487), change in cash 660, EBITDA 1,068, cash conversion 179%\n    Five-year cash conversion (total CFO / total EBITDA): 67%\n    Five-year uses of cash: capex (3,442), gross debt repaid (2,164), dividends (263), buybacks (587), cash retained (163)\n    Working-capital days (inventory / receivable / payable / cycle): 2022A 142/39/67/114; 2023A 159/43/70/132; 2024A 148/47/67/128; 2025A 140/57/72/125; 2026A 157/51/99/108\n    Cyclicality: Cash conversion rises when revenue falls: cash is released from working capital in downturns and absorbed in recoveries, so a strong cash year in a downturn is partly one-off.\n    Capex basis: capex = purchase of fixed and intangible assets as reported; treasury investments, grants and other investing flows are shown separately\n    Does profit turn into cash? [neutral, vs general norm] Only part of reported profit reaches the bank, and the share swings widely from year to year. (general norm, not company-specific (about 80% or more of EBITDA reaching operating cash flow is healthy))\n    Does the business fund itself? [neutral, vs own history] Free cash flow is positive in some years but does not reliably cover payouts and debt service. (report data (own five-year totals))\n    Is cash flattered by one-offs? [concern, vs own history] The latest cash year is partly one-off: working capital was released in a downturn and may be absorbed again in recovery. (report data (own five-year history))\nRATIO YARDSTICKS (computed):\n  RATIO BENCHMARKS (value; own five-year range; peer median; verdict vs yardstick):\n    Gross margin (higher is better): 46.6%; range 45.1% to 48.0%; peer median 49.2%; neutral vs peers. Pricing power is neither improving nor eroding, so profit depends on cost control. (report data (peer median, latest year))\n    EBITDA margin (higher is better): 8.4%; range 8.4% to 14.6%; peer median 13.0%; concern vs peers. Operations keep little of each sale as profit, so earnings are fragile. (report data (peer median, latest year))\n    Net margin (higher is better): 2.2%; range 2.2% to 7.0%; peer median 7.6%; concern vs peers. Very little of each sale reaches owners, so small shocks can erase profit. (report data (peer median, latest year))\n    Return on equity (higher is better): 4.2%; range 4.2% to 15.1%; peer median 7.9%; concern vs peers. Owners' money earns a weak return, which does not justify a premium price. (report data (peer median, latest year))\n    Return on assets (higher is better): 2.0%; range 2.0% to 7.1%; peer median 5.4%; concern vs peers. Assets earn little, so the business is capital heavy for its profit. (report data (peer median, latest year))\n    Current ratio (higher is better): 1.58x; range 1.37x to 1.72x; peer median 2.74x; concern vs peers. Short-term assets barely cover short-term bills, so liquidity is tight. (report data (peer median, latest year))\n    Interest coverage (higher is better): 2.78x; range 2.78x to 7.65x; peer median 10.79x; concern vs peers. Profit covers interest only thinly, so a downturn puts debt service at risk. (report data (peer median, latest year))\n    Debt to equity (lower is better): 0.37x; range 0.37x to 0.80x; peer median 0.18x; concern vs peers. Borrowing relative to owners' funds is above the benchmark, which adds risk if earnings fall. (report data (peer median, latest year))\n    SG&A % of revenue (lower is better): 37.8%; range 30.7% to 37.8%; peer median 35.7%; neutral vs peers. Overheads take a typical share of sales. (report data (peer median, latest year))\n=== END CANONICAL FACTS ==="
+}

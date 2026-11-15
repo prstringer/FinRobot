@@ -191,7 +191,7 @@
                 <div>
                     <label class="block text-[10px] font-medium text-slate-400 mb-1.5 ml-1">Market</label>
                     <div class="flex gap-2">
-                        <button type="button" @click="form.data_provider = 'fmp'" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-medium border transition-all duration-200" :class="form.data_provider === 'fmp' ? 'bg-blue-500/20 text-blue-300 border-blue-500/50' : 'bg-white/5 text-slate-500 border-transparent hover:bg-white/10'" title="US stocks via Financial Modeling Prep (USD)">US · FMP</button>
+                        <button type="button" @click="form.data_provider = 'fmp'; form.report_format = 'text'" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-medium border transition-all duration-200" :class="form.data_provider === 'fmp' ? 'bg-blue-500/20 text-blue-300 border-blue-500/50' : 'bg-white/5 text-slate-500 border-transparent hover:bg-white/10'" title="US stocks via Financial Modeling Prep (USD)">US · FMP</button>
                         <button type="button" @click="form.data_provider = 'finedge'" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-medium border transition-all duration-200" :class="form.data_provider === 'finedge' ? 'bg-orange-500/20 text-orange-300 border-orange-500/50' : 'bg-white/5 text-slate-500 border-transparent hover:bg-white/10'" title="Indian NSE/BSE stocks via FinEdge (INR)">India · FinEdge</button>
                     </div>
                     <p v-if="form.data_provider === 'finedge'" class="text-[9px] text-slate-500 mt-1.5 ml-1 leading-snug">NSE symbol, e.g. RELIANCE. Peers are found automatically; the free FinEdge plan covers ITC, RELIANCE, HDFCBANK and ICICIPRULI only.</p>
@@ -237,6 +237,17 @@
                             <span class="w-1.5 h-1.5 rounded-full" :class="form.generate_pdf ? 'bg-purple-400' : 'bg-slate-600'"></span>PDF Report
                         </button>
                     </div>
+                </div>
+
+                <!-- Report format: standard text reports, the new visual reports, or both -->
+                <div>
+                    <label class="block text-[10px] font-medium text-slate-400 mb-2 ml-1">Report Format</label>
+                    <div class="flex gap-2" role="group" aria-label="Report format">
+                        <button type="button" @click="form.report_format = 'text'" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-medium border transition-all duration-200" :class="form.report_format === 'text' ? 'bg-blue-500/20 border-blue-500/40 text-blue-300' : 'bg-white/5 border-white/10 text-slate-400'">Standard</button>
+                        <button type="button" @click="form.report_format = 'visual'" :disabled="form.data_provider !== 'finedge'" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-medium border transition-all duration-200 disabled:opacity-40" :class="form.report_format === 'visual' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300' : 'bg-white/5 border-white/10 text-slate-400'">Visual</button>
+                        <button type="button" @click="form.report_format = 'all'" :disabled="form.data_provider !== 'finedge'" class="flex-1 py-1.5 px-3 rounded-lg text-xs font-medium border transition-all duration-200 disabled:opacity-40" :class="form.report_format === 'all' ? 'bg-purple-500/20 border-purple-500/40 text-purple-300' : 'bg-white/5 border-white/10 text-slate-400'">Both</button>
+                    </div>
+                    <p class="text-[10px] text-slate-500 mt-1 ml-1" v-show="form.report_format !== 'text'">Visual reports are for Indian (FinEdge) stocks. Visual only skips the AI text sections.</p>
                 </div>
 
                 <!-- AI text provider -->
@@ -459,9 +470,11 @@
                             </div>
                             <h4 class="font-bold text-white mb-0.5 tracking-tight">{{ task.ticker }}</h4>
                             <p class="text-xs text-slate-400 mb-4 line-clamp-1 h-4">{{ task.company || task.company_name }}</p>
-                            <div v-if="task.status === 'completed' && task.result" class="grid gap-2" :class="(task.result.pdf && task.result.pdf.length) || (task.result.html && task.result.html.length) ? 'grid-cols-3' : 'grid-cols-1'">
+                            <div v-if="task.status === 'completed' && task.result" class="grid gap-2" :class="(task.result.pdf && task.result.pdf.length) || (task.result.html && task.result.html.length) || (task.result.visual_html && task.result.visual_html.length) ? 'grid-cols-3' : 'grid-cols-1'">
                                 <a v-if="task.result.html && task.result.html.length" :href="'/output/' + task.ticker + '/report/' + task.result.html[0]" target="_blank" class="flex items-center justify-center gap-1 py-1.5 rounded bg-white/5 hover:bg-blue-500/20 text-slate-300 hover:text-blue-400 text-[10px] font-bold transition-all border border-white/5 hover:border-blue-500/30">HTML</a>
                                 <a v-if="task.result.pdf && task.result.pdf.length" :href="'/output/' + task.ticker + '/report/' + task.result.pdf[0]" target="_blank" class="flex items-center justify-center gap-1 py-1.5 rounded bg-white/5 hover:bg-emerald-500/20 text-slate-300 hover:text-emerald-400 text-[10px] font-bold transition-all border border-white/5 hover:border-emerald-500/30">PDF</a>
+                                <a v-if="task.result.visual_html && task.result.visual_html.length" :href="'/output/' + task.ticker + '/report/' + task.result.visual_html[0]" target="_blank" class="flex items-center justify-center gap-1 py-1.5 rounded bg-white/5 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-400 text-[10px] font-bold transition-all border border-white/5 hover:border-cyan-500/30">VISUAL</a>
+                                <a v-if="task.result.visual_pdf && task.result.visual_pdf.length" :href="'/output/' + task.ticker + '/report/' + task.result.visual_pdf[0]" target="_blank" class="flex items-center justify-center gap-1 py-1.5 rounded bg-white/5 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-400 text-[10px] font-bold transition-all border border-white/5 hover:border-cyan-500/30">VISUAL PDF</a>
                                 <button @click="viewTaskLog(task)" class="flex items-center justify-center gap-1 py-1.5 rounded bg-white/5 hover:bg-amber-500/20 text-slate-300 hover:text-amber-400 text-[10px] font-bold transition-all border border-white/5 hover:border-amber-500/30">LOG</button>
                             </div>
                             <div v-else-if="task.status === 'failed'" class="grid grid-cols-1 gap-2">
@@ -523,6 +536,7 @@
                         margin_improvement: 0.01,
                         generate_text: true,
                         generate_pdf: true,
+                        report_format: 'text',
                         enable_sensitivity_analysis: true,
                         enable_catalyst_analysis: true,
                         enable_enhanced_news: true,
@@ -596,11 +610,13 @@
                                 company_name: h.company_name,
                                 status: h.status,
                                 logs: [`Report generated: ${h.company_name} (${h.ticker})`],
-                                result: (h.html.length || h.pdf.length) ? {
+                                result: (h.html.length || h.pdf.length || (h.visual_html && h.visual_html.length)) ? {
                                     report_dir: `/output/${h.ticker}/report`,
                                     ticker: h.ticker,
                                     html: h.html,
-                                    pdf: h.pdf
+                                    pdf: h.pdf,
+                                    visual_html: h.visual_html || [],
+                                    visual_pdf: h.visual_pdf || []
                                 } : null,
                                 showLogs: false
                             });
@@ -713,18 +729,23 @@
                         const response = await fetch(`/api/reports/${task.ticker}`);
                         const data = await response.json();
                         // 优先显示完整的PDF报告（Professional_Equity_Report），而不是单页图表
-                        const allPdfs = data.reports.filter(r => r.endsWith('.pdf'));
+                        const isVisual = r => r.includes('_Visual_Report_');
+                        const visualPdf = data.reports.filter(r => r.endsWith('.pdf') && isVisual(r));
+                        const visualHtml = data.reports.filter(r => r.endsWith('.html') && isVisual(r));
+                        const allPdfs = data.reports.filter(r => r.endsWith('.pdf') && !isVisual(r));
                         const professionalPdf = allPdfs.filter(r => r.includes('Professional_Equity_Report') || r.includes('Professional'));
                         const sortedPdfs = professionalPdf.length > 0 ? [...professionalPdf, ...allPdfs.filter(r => !r.includes('Professional'))] : allPdfs;
                         // 优先显示完整的HTML报告（Professional_Equity_Report），而不是单页
-                        const allHtmls = data.reports.filter(r => r.endsWith('.html'));
+                        const allHtmls = data.reports.filter(r => r.endsWith('.html') && !isVisual(r));
                         const professionalHtml = allHtmls.filter(r => r.includes('Professional_Equity_Report'));
                         const combinedHtml = allHtmls.filter(r => r.includes('Combined_Equity_Report'));
                         const otherHtmls = allHtmls.filter(r => !r.includes('Professional_Equity_Report') && !r.includes('Combined_Equity_Report') && !r.includes('Page'));
                         const sortedHtmls = [...professionalHtml, ...combinedHtml, ...otherHtmls];
                         task.result = {
                             html: sortedHtmls.length > 0 ? sortedHtmls : allHtmls,
-                            pdf: sortedPdfs
+                            pdf: sortedPdfs,
+                            visual_html: visualHtml,
+                            visual_pdf: visualPdf
                         };
                     } catch (e) { console.error("Error fetching reports", e); }
                 },

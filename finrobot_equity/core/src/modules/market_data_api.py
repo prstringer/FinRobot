@@ -565,7 +565,8 @@ def compute_technical_indicators(df: pd.DataFrame, ticker: str = "") -> dict:
     ``df`` needs 'date', 'close' and 'volume' columns (any order of dates).
     """
     result = {
-        'sma50': None, 'sma200': None, 'rsi14': None,
+        'sma20': None, 'sma50': None, 'sma200': None, 'rsi14': None,
+        'high_52w': None, 'low_52w': None, 'as_of_date': None,
         'macd': None, 'macd_signal': None, 'macd_histogram': None,
         'avg_volume_20d': None, 'latest_volume': None,
         'price': None,
@@ -583,6 +584,15 @@ def compute_technical_indicators(df: pd.DataFrame, ticker: str = "") -> dict:
         volume = df['volume'].astype(float)
 
         result['price'] = close.iloc[-1]
+        result['as_of_date'] = str(pd.Timestamp(df['date'].iloc[-1]).date())
+
+        # 20-day SMA and 52-week (last ~250 sessions) high / low from the same series
+        result['sma20'] = round(close.rolling(20).mean().iloc[-1], 2) if len(close) >= 20 else None
+        window = df.tail(250)
+        hi = window['high'] if 'high' in window else window['close']
+        lo = window['low'] if 'low' in window else window['close']
+        result['high_52w'] = round(float(hi.max()), 2)
+        result['low_52w'] = round(float(lo.min()), 2)
 
         # SMA
         sma50 = close.rolling(50).mean().iloc[-1]

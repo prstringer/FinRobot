@@ -1,0 +1,5490 @@
+{
+ "schema_version": 1,
+ "meta": {
+  "ticker": "WELSPUNLIV",
+  "company_name": "Welspun Living Ltd",
+  "sector": "Home textiles",
+  "kind": "nonfinancial",
+  "report_date": "2026-11-15",
+  "generated_at": "2026-11-15T10:27:30",
+  "currency": "INR",
+  "snapshot": {
+   "price": 249.0,
+   "price_date": "2026-11-13",
+   "price_time": "15:30 IST",
+   "market_cap_cr": 23524,
+   "week52_low": 107.4,
+   "week52_high": 267.4
+  }
+ },
+ "thesis": "A sound product business, hurt by fixed costs, priced for a recovery that has only started.",
+ "warnings": [
+  {
+   "level": "warning",
+   "text": "Peer EV/EBITDA is on each company's current price; the history uses fiscal-year average prices."
+  },
+  {
+   "level": "info",
+   "text": "Q2 FY27 is in the TTM figures but not in the FY26 full-year figures."
+  }
+ ],
+ "panels": [
+  {
+   "id": "summary",
+   "n": 1,
+   "nav": "Summary",
+   "question": "Should I worry, and about what?",
+   "headline": "Sound product, hurt by costs, priced ahead",
+   "charts": [
+    {
+     "id": "price_vs_earnings",
+     "role": "main",
+     "title": "Price against earnings",
+     "subtitle": "Change over the last year, %",
+     "option": {
+      "grid": {
+       "left": 150,
+       "right": 60,
+       "top": 10,
+       "bottom": 24
+      },
+      "xAxis": {
+       "type": "value",
+       "axisLine": {
+        "show": false
+       },
+       "splitLine": {
+        "lineStyle": {
+         "color": "@grid"
+        }
+       },
+       "axisLabel": {
+        "color": "@muted"
+       }
+      },
+      "yAxis": {
+       "type": "category",
+       "inverse": true,
+       "data": [
+        "Share price, 1 year",
+        "EPS, last full year",
+        "EPS, TTM vs last year"
+       ],
+       "axisLine": {
+        "lineStyle": {
+         "color": "@grey4"
+        }
+       },
+       "axisLabel": {
+        "color": "@text"
+       }
+      },
+      "series": [
+       {
+        "type": "bar",
+        "barWidth": 22,
+        "data": [
+         {
+          "value": 82,
+          "tip": "Share price: +82% over one year",
+          "itemStyle": {
+           "color": "@accent"
+          },
+          "label": {
+           "show": true,
+           "position": "right",
+           "formatter": "+82%"
+          }
+         },
+         {
+          "value": -68,
+          "tip": "EPS FY26 against FY25: -68%",
+          "itemStyle": {
+           "color": "@grey3"
+          },
+          "label": {
+           "show": true,
+           "position": "left",
+           "formatter": "-68%"
+          }
+         },
+         {
+          "value": 115,
+          "tip": "TTM EPS against FY26 EPS: +115%",
+          "itemStyle": {
+           "color": "@grey3"
+          },
+          "label": {
+           "show": true,
+           "position": "right",
+           "formatter": "+115%"
+          }
+         }
+        ]
+       }
+      ]
+     },
+     "alt": "Bar chart. The share price rose 82% in a year. EPS fell 68% in the last full year but TTM EPS is 115% above that low base.",
+     "datatable": {
+      "columns": [
+       "Measure",
+       "Change %"
+      ],
+      "rows": [
+       [
+        "Share price, 1 year",
+        "+82"
+       ],
+       [
+        "EPS, last full year",
+        "-68"
+       ],
+       [
+        "EPS, TTM vs last year",
+        "+115"
+       ]
+      ]
+     },
+     "variants": null,
+     "default_variant": null,
+     "static_note": null,
+     "height": 190
+    }
+   ],
+   "chips": [],
+   "extra": {
+    "lights": [
+     {
+      "key": "business",
+      "label": "Business health",
+      "light": "neutral",
+      "reason": "Pricing holds, but interest cover is thin and sales are shrinking."
+     },
+     {
+      "key": "profit",
+      "label": "Profit trend",
+      "light": "concern",
+      "reason": "EBITDA margin is near its five-year low; TTM shows a recovery."
+     },
+     {
+      "key": "price",
+      "label": "Price vs value",
+      "light": "concern",
+      "reason": "Fair value per share is below today's price in every case."
+     },
+     {
+      "key": "momentum",
+      "label": "Momentum",
+      "light": "neutral",
+      "reason": "Uptrend intact, but late, stretched and thinly traded."
+     }
+    ],
+    "price_vs_earnings": {
+     "price_change_1y_pct": 82.3,
+     "eps_fy_change_pct": -68.0,
+     "eps_ttm_change_pct": 114.7,
+     "sentence": "The share price is behind TTM earnings but far ahead of last full-year earnings."
+    },
+    "header_strip": {}
+   },
+   "notes": []
+  },
+  {
+   "id": "profit_engine",
+   "n": 2,
+   "nav": "Profit engine",
+   "question": "Where did the profit go?",
+   "headline": "Prices held. Costs broke the margin.",
+   "charts": [
+    {
+     "id": "margin_scissors",
+     "role": "main",
+     "title": "Prices held, overheads rose",
+     "subtitle": "Contribution margin and SG&A as % of revenue; forecasts dashed",
+     "option": {
+      "grid": {
+       "left": 44,
+       "right": 150,
+       "top": 14,
+       "bottom": 28
+      },
+      "tooltip": {
+       "trigger": "axis"
+      },
+      "xAxis": {
+       "type": "category",
+       "data": [
+        "FY22",
+        "FY23",
+        "FY24",
+        "FY25",
+        "FY26",
+        "2027E",
+        "2028E",
+        "2029E"
+       ],
+       "axisLine": {
+        "lineStyle": {
+         "color": "@grey4"
+        }
+       },
+       "axisLabel": {
+        "color": "@muted"
+       }
+      },
+      "yAxis": {
+       "type": "value",
+       "min": 25,
+       "max": 55,
+       "axisLabel": {
+        "color": "@muted",
+        "formatter": "{value}%"
+       },
+       "splitLine": {
+        "lineStyle": {
+         "color": "@grid"
+        }
+       }
+      },
+      "series": [
+       {
+        "name": "SG&A base",
+        "type": "line",
+        "stack": "gap",
+        "symbol": "none",
+        "lineStyle": {
+         "opacity": 0
+        },
+        "areaStyle": {
+         "opacity": 0
+        },
+        "data": [
+         30.7,
+         34.9,
+         33.1,
+         33.9,
+         37.8,
+         37.3,
+         36.8,
+         36.3
+        ],
+        "silent": true
+       },
+       {
+        "name": "Gap",
+        "type": "line",
+        "stack": "gap",
+        "symbol": "none",
+        "lineStyle": {
+         "opacity": 0
+        },
+        "areaStyle": {
+         "color": "@grey5",
+         "opacity": 0.7
+        },
+        "data": [
+         14.6,
+         9.3,
+         14.1,
+         12.3,
+         8.4,
+         9.9,
+         11.4,
+         12.9
+        ],
+        "silent": true
+       },
+       {
+        "name": "Contribution margin",
+        "type": "line",
+        "symbol": "circle",
+        "symbolSize": 6,
+        "lineStyle": {
+         "color": "@accent",
+         "width": 3
+        },
+        "itemStyle": {
+         "color": "@accent"
+        },
+        "data": [
+         {
+          "value": 45.3,
+          "tip": "FY22: contribution margin 45.3%"
+         },
+         {
+          "value": 44.2,
+          "tip": "FY23: contribution margin 44.2%"
+         },
+         {
+          "value": 47.2,
+          "tip": "FY24: contribution margin 47.2%"
+         },
+         {
+          "value": 46.2,
+          "tip": "FY25: contribution margin 46.2%"
+         },
+         {
+          "value": 46.2,
+          "tip": "FY26: contribution margin 46.2%"
+         },
+         null,
+         null,
+         null
+        ],
+        "endLabel": {
+         "show": false
+        }
+       },
+       {
+        "name": "Contribution margin (forecast)",
+        "type": "line",
+        "symbol": "circle",
+        "symbolSize": 5,
+        "lineStyle": {
+         "color": "@accent",
+         "width": 2,
+         "type": "dashed"
+        },
+        "itemStyle": {
+         "color": "@accent"
+        },
+        "data": [
+         null,
+         null,
+         null,
+         null,
+         {
+          "value": 46.2,
+          "tip": "FY26: contribution margin 46.2%"
+         },
+         {
+          "value": 47.2,
+          "tip": "2027E: contribution margin 47.2% (forecast)"
+         },
+         {
+          "value": 48.2,
+          "tip": "2028E: contribution margin 48.2% (forecast)"
+         },
+         {
+          "value": 49.2,
+          "tip": "2029E: contribution margin 49.2% (forecast)"
+         }
+        ],
+        "endLabel": {
+         "show": true,
+         "formatter": "Contribution margin",
+         "color": "@accent",
+         "distance": 6
+        }
+       },
+       {
+        "name": "SG&A as % of revenue",
+        "type": "line",
+        "symbol": "circle",
+        "symbolSize": 6,
+        "lineStyle": {
+         "color": "@grey1",
+         "width": 3
+        },
+        "itemStyle": {
+         "color": "@grey1"
+        },
+        "data": [
+         {
+          "value": 30.7,
+          "tip": "FY22: SG&A 30.7% of revenue"
+         },
+         {
+          "value": 34.9,
+          "tip": "FY23: SG&A 34.9% of revenue"
+         },
+         {
+          "value": 33.1,
+          "tip": "FY24: SG&A 33.1% of revenue"
+         },
+         {
+          "value": 33.9,
+          "tip": "FY25: SG&A 33.9% of revenue"
+         },
+         {
+          "value": 37.8,
+          "tip": "FY26: SG&A 37.8% of revenue"
+         },
+         null,
+         null,
+         null
+        ],
+        "markPoint": {
+         "symbol": "pin",
+         "symbolSize": 44,
+         "itemStyle": {
+          "color": "@grey1"
+         },
+         "label": {
+          "color": "@bg",
+          "formatter": "37.8%",
+          "fontSize": 10
+         },
+         "data": [
+          {
+           "coord": [
+            "FY26",
+            37.8
+           ],
+           "tip": "SG&A 37.8%, five-year high"
+          }
+         ]
+        }
+       },
+       {
+        "name": "SG&A (forecast)",
+        "type": "line",
+        "symbol": "circle",
+        "symbolSize": 5,
+        "lineStyle": {
+         "color": "@grey1",
+         "width": 2,
+         "type": "dashed"
+        },
+        "itemStyle": {
+         "color": "@grey1"
+        },
+        "data": [
+         null,
+         null,
+         null,
+         null,
+         {
+          "value": 37.8,
+          "tip": "FY26: SG&A 37.8% of revenue"
+         },
+         {
+          "value": 37.3,
+          "tip": "2027E: SG&A 37.3% of revenue (forecast)"
+         },
+         {
+          "value": 36.8,
+          "tip": "2028E: SG&A 36.8% of revenue (forecast)"
+         },
+         {
+          "value": 36.3,
+          "tip": "2029E: SG&A 36.3% of revenue (forecast)"
+         }
+        ],
+        "endLabel": {
+         "show": true,
+         "formatter": "SG&A % of revenue",
+         "color": "@grey1",
+         "distance": 6
+        },
+        "markArea": {
+         "silent": true,
+         "itemStyle": {
+          "color": "@grey5",
+          "opacity": 0.25
+         },
+         "label": {
+          "show": true,
+          "position": "insideTop",
+          "formatter": "Forecast",
+          "color": "@muted"
+         },
+         "data": [
+          [
+           {
+            "xAxis": "2027E"
+           },
+           {
+            "xAxis": "2029E"
+           }
+          ]
+         ]
+        }
+       }
+      ]
+     },
+     "alt": "Line chart. SG&A rose from 30.7% to 37.8% of revenue between FY22 and FY26 while contribution margin stayed near 46%. The shaded gap between the lines narrowed. Forecasts are dashed.",
+     "datatable": {
+      "columns": [
+       "Year",
+       "Contribution margin %",
+       "SG&A % of revenue"
+      ],
+      "rows": [
+       [
+        "FY22",
+        "45.3",
+        "30.7"
+       ],
+       [
+        "FY23",
+        "44.2",
+        "34.9"
+       ],
+       [
+        "FY24",
+        "47.2",
+        "33.1"
+       ],
+       [
+        "FY25",
+        "46.2",
+        "33.9"
+       ],
+       [
+        "FY26",
+        "46.2",
+        "37.8"
+       ],
+       [
+        "2027E",
+        "47.2",
+        "37.3"
+       ],
+       [
+        "2028E",
+        "48.2",
+        "36.8"
+       ],
+       [
+        "2029E",
+        "49.2",
+        "36.3"
+       ]
+      ]
+     },
+     "variants": null,
+     "default_variant": null,
+     "static_note": null,
+     "height": 300
+    },
+    {
+     "id": "waterfall",
+     "role": "small",
+     "title": "From revenue to EBITDA, FY26",
+     "subtitle": "Rs crore",
+     "option": {
+      "grid": {
+       "left": 12,
+       "right": 12,
+       "top": 24,
+       "bottom": 28,
+       "containLabel": true
+      },
+      "xAxis": {
+       "type": "category",
+       "data": [
+        "Revenue",
+        "Direct costs",
+        "Contribution",
+        "SG&A",
+        "EBITDA"
+       ],
+       "axisLabel": {
+        "color": "@muted",
+        "interval": 0,
+        "fontSize": 10
+       }
+      },
+      "yAxis": {
+       "type": "value",
+       "show": false
+      },
+      "series": [
+       {
+        "type": "bar",
+        "stack": "w",
+        "itemStyle": {
+         "color": "transparent"
+        },
+        "silent": true,
+        "data": [
+         0,
+         5346,
+         0,
+         793,
+         0
+        ]
+       },
+       {
+        "type": "bar",
+        "stack": "w",
+        "barWidth": 34,
+        "data": [
+         {
+          "value": 9399,
+          "tip": "Revenue Rs 9,399 cr",
+          "itemStyle": {
+           "color": "@grey3"
+          },
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "9,399"
+          }
+         },
+         {
+          "value": 5053,
+          "tip": "Direct costs Rs 5,053 cr",
+          "itemStyle": {
+           "color": "@grey4"
+          },
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "-5,053"
+          }
+         },
+         {
+          "value": 4346,
+          "tip": "Contribution Rs 4,346 cr",
+          "itemStyle": {
+           "color": "@accent"
+          },
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "4,346"
+          }
+         },
+         {
+          "value": 3553,
+          "tip": "SG&A Rs 3,553 cr",
+          "itemStyle": {
+           "color": "@grey1"
+          },
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "-3,553"
+          }
+         },
+         {
+          "value": 793,
+          "tip": "EBITDA Rs 793 cr",
+          "itemStyle": {
+           "color": "@accent"
+          },
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "793"
+          }
+         }
+        ]
+       }
+      ]
+     },
+     "alt": "Waterfall chart. Revenue of Rs 9,399 crore less Rs 5,053 crore of direct costs leaves Rs 4,346 crore of contribution. SG&A of Rs 3,553 crore leaves EBITDA of Rs 793 crore.",
+     "datatable": {
+      "columns": [
+       "Step",
+       "Rs crore"
+      ],
+      "rows": [
+       [
+        "Revenue",
+        "9,399"
+       ],
+       [
+        "Direct costs",
+        "-5,053"
+       ],
+       [
+        "Contribution",
+        "4,346"
+       ],
+       [
+        "SG&A",
+        "-3,553"
+       ],
+       [
+        "EBITDA",
+        "793"
+       ]
+      ]
+     },
+     "variants": null,
+     "default_variant": null,
+     "static_note": null,
+     "height": 240
+    }
+   ],
+   "chips": [
+    {
+     "id": "contribution_margin",
+     "metric": "contribution_margin",
+     "label": "Contribution margin",
+     "value": 46.2,
+     "value_text": "46.2%",
+     "unit": "%",
+     "period": "FY26",
+     "verdict": "good",
+     "icon": "check",
+     "yardstick": "own_history",
+     "yardstick_text": "vs own history",
+     "scale": {
+      "min": 44.2,
+      "max": 47.2,
+      "peer_median": null,
+      "higher_is_better": true,
+      "value": 46.2
+     },
+     "so_what": "Revenue swung 33 points but this margin moved 3. Pricing is holding; the profit problem lies in costs below this line.",
+     "source": "report_data",
+     "calc": "Contribution profit / revenue, FY22 to FY26. Verdict: top third of own five-year range."
+    },
+    {
+     "id": "sga_ratio",
+     "metric": "sga_ratio",
+     "label": "SG&A as % of revenue",
+     "value": 37.8,
+     "value_text": "37.8%",
+     "unit": "%",
+     "period": "FY26",
+     "verdict": "concern",
+     "icon": "alert",
+     "yardstick": "own_history",
+     "yardstick_text": "vs own history",
+     "scale": {
+      "min": 30.7,
+      "max": 37.8,
+      "peer_median": 35.7,
+      "higher_is_better": false,
+      "value": 37.8
+     },
+     "so_what": "Overheads take more of each sale than at any time in five years, which is what squeezes profit when sales fall.",
+     "source": "report_data",
+     "calc": "SG&A / revenue. Lower is better. Peer median from the peer set."
+    },
+    {
+     "id": "operating_leverage",
+     "metric": "operating_leverage",
+     "label": "Operating leverage",
+     "value": 44.1,
+     "value_text": "Rs 44 per Rs 100",
+     "unit": "",
+     "period": "FY25 to FY26",
+     "verdict": "concern",
+     "icon": "alert",
+     "yardstick": "own_history",
+     "yardstick_text": "vs own history",
+     "scale": {
+      "min": 0,
+      "max": 100,
+      "peer_median": null,
+      "higher_is_better": false,
+      "value": 44.1
+     },
+     "so_what": "A large share of each lost rupee of sales comes straight out of profit, so earnings swing more than sales.",
+     "source": "calculated",
+     "calc": "Change in EBITDA / change in revenue x 100, FY25 to FY26."
+    }
+   ],
+   "extra": {
+    "bridge": {
+     "from": "FY22",
+     "to": "FY26",
+     "d_ebitda_margin_pts": -6.2,
+     "d_contribution_margin_pts": 0.9,
+     "d_sga_pct_pts": 7.1,
+     "text": "EBITDA margin moved -6.2 points from FY22 to FY26: contribution margin +0.9 points, SG&A as % of revenue +7.1 points."
+    },
+    "operating_leverage": {
+     "ebitda_per_100_revenue": 44.1,
+     "text": "About Rs 44 of every Rs 100 of lost sales came out of EBITDA from FY25 to FY26."
+    }
+   },
+   "notes": []
+  },
+  {
+   "id": "cyclicality",
+   "n": 3,
+   "nav": "Cyclicality",
+   "question": "Is this a one-off dip?",
+   "headline": "Second downturn in four years, same pattern.",
+   "charts": [
+    {
+     "id": "growth_vs_ebitda",
+     "role": "main",
+     "title": "Sales swings drive earnings swings",
+     "subtitle": "Revenue growth (bars, left axis) and EBITDA (line, right axis)",
+     "option": {
+      "grid": {
+       "left": 50,
+       "right": 56,
+       "top": 44,
+       "bottom": 28
+      },
+      "tooltip": {
+       "trigger": "axis"
+      },
+      "xAxis": {
+       "type": "category",
+       "data": [
+        "FY22",
+        "FY23",
+        "FY24",
+        "FY25",
+        "FY26"
+       ],
+       "axisLabel": {
+        "color": "@muted"
+       },
+       "axisLine": {
+        "lineStyle": {
+         "color": "@grey4"
+        }
+       }
+      },
+      "yAxis": [
+       {
+        "type": "value",
+        "name": "Revenue growth, %",
+        "nameTextStyle": {
+         "color": "@muted"
+        },
+        "axisLabel": {
+         "color": "@muted"
+        },
+        "splitLine": {
+         "lineStyle": {
+          "color": "@grid"
+         }
+        }
+       },
+       {
+        "type": "value",
+        "name": "EBITDA, Rs cr",
+        "nameTextStyle": {
+         "color": "@muted"
+        },
+        "min": 0,
+        "max": 1800,
+        "axisLabel": {
+         "color": "@muted"
+        },
+        "splitLine": {
+         "show": false
+        }
+       }
+      ],
+      "series": [
+       {
+        "name": "Revenue growth",
+        "type": "bar",
+        "barWidth": 30,
+        "data": [
+         null,
+         {
+          "value": -13.1,
+          "tip": "FY23: revenue growth -13.1%",
+          "itemStyle": {
+           "color": "@concern"
+          },
+          "label": {
+           "show": true,
+           "position": "bottom",
+           "formatter": "-13.1%"
+          }
+         },
+         {
+          "value": 19.6,
+          "tip": "FY24: revenue growth 19.6%",
+          "itemStyle": {
+           "color": "@grey3"
+          },
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "19.6%"
+          }
+         },
+         {
+          "value": 8.9,
+          "tip": "FY25: revenue growth 8.9%",
+          "itemStyle": {
+           "color": "@grey3"
+          },
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "8.9%"
+          }
+         },
+         {
+          "value": -10.9,
+          "tip": "FY26: revenue growth -10.9%",
+          "itemStyle": {
+           "color": "@concern"
+          },
+          "label": {
+           "show": true,
+           "position": "bottom",
+           "formatter": "-10.9%"
+          }
+         }
+        ]
+       },
+       {
+        "name": "EBITDA",
+        "type": "line",
+        "yAxisIndex": 1,
+        "symbol": "circle",
+        "symbolSize": 7,
+        "lineStyle": {
+         "color": "@accent",
+         "width": 3
+        },
+        "itemStyle": {
+         "color": "@accent"
+        },
+        "data": [
+         {
+          "value": 1359,
+          "tip": "FY22: EBITDA Rs 1,359 cr",
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "1,359"
+          }
+         },
+         {
+          "value": 753,
+          "tip": "FY23: EBITDA Rs 753 cr",
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "753"
+          }
+         },
+         {
+          "value": 1369,
+          "tip": "FY24: EBITDA Rs 1,369 cr",
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "1,369"
+          }
+         },
+         {
+          "value": 1298,
+          "tip": "FY25: EBITDA Rs 1,298 cr",
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "1,298"
+          }
+         },
+         {
+          "value": 793,
+          "tip": "FY26: EBITDA Rs 793 cr",
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "793"
+          }
+         }
+        ],
+        "markArea": {
+         "silent": true,
+         "itemStyle": {
+          "color": "@grey5",
+          "opacity": 0.45
+         },
+         "label": {
+          "show": true,
+          "formatter": "Steadiest peer: Rs 1,220 to 1,280 cr",
+          "position": "insideTop",
+          "color": "@muted",
+          "fontSize": 10
+         },
+         "data": [
+          [
+           {
+            "yAxis": 1220
+           },
+           {
+            "yAxis": 1280
+           }
+          ]
+         ]
+        }
+       }
+      ]
+     },
+     "alt": "Combined chart. Revenue fell 13.1% in FY23 and 10.9% in FY26, and EBITDA fell with it from Rs 1,359 crore to Rs 753 crore and from Rs 1,298 crore to Rs 793 crore. The steadiest peer stayed within Rs 1,220 to 1,280 crore.",
+     "datatable": {
+      "columns": [
+       "Year",
+       "Revenue growth %",
+       "EBITDA Rs cr"
+      ],
+      "rows": [
+       [
+        "FY22",
+        "n/a",
+        "1359"
+       ],
+       [
+        "FY23",
+        "-13.1",
+        "753"
+       ],
+       [
+        "FY24",
+        "19.6",
+        "1369"
+       ],
+       [
+        "FY25",
+        "8.9",
+        "1298"
+       ],
+       [
+        "FY26",
+        "-10.9",
+        "793"
+       ]
+      ]
+     },
+     "variants": null,
+     "default_variant": null,
+     "static_note": null,
+     "height": 300
+    }
+   ],
+   "chips": [
+    {
+     "id": "ebitda_margin",
+     "metric": "ebitda_margin",
+     "label": "EBITDA margin",
+     "value": 8.4,
+     "value_text": "8.4%",
+     "unit": "%",
+     "period": "FY26",
+     "verdict": "concern",
+     "icon": "alert",
+     "yardstick": "own_history",
+     "yardstick_text": "vs own history",
+     "scale": {
+      "min": 8.4,
+      "max": 14.6,
+      "peer_median": 13.0,
+      "higher_is_better": true,
+      "value": 8.4
+     },
+     "so_what": "Operating profit per rupee of sales is at its low point, so each further fall in sales hurts earnings sharply.",
+     "source": "report_data",
+     "calc": "EBITDA / revenue, FY22 to FY26."
+    },
+    {
+     "id": "earnings_volatility",
+     "metric": "earnings_volatility",
+     "label": "Earnings volatility",
+     "value": 6.2,
+     "value_text": "6.2 pts",
+     "unit": "pts",
+     "period": "FY22 to FY26",
+     "verdict": "concern",
+     "icon": "alert",
+     "yardstick": "peers",
+     "yardstick_text": "vs peers",
+     "scale": {
+      "min": 1.0,
+      "max": 8.0,
+      "peer_median": 2.1,
+      "higher_is_better": false,
+      "value": 6.2
+     },
+     "so_what": "Profit margins swing far more than at the steadiest peers, which makes the earnings path harder to trust.",
+     "source": "calculated",
+     "calc": "Range of EBITDA margin over five years, compared with the peer median range."
+    }
+   ],
+   "extra": {},
+   "notes": []
+  },
+  {
+   "id": "strength",
+   "n": 4,
+   "nav": "Strength",
+   "question": "Can it fund itself and carry its debt?",
+   "headline": "Debt falling; cash strong, partly one-off.",
+   "charts": [
+    {
+     "id": "ebitda_vs_cfo",
+     "role": "main",
+     "title": "Does profit turn into cash?",
+     "subtitle": "EBITDA and operating cash flow, Rs crore; conversion % above each pair",
+     "option": {
+      "grid": {
+       "left": 50,
+       "right": 16,
+       "top": 36,
+       "bottom": 30
+      },
+      "tooltip": {
+       "trigger": "axis"
+      },
+      "xAxis": {
+       "type": "category",
+       "data": [
+        "FY22",
+        "FY23",
+        "FY24",
+        "FY25",
+        "FY26",
+        "TTM"
+       ],
+       "axisLabel": {
+        "color": "@muted"
+       },
+       "axisLine": {
+        "lineStyle": {
+         "color": "@grey4"
+        }
+       }
+      },
+      "yAxis": {
+       "type": "value",
+       "min": 0,
+       "axisLabel": {
+        "color": "@muted"
+       },
+       "splitLine": {
+        "lineStyle": {
+         "color": "@grid"
+        }
+       }
+      },
+      "series": [
+       {
+        "name": "EBITDA",
+        "type": "bar",
+        "barGap": "8%",
+        "itemStyle": {
+         "color": "@grey3"
+        },
+        "data": [
+         {
+          "value": 1359,
+          "tip": "FY22: EBITDA Rs 1,359 cr"
+         },
+         {
+          "value": 753,
+          "tip": "FY23: EBITDA Rs 753 cr"
+         },
+         {
+          "value": 1369,
+          "tip": "FY24: EBITDA Rs 1,369 cr"
+         },
+         {
+          "value": 1298,
+          "tip": "FY25: EBITDA Rs 1,298 cr"
+         },
+         {
+          "value": 793,
+          "tip": "FY26: EBITDA Rs 793 cr"
+         },
+         {
+          "value": 1068,
+          "tip": "TTM: EBITDA Rs 1,068 cr"
+         }
+        ]
+       },
+       {
+        "name": "Operating cash flow",
+        "type": "bar",
+        "itemStyle": {
+         "color": "@accent"
+        },
+        "data": [
+         {
+          "value": 587,
+          "tip": "FY22: operating cash flow Rs 587 cr, 43% of EBITDA",
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "43%"
+          }
+         },
+         {
+          "value": 756,
+          "tip": "FY23: operating cash flow Rs 756 cr, 100% of EBITDA",
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "100%"
+          }
+         },
+         {
+          "value": 533,
+          "tip": "FY24: operating cash flow Rs 533 cr, 39% of EBITDA",
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "39%"
+          }
+         },
+         {
+          "value": 688,
+          "tip": "FY25: operating cash flow Rs 688 cr, 53% of EBITDA",
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "53%"
+          }
+         },
+         {
+          "value": 1175,
+          "tip": "FY26: operating cash flow Rs 1,175 cr, 148% of EBITDA",
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "148%"
+          }
+         },
+         {
+          "value": 1910,
+          "tip": "TTM: operating cash flow Rs 1,910 cr, 179% of EBITDA",
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "179%"
+          }
+         }
+        ]
+       }
+      ]
+     },
+     "alt": "Paired bar chart of EBITDA and operating cash flow. Cash conversion was 43%, 100%, 39%, 53% and 148% from FY22 to FY26. It rose when sales fell, in FY23 and FY26.",
+     "datatable": {
+      "columns": [
+       "Year",
+       "EBITDA Rs cr",
+       "Operating cash flow Rs cr",
+       "Conversion"
+      ],
+      "rows": [
+       [
+        "FY22",
+        "1359",
+        "587",
+        "43%"
+       ],
+       [
+        "FY23",
+        "753",
+        "756",
+        "100%"
+       ],
+       [
+        "FY24",
+        "1369",
+        "533",
+        "39%"
+       ],
+       [
+        "FY25",
+        "1298",
+        "688",
+        "53%"
+       ],
+       [
+        "FY26",
+        "793",
+        "1175",
+        "148%"
+       ],
+       [
+        "TTM",
+        "1068",
+        "1910",
+        "179%"
+       ]
+      ]
+     },
+     "variants": null,
+     "default_variant": null,
+     "static_note": null,
+     "height": 290
+    },
+    {
+     "id": "debt_equity",
+     "role": "small",
+     "title": "Debt to equity",
+     "subtitle": "Lower is better",
+     "option": {
+      "grid": {
+       "left": 12,
+       "right": 20,
+       "top": 10,
+       "bottom": 24,
+       "containLabel": true
+      },
+      "xAxis": {
+       "type": "category",
+       "data": [
+        "FY22",
+        "FY26"
+       ],
+       "axisLabel": {
+        "color": "@muted"
+       }
+      },
+      "yAxis": {
+       "type": "value",
+       "min": 0,
+       "axisLabel": {
+        "color": "@muted"
+       },
+       "splitLine": {
+        "lineStyle": {
+         "color": "@grid"
+        }
+       }
+      },
+      "series": [
+       {
+        "type": "bar",
+        "barWidth": 30,
+        "data": [
+         {
+          "value": 0.8,
+          "tip": "FY22: debt to equity 0.80x",
+          "itemStyle": {
+           "color": "@grey3"
+          },
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "0.8x"
+          }
+         },
+         {
+          "value": 0.37,
+          "tip": "FY26: debt to equity 0.37x",
+          "itemStyle": {
+           "color": "@accent"
+          },
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "0.37x"
+          }
+         }
+        ]
+       }
+      ]
+     },
+     "alt": "Debt to equity: FY22 0.8x, FY26 0.37x. Improving.",
+     "datatable": {
+      "columns": [
+       "Year",
+       "Debt to equity"
+      ],
+      "rows": [
+       [
+        "FY22",
+        "0.8"
+       ],
+       [
+        "FY26",
+        "0.37"
+       ]
+      ]
+     },
+     "variants": null,
+     "default_variant": null,
+     "static_note": null,
+     "height": 200
+    },
+    {
+     "id": "interest_cover",
+     "role": "small",
+     "title": "Interest coverage",
+     "subtitle": "Higher is better",
+     "option": {
+      "grid": {
+       "left": 12,
+       "right": 20,
+       "top": 10,
+       "bottom": 24,
+       "containLabel": true
+      },
+      "xAxis": {
+       "type": "category",
+       "data": [
+        "FY22",
+        "FY26"
+       ],
+       "axisLabel": {
+        "color": "@muted"
+       }
+      },
+      "yAxis": {
+       "type": "value",
+       "min": 0,
+       "axisLabel": {
+        "color": "@muted"
+       },
+       "splitLine": {
+        "lineStyle": {
+         "color": "@grid"
+        }
+       }
+      },
+      "series": [
+       {
+        "type": "bar",
+        "barWidth": 30,
+        "data": [
+         {
+          "value": 7.7,
+          "tip": "FY22: interest cover 7.7x",
+          "itemStyle": {
+           "color": "@grey3"
+          },
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "7.7x"
+          }
+         },
+         {
+          "value": 2.8,
+          "tip": "FY26: interest cover 2.8x",
+          "itemStyle": {
+           "color": "@accent"
+          },
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "2.8x"
+          }
+         }
+        ]
+       }
+      ]
+     },
+     "alt": "Interest coverage: FY22 7.7x, FY26 2.8x. Weakening.",
+     "datatable": {
+      "columns": [
+       "Year",
+       "Interest coverage"
+      ],
+      "rows": [
+       [
+        "FY22",
+        "7.7"
+       ],
+       [
+        "FY26",
+        "2.8"
+       ]
+      ]
+     },
+     "variants": null,
+     "default_variant": null,
+     "static_note": null,
+     "height": 200
+    }
+   ],
+   "chips": [
+    {
+     "id": "cash_conversion",
+     "metric": "cash_conversion",
+     "label": "Cash conversion",
+     "value": 148,
+     "value_text": "148%",
+     "unit": "%",
+     "period": "FY26",
+     "verdict": "concern",
+     "icon": "alert",
+     "yardstick": "own_history",
+     "yardstick_text": "vs own history",
+     "scale": {
+      "min": 39,
+      "max": 148,
+      "peer_median": null,
+      "higher_is_better": true,
+      "value": 148
+     },
+     "so_what": "Cash comes in when sales fall and goes out when they rise, so FY26 cash is flattered.",
+     "source": "calculated",
+     "calc": "Operating cash flow / EBITDA each year; correlation with revenue growth -0.89."
+    },
+    {
+     "id": "debt_equity",
+     "metric": "debt_equity",
+     "label": "Debt to equity",
+     "value": 0.37,
+     "value_text": "0.37x",
+     "unit": "x",
+     "period": "FY26",
+     "verdict": "good",
+     "icon": "check",
+     "yardstick": "own_history",
+     "yardstick_text": "vs own history",
+     "scale": {
+      "min": 0.37,
+      "max": 0.8,
+      "peer_median": 0.18,
+      "higher_is_better": false,
+      "value": 0.37
+     },
+     "so_what": "Borrowing has fallen steadily, which gives room to ride out a weak year.",
+     "source": "report_data",
+     "calc": "Total debt / shareholders' equity, FY22 to FY26."
+    },
+    {
+     "id": "interest_coverage",
+     "metric": "interest_coverage",
+     "label": "Interest coverage",
+     "value": 2.8,
+     "value_text": "2.8x",
+     "unit": "x",
+     "period": "FY26",
+     "verdict": "concern",
+     "icon": "alert",
+     "yardstick": "general_norm",
+     "yardstick_text": "General norm, not company-specific",
+     "scale": {
+      "min": 2.0,
+      "max": 4.0,
+      "peer_median": null,
+      "higher_is_better": true,
+      "value": 2.8
+     },
+     "so_what": "Profit covers interest only thinly, so a further earnings dip would strain debt service.",
+     "source": "general_norm",
+     "calc": "EBIT / interest expense. General norm: below 3x is thin."
+    }
+   ],
+   "extra": {},
+   "notes": [
+    "Capex is reported separately from other investing cash flow: capex was Rs 799 cr in FY26 and free cash flow Rs 376 cr."
+   ]
+  },
+  {
+   "id": "valuation",
+   "n": 5,
+   "nav": "Valuation",
+   "question": "Is the price justified?",
+   "headline": "Priced above its history and steadiest peer.",
+   "charts": [
+    {
+     "id": "valuation_strip",
+     "role": "main",
+     "title": "Where the stock sits among peers",
+     "subtitle": "EV/EBITDA on last full-year EBITDA; peers at their current prices",
+     "option": {
+      "grid": {
+       "left": 20,
+       "right": 40,
+       "top": 40,
+       "bottom": 50
+      },
+      "xAxis": {
+       "type": "value",
+       "min": 0,
+       "max": 35,
+       "name": "EV/EBITDA, x",
+       "nameLocation": "middle",
+       "nameGap": 28,
+       "nameTextStyle": {
+        "color": "@muted"
+       },
+       "axisLabel": {
+        "color": "@muted"
+       },
+       "splitLine": {
+        "lineStyle": {
+         "color": "@grid"
+        }
+       }
+      },
+      "yAxis": {
+       "type": "value",
+       "show": false,
+       "min": -1,
+       "max": 1
+      },
+      "series": [
+       {
+        "type": "scatter",
+        "symbolSize": 14,
+        "data": [
+         {
+          "value": [
+           11.4,
+           0
+          ],
+          "name": "VTL",
+          "tip": "VTL: EV/EBITDA 11.4x",
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "VTL",
+           "color": "@muted",
+           "fontSize": 10
+          },
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": [
+           16.0,
+           0
+          ],
+          "name": "ICIL",
+          "tip": "ICIL: EV/EBITDA 16.0x",
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "ICIL",
+           "color": "@muted",
+           "fontSize": 10
+          },
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": [
+           17.8,
+           0
+          ],
+          "name": "TRIDENT",
+          "tip": "TRIDENT: EV/EBITDA 17.8x",
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "TRIDENT",
+           "color": "@muted",
+           "fontSize": 10
+          },
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": [
+           25.7,
+           0
+          ],
+          "name": "GARFIBRES",
+          "tip": "GARFIBRES: EV/EBITDA 25.7x",
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "GARFIBRES",
+           "color": "@muted",
+           "fontSize": 10
+          },
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": [
+           26.9,
+           0
+          ],
+          "name": "KPRMILL",
+          "tip": "KPRMILL: EV/EBITDA 26.9x",
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "KPRMILL",
+           "color": "@muted",
+           "fontSize": 10
+          },
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": [
+           29.7,
+           0
+          ],
+          "name": "Welspun",
+          "tip": "Welspun at today's price: 29.7x",
+          "symbolSize": 20,
+          "label": {
+           "show": true,
+           "position": "bottom",
+           "formatter": "Welspun 29.7x",
+           "color": "@accent",
+           "fontWeight": "bold"
+          },
+          "itemStyle": {
+           "color": "@accent"
+          }
+         }
+        ],
+        "markLine": {
+         "silent": true,
+         "symbol": "none",
+         "lineStyle": {
+          "color": "@grey2",
+          "type": "dashed"
+         },
+         "label": {
+          "formatter": "Peer median 17.8x",
+          "color": "@muted",
+          "position": "end"
+         },
+         "data": [
+          {
+           "xAxis": 17.8
+          }
+         ]
+        }
+       },
+       {
+        "type": "scatter",
+        "symbolSize": 14,
+        "data": [
+         {
+          "value": [
+           16.6,
+           0
+          ],
+          "tip": "At the report's price of about Rs 129: 16.6x",
+          "itemStyle": {
+           "color": "@accent",
+           "opacity": 0.3
+          },
+          "label": {
+           "show": true,
+           "position": "bottom",
+           "formatter": "16.6x (report price)",
+           "color": "@muted",
+           "fontSize": 10
+          }
+         }
+        ]
+       }
+      ]
+     },
+     "alt": "Dot strip. Peers sit between 11.4x and 26.9x EV/EBITDA with a median of 17.8x. Welspun is at 29.7x at today's price, above every peer; at the report's price of about Rs 129 it was 16.6x.",
+     "datatable": {
+      "columns": [
+       "Company",
+       "EV/EBITDA x"
+      ],
+      "rows": [
+       [
+        "VTL",
+        "11.4"
+       ],
+       [
+        "ICIL",
+        "16.0"
+       ],
+       [
+        "TRIDENT",
+        "17.8"
+       ],
+       [
+        "GARFIBRES",
+        "25.7"
+       ],
+       [
+        "KPRMILL",
+        "26.9"
+       ],
+       [
+        "Welspun, today's price",
+        "29.7"
+       ],
+       [
+        "Welspun, report price",
+        "16.6"
+       ]
+      ]
+     },
+     "variants": [
+      {
+       "key": "today",
+       "label": "At today's price",
+       "option": {
+        "grid": {
+         "left": 20,
+         "right": 40,
+         "top": 40,
+         "bottom": 50
+        },
+        "xAxis": {
+         "type": "value",
+         "min": 0,
+         "max": 35,
+         "name": "EV/EBITDA, x",
+         "nameLocation": "middle",
+         "nameGap": 28,
+         "nameTextStyle": {
+          "color": "@muted"
+         },
+         "axisLabel": {
+          "color": "@muted"
+         },
+         "splitLine": {
+          "lineStyle": {
+           "color": "@grid"
+          }
+         }
+        },
+        "yAxis": {
+         "type": "value",
+         "show": false,
+         "min": -1,
+         "max": 1
+        },
+        "series": [
+         {
+          "type": "scatter",
+          "symbolSize": 14,
+          "data": [
+           {
+            "value": [
+             11.4,
+             0
+            ],
+            "name": "VTL",
+            "tip": "VTL: EV/EBITDA 11.4x",
+            "label": {
+             "show": true,
+             "position": "top",
+             "formatter": "VTL",
+             "color": "@muted",
+             "fontSize": 10
+            },
+            "itemStyle": {
+             "color": "@grey3"
+            }
+           },
+           {
+            "value": [
+             16.0,
+             0
+            ],
+            "name": "ICIL",
+            "tip": "ICIL: EV/EBITDA 16.0x",
+            "label": {
+             "show": true,
+             "position": "top",
+             "formatter": "ICIL",
+             "color": "@muted",
+             "fontSize": 10
+            },
+            "itemStyle": {
+             "color": "@grey3"
+            }
+           },
+           {
+            "value": [
+             17.8,
+             0
+            ],
+            "name": "TRIDENT",
+            "tip": "TRIDENT: EV/EBITDA 17.8x",
+            "label": {
+             "show": true,
+             "position": "top",
+             "formatter": "TRIDENT",
+             "color": "@muted",
+             "fontSize": 10
+            },
+            "itemStyle": {
+             "color": "@grey3"
+            }
+           },
+           {
+            "value": [
+             25.7,
+             0
+            ],
+            "name": "GARFIBRES",
+            "tip": "GARFIBRES: EV/EBITDA 25.7x",
+            "label": {
+             "show": true,
+             "position": "top",
+             "formatter": "GARFIBRES",
+             "color": "@muted",
+             "fontSize": 10
+            },
+            "itemStyle": {
+             "color": "@grey3"
+            }
+           },
+           {
+            "value": [
+             26.9,
+             0
+            ],
+            "name": "KPRMILL",
+            "tip": "KPRMILL: EV/EBITDA 26.9x",
+            "label": {
+             "show": true,
+             "position": "top",
+             "formatter": "KPRMILL",
+             "color": "@muted",
+             "fontSize": 10
+            },
+            "itemStyle": {
+             "color": "@grey3"
+            }
+           },
+           {
+            "value": [
+             29.7,
+             0
+            ],
+            "name": "Welspun",
+            "tip": "Welspun at today's price: 29.7x",
+            "symbolSize": 20,
+            "label": {
+             "show": true,
+             "position": "bottom",
+             "formatter": "Welspun 29.7x",
+             "color": "@accent",
+             "fontWeight": "bold"
+            },
+            "itemStyle": {
+             "color": "@accent"
+            }
+           }
+          ],
+          "markLine": {
+           "silent": true,
+           "symbol": "none",
+           "lineStyle": {
+            "color": "@grey2",
+            "type": "dashed"
+           },
+           "label": {
+            "formatter": "Peer median 17.8x",
+            "color": "@muted",
+            "position": "end"
+           },
+           "data": [
+            {
+             "xAxis": 17.8
+            }
+           ]
+          }
+         },
+         {
+          "type": "scatter",
+          "symbolSize": 14,
+          "data": [
+           {
+            "value": [
+             16.6,
+             0
+            ],
+            "tip": "At the report's price of about Rs 129: 16.6x",
+            "itemStyle": {
+             "color": "@accent",
+             "opacity": 0.3
+            },
+            "label": {
+             "show": true,
+             "position": "bottom",
+             "formatter": "16.6x (report price)",
+             "color": "@muted",
+             "fontSize": 10
+            }
+           }
+          ]
+         }
+        ]
+       }
+      },
+      {
+       "key": "report",
+       "label": "At report price",
+       "option": {
+        "grid": {
+         "left": 20,
+         "right": 40,
+         "top": 40,
+         "bottom": 50
+        },
+        "xAxis": {
+         "type": "value",
+         "min": 0,
+         "max": 35,
+         "name": "EV/EBITDA, x",
+         "nameLocation": "middle",
+         "nameGap": 28,
+         "nameTextStyle": {
+          "color": "@muted"
+         },
+         "axisLabel": {
+          "color": "@muted"
+         },
+         "splitLine": {
+          "lineStyle": {
+           "color": "@grid"
+          }
+         }
+        },
+        "yAxis": {
+         "type": "value",
+         "show": false,
+         "min": -1,
+         "max": 1
+        },
+        "series": [
+         {
+          "type": "scatter",
+          "symbolSize": 14,
+          "data": [
+           {
+            "value": [
+             11.4,
+             0
+            ],
+            "name": "VTL",
+            "tip": "VTL: EV/EBITDA 11.4x",
+            "label": {
+             "show": true,
+             "position": "top",
+             "formatter": "VTL",
+             "color": "@muted",
+             "fontSize": 10
+            },
+            "itemStyle": {
+             "color": "@grey3"
+            }
+           },
+           {
+            "value": [
+             16.0,
+             0
+            ],
+            "name": "ICIL",
+            "tip": "ICIL: EV/EBITDA 16.0x",
+            "label": {
+             "show": true,
+             "position": "top",
+             "formatter": "ICIL",
+             "color": "@muted",
+             "fontSize": 10
+            },
+            "itemStyle": {
+             "color": "@grey3"
+            }
+           },
+           {
+            "value": [
+             17.8,
+             0
+            ],
+            "name": "TRIDENT",
+            "tip": "TRIDENT: EV/EBITDA 17.8x",
+            "label": {
+             "show": true,
+             "position": "top",
+             "formatter": "TRIDENT",
+             "color": "@muted",
+             "fontSize": 10
+            },
+            "itemStyle": {
+             "color": "@grey3"
+            }
+           },
+           {
+            "value": [
+             25.7,
+             0
+            ],
+            "name": "GARFIBRES",
+            "tip": "GARFIBRES: EV/EBITDA 25.7x",
+            "label": {
+             "show": true,
+             "position": "top",
+             "formatter": "GARFIBRES",
+             "color": "@muted",
+             "fontSize": 10
+            },
+            "itemStyle": {
+             "color": "@grey3"
+            }
+           },
+           {
+            "value": [
+             26.9,
+             0
+            ],
+            "name": "KPRMILL",
+            "tip": "KPRMILL: EV/EBITDA 26.9x",
+            "label": {
+             "show": true,
+             "position": "top",
+             "formatter": "KPRMILL",
+             "color": "@muted",
+             "fontSize": 10
+            },
+            "itemStyle": {
+             "color": "@grey3"
+            }
+           },
+           {
+            "value": [
+             16.6,
+             0
+            ],
+            "name": "Welspun",
+            "tip": "Welspun at the report's price: 16.6x",
+            "symbolSize": 20,
+            "label": {
+             "show": true,
+             "position": "bottom",
+             "formatter": "Welspun 16.6x",
+             "color": "@accent",
+             "fontWeight": "bold"
+            },
+            "itemStyle": {
+             "color": "@accent"
+            }
+           }
+          ],
+          "markLine": {
+           "silent": true,
+           "symbol": "none",
+           "lineStyle": {
+            "color": "@grey2",
+            "type": "dashed"
+           },
+           "label": {
+            "formatter": "Peer median 17.8x",
+            "color": "@muted",
+            "position": "end"
+           },
+           "data": [
+            {
+             "xAxis": 17.8
+            }
+           ]
+          }
+         }
+        ]
+       }
+      }
+     ],
+     "default_variant": "today",
+     "static_note": "At the report's price of about Rs 129, EV/EBITDA was 16.6x.",
+     "height": 230
+    },
+    {
+     "id": "pe_history",
+     "role": "small",
+     "title": "P/E against its own history",
+     "subtitle": "Band is the five-year range of 18x to 37x",
+     "option": {
+      "grid": {
+       "left": 12,
+       "right": 24,
+       "top": 30,
+       "bottom": 40,
+       "containLabel": true
+      },
+      "xAxis": {
+       "type": "value",
+       "min": 0,
+       "max": 130,
+       "name": "P/E, x",
+       "nameLocation": "middle",
+       "nameGap": 26,
+       "nameTextStyle": {
+        "color": "@muted"
+       },
+       "axisLabel": {
+        "color": "@muted"
+       },
+       "splitLine": {
+        "lineStyle": {
+         "color": "@grid"
+        }
+       }
+      },
+      "yAxis": {
+       "type": "value",
+       "show": false,
+       "min": -1,
+       "max": 1
+      },
+      "series": [
+       {
+        "type": "scatter",
+        "symbolSize": 16,
+        "data": [
+         {
+          "value": [
+           116.9,
+           0.25
+          ],
+          "tip": "P/E on FY26 EPS at today's price: 116.9x",
+          "itemStyle": {
+           "color": "@accent"
+          },
+          "label": {
+           "show": true,
+           "position": "top",
+           "formatter": "FY26 EPS 116.9x"
+          }
+         },
+         {
+          "value": [
+           54.5,
+           -0.25
+          ],
+          "tip": "P/E on TTM EPS at today's price: 54.5x",
+          "itemStyle": {
+           "color": "@accent"
+          },
+          "label": {
+           "show": true,
+           "position": "bottom",
+           "formatter": "TTM EPS 54.5x"
+          }
+         }
+        ],
+        "markArea": {
+         "silent": true,
+         "itemStyle": {
+          "color": "@grey5",
+          "opacity": 0.6
+         },
+         "label": {
+          "show": true,
+          "formatter": "Own range 18x to 37x",
+          "color": "@muted",
+          "position": "insideTop"
+         },
+         "data": [
+          [
+           {
+            "xAxis": 18
+           },
+           {
+            "xAxis": 37
+           }
+          ]
+         ]
+        }
+       }
+      ]
+     },
+     "alt": "P/E against history. The company's five-year P/E range is 18x to 37x. Today it is 54.5x on trailing 12-month EPS and 116.9x on FY26 EPS.",
+     "datatable": {
+      "columns": [
+       "Measure",
+       "P/E x"
+      ],
+      "rows": [
+       [
+        "Own range low",
+        "18"
+       ],
+       [
+        "Own range high",
+        "37"
+       ],
+       [
+        "TTM EPS",
+        "54.5"
+       ],
+       [
+        "FY26 EPS",
+        "116.9"
+       ]
+      ]
+     },
+     "variants": null,
+     "default_variant": null,
+     "static_note": null,
+     "height": 220
+    },
+    {
+     "id": "price_ruler",
+     "role": "small",
+     "title": "Fair value per share against Rs 249",
+     "subtitle": "Bands from each forecast case",
+     "option": {
+      "grid": {
+       "left": 12,
+       "right": 24,
+       "top": 16,
+       "bottom": 36,
+       "containLabel": true
+      },
+      "xAxis": {
+       "type": "value",
+       "min": 100,
+       "max": 320,
+       "name": "Rs per share",
+       "nameLocation": "middle",
+       "nameGap": 24,
+       "nameTextStyle": {
+        "color": "@muted"
+       },
+       "axisLabel": {
+        "color": "@muted"
+       },
+       "splitLine": {
+        "lineStyle": {
+         "color": "@grid"
+        }
+       }
+      },
+      "yAxis": {
+       "type": "category",
+       "inverse": true,
+       "data": [
+        "Company model",
+        "Peer dataset"
+       ],
+       "axisLabel": {
+        "color": "@text"
+       }
+      },
+      "series": [
+       {
+        "type": "bar",
+        "stack": "r",
+        "silent": true,
+        "itemStyle": {
+         "color": "transparent"
+        },
+        "data": [
+         124,
+         105
+        ]
+       },
+       {
+        "type": "bar",
+        "stack": "r",
+        "barWidth": 18,
+        "data": [
+         {
+          "value": 62,
+          "tip": "Company model, 12x to 18x FY27E EBITDA: Rs 124 to 186",
+          "itemStyle": {
+           "color": "@grey3"
+          },
+          "label": {
+           "show": true,
+           "formatter": "Rs 124 to 186"
+          }
+         },
+         {
+          "value": 50,
+          "tip": "Peer dataset projection, 12x to 18x: Rs 105 to 155",
+          "itemStyle": {
+           "color": "@grey4"
+          },
+          "label": {
+           "show": true,
+           "formatter": "Rs 105 to 155"
+          }
+         }
+        ],
+        "markLine": {
+         "silent": true,
+         "symbol": "none",
+         "lineStyle": {
+          "color": "@accent",
+          "width": 2
+         },
+         "label": {
+          "formatter": "Price Rs 249",
+          "color": "@accent",
+          "position": "end"
+         },
+         "data": [
+          {
+           "xAxis": 249
+          }
+         ]
+        }
+       }
+      ]
+     },
+     "alt": "Price ruler. Fair value bands are Rs 124 to 186 per share on the company model and Rs 105 to 155 on the peer dataset projection. Today's price of Rs 249 is above both.",
+     "datatable": {
+      "columns": [
+       "Case",
+       "Low Rs",
+       "High Rs"
+      ],
+      "rows": [
+       [
+        "Company model",
+        "124",
+        "186"
+       ],
+       [
+        "Peer dataset",
+        "105",
+        "155"
+       ]
+      ]
+     },
+     "variants": null,
+     "default_variant": null,
+     "static_note": null,
+     "height": 200
+    }
+   ],
+   "chips": [
+    {
+     "id": "pe_vs_history",
+     "metric": "pe_vs_history",
+     "label": "P/E against own history",
+     "value": 54.5,
+     "value_text": "54.5x",
+     "unit": "x",
+     "period": "TTM",
+     "verdict": "concern",
+     "icon": "alert",
+     "yardstick": "own_history",
+     "yardstick_text": "vs own history",
+     "scale": {
+      "min": 18,
+      "max": 37,
+      "peer_median": null,
+      "higher_is_better": false,
+      "value": 54.5
+     },
+     "so_what": "The price asks investors to pay well above what they have paid in the past for each rupee of profit.",
+     "source": "report_data",
+     "calc": "Price / TTM EPS at the snapshot price against P/E on year-end figures FY22 to FY26."
+    },
+    {
+     "id": "ev_ebitda_vs_peers",
+     "metric": "ev_ebitda_vs_peers",
+     "label": "EV/EBITDA against peers",
+     "value": 29.7,
+     "value_text": "29.7x",
+     "unit": "x",
+     "period": "FY26",
+     "verdict": "concern",
+     "icon": "alert",
+     "yardstick": "peers",
+     "yardstick_text": "vs peers",
+     "scale": {
+      "min": 11.4,
+      "max": 26.9,
+      "peer_median": 17.8,
+      "higher_is_better": false,
+      "value": 29.7
+     },
+     "so_what": "The market pays more for each rupee of operating profit than for any peer.",
+     "source": "report_data",
+     "calc": "(Market cap + net debt) / FY26 EBITDA at today's price; peer median at their current prices."
+    },
+    {
+     "id": "fair_value_vs_price",
+     "metric": "fair_value_vs_price",
+     "label": "Fair value against price",
+     "value": 165,
+     "value_text": "Rs 165",
+     "unit": "",
+     "period": "FY27E",
+     "verdict": "concern",
+     "icon": "alert",
+     "yardstick": "own_history",
+     "yardstick_text": "vs own history",
+     "scale": {
+      "min": 124,
+      "max": 186,
+      "peer_median": null,
+      "higher_is_better": true,
+      "value": 165
+     },
+     "so_what": "Every forecast case values the shares below today's price, so the price assumes more than the model does.",
+     "source": "calculated",
+     "calc": "16x model FY27E EBITDA less net debt, per share; range 12x to 18x."
+    }
+   ],
+   "extra": {
+    "fair_value_cases": [
+     {
+      "key": "model",
+      "label": "Company model",
+      "basis": "12x to 18x FY27E EBITDA of Rs 977 cr",
+      "low_price": 124,
+      "high_price": 186,
+      "vs_price_pct_low": -50,
+      "vs_price_pct_high": -25
+     },
+     {
+      "key": "peer_dataset",
+      "label": "Peer dataset projection",
+      "basis": "12x to 18x FY27 EBITDA of Rs 780 cr",
+      "low_price": 105,
+      "high_price": 155,
+      "vs_price_pct_low": -58,
+      "vs_price_pct_high": -38
+     }
+    ],
+    "price": 249.0,
+    "toggle_note": "At the report's price of about Rs 129, EV/EBITDA was 16.6x."
+   },
+   "notes": []
+  },
+  {
+   "id": "price",
+   "n": 6,
+   "nav": "Price",
+   "question": "What is the share price doing?",
+   "headline": "Strong trend, losing force.",
+   "charts": [
+    {
+     "id": "price_trend",
+     "role": "main",
+     "title": "One year of price",
+     "subtitle": "With 50- and 200-day averages and volume",
+     "option": {
+      "grid": [
+       {
+        "left": 44,
+        "right": 16,
+        "top": 14,
+        "height": "58%"
+       },
+       {
+        "left": 44,
+        "right": 16,
+        "top": "74%",
+        "height": "16%"
+       }
+      ],
+      "tooltip": {
+       "trigger": "axis"
+      },
+      "xAxis": [
+       {
+        "type": "category",
+        "data": [
+         "D270",
+         "D275",
+         "D280",
+         "D285",
+         "D290",
+         "D295",
+         "D300",
+         "D305",
+         "D310",
+         "D315",
+         "D320",
+         "D325",
+         "D330",
+         "D335",
+         "D340",
+         "D345",
+         "D350",
+         "D355",
+         "D360",
+         "D365",
+         "D370",
+         "D375",
+         "D380",
+         "D385",
+         "D390",
+         "D395",
+         "D400",
+         "D405",
+         "D410",
+         "D415",
+         "D420",
+         "D425",
+         "D430",
+         "D435",
+         "D440",
+         "D445",
+         "D450",
+         "D455",
+         "D460",
+         "D465",
+         "D470",
+         "D475",
+         "D480",
+         "D485",
+         "D490",
+         "D495",
+         "D500",
+         "D505",
+         "D510",
+         "D515"
+        ],
+        "gridIndex": 0,
+        "axisLabel": {
+         "show": false
+        },
+        "axisLine": {
+         "lineStyle": {
+          "color": "@grey4"
+         }
+        }
+       },
+       {
+        "type": "category",
+        "data": [
+         "D270",
+         "D275",
+         "D280",
+         "D285",
+         "D290",
+         "D295",
+         "D300",
+         "D305",
+         "D310",
+         "D315",
+         "D320",
+         "D325",
+         "D330",
+         "D335",
+         "D340",
+         "D345",
+         "D350",
+         "D355",
+         "D360",
+         "D365",
+         "D370",
+         "D375",
+         "D380",
+         "D385",
+         "D390",
+         "D395",
+         "D400",
+         "D405",
+         "D410",
+         "D415",
+         "D420",
+         "D425",
+         "D430",
+         "D435",
+         "D440",
+         "D445",
+         "D450",
+         "D455",
+         "D460",
+         "D465",
+         "D470",
+         "D475",
+         "D480",
+         "D485",
+         "D490",
+         "D495",
+         "D500",
+         "D505",
+         "D510",
+         "D515"
+        ],
+        "gridIndex": 1,
+        "axisLabel": {
+         "show": false
+        }
+       }
+      ],
+      "yAxis": [
+       {
+        "type": "value",
+        "scale": true,
+        "gridIndex": 0,
+        "axisLabel": {
+         "color": "@muted"
+        },
+        "splitLine": {
+         "lineStyle": {
+          "color": "@grid"
+         }
+        }
+       },
+       {
+        "type": "value",
+        "gridIndex": 1,
+        "axisLabel": {
+         "color": "@muted",
+         "formatter": "{value}M"
+        },
+        "splitLine": {
+         "show": false
+        }
+       }
+      ],
+      "series": [
+       {
+        "name": "Price",
+        "type": "line",
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "symbol": "none",
+        "lineStyle": {
+         "color": "@accent",
+         "width": 2
+        },
+        "data": [
+         210.9,
+         218.0,
+         221.5,
+         207.2,
+         202.0,
+         207.8,
+         208.8,
+         206.4,
+         200.1,
+         213.0,
+         215.2,
+         219.6,
+         226.2,
+         232.8,
+         233.0,
+         229.9,
+         240.7,
+         245.2,
+         251.1,
+         259.3,
+         255.5,
+         255.4,
+         258.4,
+         258.0,
+         259.0,
+         270.6,
+         271.1,
+         269.7,
+         269.7,
+         271.0,
+         272.7,
+         256.1,
+         255.1,
+         261.6,
+         252.4,
+         266.2,
+         257.1,
+         255.4,
+         245.3,
+         254.3,
+         252.8,
+         253.9,
+         247.9,
+         254.5,
+         263.0,
+         270.8,
+         275.7,
+         274.8,
+         275.9,
+         266.2
+        ],
+        "markPoint": {
+         "symbol": "pin",
+         "symbolSize": 46,
+         "itemStyle": {
+          "color": "@accent"
+         },
+         "label": {
+          "color": "@bg",
+          "formatter": "249",
+          "fontSize": 10
+         },
+         "data": [
+          {
+           "coord": [
+            "D515",
+            249.0
+           ],
+           "tip": "Latest close Rs 249"
+          }
+         ]
+        }
+       },
+       {
+        "name": "50-day average",
+        "type": "line",
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "symbol": "none",
+        "lineStyle": {
+         "color": "@grey1",
+         "width": 1.5
+        },
+        "data": [
+         186.9,
+         191.3,
+         196.4,
+         200.3,
+         202.5,
+         203.8,
+         205.2,
+         206.1,
+         207.3,
+         208.6,
+         209.6,
+         210.2,
+         210.4,
+         212.2,
+         214.9,
+         217.8,
+         220.3,
+         223.8,
+         228.8,
+         233.4,
+         237.4,
+         241.0,
+         244.3,
+         247.1,
+         249.8,
+         253.4,
+         257.1,
+         259.8,
+         261.5,
+         263.4,
+         265.2,
+         265.8,
+         265.9,
+         266.2,
+         265.5,
+         265.0,
+         264.2,
+         262.8,
+         261.2,
+         259.4,
+         257.3,
+         256.3,
+         255.4,
+         254.1,
+         254.7,
+         255.3,
+         255.5,
+         257.1,
+         259.2,
+         261.2
+        ],
+        "endLabel": {
+         "show": true,
+         "formatter": "50-day",
+         "color": "@grey1"
+        }
+       },
+       {
+        "name": "200-day average",
+        "type": "line",
+        "xAxisIndex": 0,
+        "yAxisIndex": 0,
+        "symbol": "none",
+        "lineStyle": {
+         "color": "@grey3",
+         "width": 1.5,
+         "type": "dashed"
+        },
+        "data": [
+         151.5,
+         153.9,
+         156.3,
+         158.6,
+         160.6,
+         162.5,
+         164.4,
+         166.3,
+         168.0,
+         169.9,
+         172.0,
+         174.1,
+         176.3,
+         178.7,
+         181.1,
+         183.3,
+         185.6,
+         188.3,
+         191.2,
+         194.2,
+         197.2,
+         200.0,
+         202.9,
+         205.5,
+         208.2,
+         211.0,
+         214.0,
+         216.7,
+         219.5,
+         222.2,
+         224.8,
+         227.1,
+         229.2,
+         231.5,
+         233.2,
+         235.0,
+         236.7,
+         238.1,
+         239.7,
+         241.2,
+         242.4,
+         243.3,
+         244.0,
+         244.9,
+         246.2,
+         247.9,
+         249.3,
+         250.9,
+         252.7,
+         254.4
+        ],
+        "endLabel": {
+         "show": true,
+         "formatter": "200-day",
+         "color": "@grey3"
+        }
+       },
+       {
+        "name": "Volume",
+        "type": "bar",
+        "xAxisIndex": 1,
+        "yAxisIndex": 1,
+        "itemStyle": {
+         "color": "@grey4"
+        },
+        "data": [
+         1.02,
+         1.22,
+         1.05,
+         0.68,
+         0.72,
+         0.15,
+         0.93,
+         1.19,
+         1.21,
+         0.95,
+         0.93,
+         1.37,
+         1.01,
+         1.3,
+         1.23,
+         1.09,
+         1.52,
+         0.77,
+         0.86,
+         0.68,
+         0.68,
+         1.62,
+         1.7,
+         1.01,
+         1.23,
+         1.47,
+         1.32,
+         1.48,
+         0.49,
+         0.74,
+         1.18,
+         1.57,
+         1.04,
+         0.66,
+         0.86,
+         0.74,
+         0.66,
+         1.6,
+         0.75,
+         1.01,
+         1.86,
+         1.47,
+         1.13,
+         0.76,
+         1.16,
+         1.65,
+         1.25,
+         1.5,
+         1.04,
+         1.21
+        ]
+       }
+      ]
+     },
+     "alt": "Line chart of one year of share price with 50- and 200-day averages and volume bars. The price is above both averages and ended at Rs 249 near its 52-week high.",
+     "datatable": {
+      "columns": [
+       "Period",
+       "Close Rs"
+      ],
+      "rows": [
+       [
+        "Month 1",
+        "210.9"
+       ],
+       [
+        "Month 2",
+        "202.0"
+       ],
+       [
+        "Month 3",
+        "200.1"
+       ],
+       [
+        "Month 4",
+        "226.2"
+       ],
+       [
+        "Month 5",
+        "240.7"
+       ],
+       [
+        "Month 6",
+        "255.5"
+       ],
+       [
+        "Month 7",
+        "259.0"
+       ],
+       [
+        "Month 8",
+        "269.7"
+       ],
+       [
+        "Month 9",
+        "255.1"
+       ],
+       [
+        "Month 10",
+        "257.1"
+       ],
+       [
+        "Month 11",
+        "252.8"
+       ],
+       [
+        "Month 12",
+        "263.0"
+       ]
+      ]
+     },
+     "variants": [
+      {
+       "key": "6m",
+       "label": "6 months",
+       "option": {
+        "grid": [
+         {
+          "left": 44,
+          "right": 16,
+          "top": 14,
+          "height": "58%"
+         },
+         {
+          "left": 44,
+          "right": 16,
+          "top": "74%",
+          "height": "16%"
+         }
+        ],
+        "tooltip": {
+         "trigger": "axis"
+        },
+        "xAxis": [
+         {
+          "type": "category",
+          "data": [
+           "D395",
+           "D400",
+           "D405",
+           "D410",
+           "D415",
+           "D420",
+           "D425",
+           "D430",
+           "D435",
+           "D440",
+           "D445",
+           "D450",
+           "D455",
+           "D460",
+           "D465",
+           "D470",
+           "D475",
+           "D480",
+           "D485",
+           "D490",
+           "D495",
+           "D500",
+           "D505",
+           "D510",
+           "D515"
+          ],
+          "gridIndex": 0,
+          "axisLabel": {
+           "show": false
+          },
+          "axisLine": {
+           "lineStyle": {
+            "color": "@grey4"
+           }
+          }
+         },
+         {
+          "type": "category",
+          "data": [
+           "D395",
+           "D400",
+           "D405",
+           "D410",
+           "D415",
+           "D420",
+           "D425",
+           "D430",
+           "D435",
+           "D440",
+           "D445",
+           "D450",
+           "D455",
+           "D460",
+           "D465",
+           "D470",
+           "D475",
+           "D480",
+           "D485",
+           "D490",
+           "D495",
+           "D500",
+           "D505",
+           "D510",
+           "D515"
+          ],
+          "gridIndex": 1,
+          "axisLabel": {
+           "show": false
+          }
+         }
+        ],
+        "yAxis": [
+         {
+          "type": "value",
+          "scale": true,
+          "gridIndex": 0,
+          "axisLabel": {
+           "color": "@muted"
+          },
+          "splitLine": {
+           "lineStyle": {
+            "color": "@grid"
+           }
+          }
+         },
+         {
+          "type": "value",
+          "gridIndex": 1,
+          "axisLabel": {
+           "color": "@muted",
+           "formatter": "{value}M"
+          },
+          "splitLine": {
+           "show": false
+          }
+         }
+        ],
+        "series": [
+         {
+          "name": "Price",
+          "type": "line",
+          "xAxisIndex": 0,
+          "yAxisIndex": 0,
+          "symbol": "none",
+          "lineStyle": {
+           "color": "@accent",
+           "width": 2
+          },
+          "data": [
+           220.3,
+           229.3,
+           246.9,
+           249.7,
+           273.2,
+           291.3,
+           297.9,
+           316.7,
+           326.0,
+           309.1,
+           302.9,
+           314.4,
+           310.5,
+           287.5,
+           276.1,
+           291.1,
+           280.1,
+           270.2,
+           272.0,
+           253.1,
+           244.3,
+           248.3,
+           250.1,
+           234.2,
+           234.5
+          ],
+          "markPoint": {
+           "symbol": "pin",
+           "symbolSize": 46,
+           "itemStyle": {
+            "color": "@accent"
+           },
+           "label": {
+            "color": "@bg",
+            "formatter": "249",
+            "fontSize": 10
+           },
+           "data": [
+            {
+             "coord": [
+              "D515",
+              249.0
+             ],
+             "tip": "Latest close Rs 249"
+            }
+           ]
+          }
+         },
+         {
+          "name": "50-day average",
+          "type": "line",
+          "xAxisIndex": 0,
+          "yAxisIndex": 0,
+          "symbol": "none",
+          "lineStyle": {
+           "color": "@grey1",
+           "width": 1.5
+          },
+          "data": [
+           236.5,
+           236.1,
+           236.3,
+           237.4,
+           240.0,
+           244.2,
+           250.1,
+           256.9,
+           264.6,
+           272.5,
+           280.2,
+           288.4,
+           295.3,
+           300.2,
+           301.8,
+           302.2,
+           300.6,
+           297.1,
+           291.8,
+           286.6,
+           281.5,
+           275.6,
+           269.5,
+           263.8,
+           259.4
+          ],
+          "endLabel": {
+           "show": true,
+           "formatter": "50-day",
+           "color": "@grey1"
+          }
+         },
+         {
+          "name": "200-day average",
+          "type": "line",
+          "xAxisIndex": 0,
+          "yAxisIndex": 0,
+          "symbol": "none",
+          "lineStyle": {
+           "color": "@grey3",
+           "width": 1.5,
+           "type": "dashed"
+          },
+          "data": [
+           201.1,
+           202.7,
+           204.6,
+           206.7,
+           209.0,
+           211.8,
+           214.6,
+           217.6,
+           221.1,
+           224.3,
+           226.8,
+           229.5,
+           232.5,
+           234.9,
+           236.9,
+           239.1,
+           241.3,
+           243.4,
+           245.7,
+           248.1,
+           250.1,
+           251.8,
+           253.4,
+           254.7,
+           255.6
+          ],
+          "endLabel": {
+           "show": true,
+           "formatter": "200-day",
+           "color": "@grey3"
+          }
+         },
+         {
+          "name": "Volume",
+          "type": "bar",
+          "xAxisIndex": 1,
+          "yAxisIndex": 1,
+          "itemStyle": {
+           "color": "@grey4"
+          },
+          "data": [
+           1.45,
+           0.05,
+           0.7,
+           1.1,
+           1.24,
+           1.93,
+           1.13,
+           1.51,
+           1.31,
+           1.38,
+           1.2,
+           0.94,
+           1.2,
+           0.57,
+           1.47,
+           0.59,
+           1.1,
+           1.85,
+           0.91,
+           1.01,
+           1.47,
+           1.01,
+           0.68,
+           1.1,
+           1.23
+          ]
+         }
+        ]
+       }
+      },
+      {
+       "key": "1y",
+       "label": "1 year",
+       "option": {
+        "grid": [
+         {
+          "left": 44,
+          "right": 16,
+          "top": 14,
+          "height": "58%"
+         },
+         {
+          "left": 44,
+          "right": 16,
+          "top": "74%",
+          "height": "16%"
+         }
+        ],
+        "tooltip": {
+         "trigger": "axis"
+        },
+        "xAxis": [
+         {
+          "type": "category",
+          "data": [
+           "D270",
+           "D275",
+           "D280",
+           "D285",
+           "D290",
+           "D295",
+           "D300",
+           "D305",
+           "D310",
+           "D315",
+           "D320",
+           "D325",
+           "D330",
+           "D335",
+           "D340",
+           "D345",
+           "D350",
+           "D355",
+           "D360",
+           "D365",
+           "D370",
+           "D375",
+           "D380",
+           "D385",
+           "D390",
+           "D395",
+           "D400",
+           "D405",
+           "D410",
+           "D415",
+           "D420",
+           "D425",
+           "D430",
+           "D435",
+           "D440",
+           "D445",
+           "D450",
+           "D455",
+           "D460",
+           "D465",
+           "D470",
+           "D475",
+           "D480",
+           "D485",
+           "D490",
+           "D495",
+           "D500",
+           "D505",
+           "D510",
+           "D515"
+          ],
+          "gridIndex": 0,
+          "axisLabel": {
+           "show": false
+          },
+          "axisLine": {
+           "lineStyle": {
+            "color": "@grey4"
+           }
+          }
+         },
+         {
+          "type": "category",
+          "data": [
+           "D270",
+           "D275",
+           "D280",
+           "D285",
+           "D290",
+           "D295",
+           "D300",
+           "D305",
+           "D310",
+           "D315",
+           "D320",
+           "D325",
+           "D330",
+           "D335",
+           "D340",
+           "D345",
+           "D350",
+           "D355",
+           "D360",
+           "D365",
+           "D370",
+           "D375",
+           "D380",
+           "D385",
+           "D390",
+           "D395",
+           "D400",
+           "D405",
+           "D410",
+           "D415",
+           "D420",
+           "D425",
+           "D430",
+           "D435",
+           "D440",
+           "D445",
+           "D450",
+           "D455",
+           "D460",
+           "D465",
+           "D470",
+           "D475",
+           "D480",
+           "D485",
+           "D490",
+           "D495",
+           "D500",
+           "D505",
+           "D510",
+           "D515"
+          ],
+          "gridIndex": 1,
+          "axisLabel": {
+           "show": false
+          }
+         }
+        ],
+        "yAxis": [
+         {
+          "type": "value",
+          "scale": true,
+          "gridIndex": 0,
+          "axisLabel": {
+           "color": "@muted"
+          },
+          "splitLine": {
+           "lineStyle": {
+            "color": "@grid"
+           }
+          }
+         },
+         {
+          "type": "value",
+          "gridIndex": 1,
+          "axisLabel": {
+           "color": "@muted",
+           "formatter": "{value}M"
+          },
+          "splitLine": {
+           "show": false
+          }
+         }
+        ],
+        "series": [
+         {
+          "name": "Price",
+          "type": "line",
+          "xAxisIndex": 0,
+          "yAxisIndex": 0,
+          "symbol": "none",
+          "lineStyle": {
+           "color": "@accent",
+           "width": 2
+          },
+          "data": [
+           210.9,
+           218.0,
+           221.5,
+           207.2,
+           202.0,
+           207.8,
+           208.8,
+           206.4,
+           200.1,
+           213.0,
+           215.2,
+           219.6,
+           226.2,
+           232.8,
+           233.0,
+           229.9,
+           240.7,
+           245.2,
+           251.1,
+           259.3,
+           255.5,
+           255.4,
+           258.4,
+           258.0,
+           259.0,
+           270.6,
+           271.1,
+           269.7,
+           269.7,
+           271.0,
+           272.7,
+           256.1,
+           255.1,
+           261.6,
+           252.4,
+           266.2,
+           257.1,
+           255.4,
+           245.3,
+           254.3,
+           252.8,
+           253.9,
+           247.9,
+           254.5,
+           263.0,
+           270.8,
+           275.7,
+           274.8,
+           275.9,
+           266.2
+          ],
+          "markPoint": {
+           "symbol": "pin",
+           "symbolSize": 46,
+           "itemStyle": {
+            "color": "@accent"
+           },
+           "label": {
+            "color": "@bg",
+            "formatter": "249",
+            "fontSize": 10
+           },
+           "data": [
+            {
+             "coord": [
+              "D515",
+              249.0
+             ],
+             "tip": "Latest close Rs 249"
+            }
+           ]
+          }
+         },
+         {
+          "name": "50-day average",
+          "type": "line",
+          "xAxisIndex": 0,
+          "yAxisIndex": 0,
+          "symbol": "none",
+          "lineStyle": {
+           "color": "@grey1",
+           "width": 1.5
+          },
+          "data": [
+           186.9,
+           191.3,
+           196.4,
+           200.3,
+           202.5,
+           203.8,
+           205.2,
+           206.1,
+           207.3,
+           208.6,
+           209.6,
+           210.2,
+           210.4,
+           212.2,
+           214.9,
+           217.8,
+           220.3,
+           223.8,
+           228.8,
+           233.4,
+           237.4,
+           241.0,
+           244.3,
+           247.1,
+           249.8,
+           253.4,
+           257.1,
+           259.8,
+           261.5,
+           263.4,
+           265.2,
+           265.8,
+           265.9,
+           266.2,
+           265.5,
+           265.0,
+           264.2,
+           262.8,
+           261.2,
+           259.4,
+           257.3,
+           256.3,
+           255.4,
+           254.1,
+           254.7,
+           255.3,
+           255.5,
+           257.1,
+           259.2,
+           261.2
+          ],
+          "endLabel": {
+           "show": true,
+           "formatter": "50-day",
+           "color": "@grey1"
+          }
+         },
+         {
+          "name": "200-day average",
+          "type": "line",
+          "xAxisIndex": 0,
+          "yAxisIndex": 0,
+          "symbol": "none",
+          "lineStyle": {
+           "color": "@grey3",
+           "width": 1.5,
+           "type": "dashed"
+          },
+          "data": [
+           151.5,
+           153.9,
+           156.3,
+           158.6,
+           160.6,
+           162.5,
+           164.4,
+           166.3,
+           168.0,
+           169.9,
+           172.0,
+           174.1,
+           176.3,
+           178.7,
+           181.1,
+           183.3,
+           185.6,
+           188.3,
+           191.2,
+           194.2,
+           197.2,
+           200.0,
+           202.9,
+           205.5,
+           208.2,
+           211.0,
+           214.0,
+           216.7,
+           219.5,
+           222.2,
+           224.8,
+           227.1,
+           229.2,
+           231.5,
+           233.2,
+           235.0,
+           236.7,
+           238.1,
+           239.7,
+           241.2,
+           242.4,
+           243.3,
+           244.0,
+           244.9,
+           246.2,
+           247.9,
+           249.3,
+           250.9,
+           252.7,
+           254.4
+          ],
+          "endLabel": {
+           "show": true,
+           "formatter": "200-day",
+           "color": "@grey3"
+          }
+         },
+         {
+          "name": "Volume",
+          "type": "bar",
+          "xAxisIndex": 1,
+          "yAxisIndex": 1,
+          "itemStyle": {
+           "color": "@grey4"
+          },
+          "data": [
+           1.02,
+           1.22,
+           1.05,
+           0.68,
+           0.72,
+           0.15,
+           0.93,
+           1.19,
+           1.21,
+           0.95,
+           0.93,
+           1.37,
+           1.01,
+           1.3,
+           1.23,
+           1.09,
+           1.52,
+           0.77,
+           0.86,
+           0.68,
+           0.68,
+           1.62,
+           1.7,
+           1.01,
+           1.23,
+           1.47,
+           1.32,
+           1.48,
+           0.49,
+           0.74,
+           1.18,
+           1.57,
+           1.04,
+           0.66,
+           0.86,
+           0.74,
+           0.66,
+           1.6,
+           0.75,
+           1.01,
+           1.86,
+           1.47,
+           1.13,
+           0.76,
+           1.16,
+           1.65,
+           1.25,
+           1.5,
+           1.04,
+           1.21
+          ]
+         }
+        ]
+       }
+      },
+      {
+       "key": "2y",
+       "label": "2 years",
+       "option": {
+        "grid": [
+         {
+          "left": 44,
+          "right": 16,
+          "top": 14,
+          "height": "58%"
+         },
+         {
+          "left": 44,
+          "right": 16,
+          "top": "74%",
+          "height": "16%"
+         }
+        ],
+        "tooltip": {
+         "trigger": "axis"
+        },
+        "xAxis": [
+         {
+          "type": "category",
+          "data": [
+           "D20",
+           "D25",
+           "D30",
+           "D35",
+           "D40",
+           "D45",
+           "D50",
+           "D55",
+           "D60",
+           "D65",
+           "D70",
+           "D75",
+           "D80",
+           "D85",
+           "D90",
+           "D95",
+           "D100",
+           "D105",
+           "D110",
+           "D115",
+           "D120",
+           "D125",
+           "D130",
+           "D135",
+           "D140",
+           "D145",
+           "D150",
+           "D155",
+           "D160",
+           "D165",
+           "D170",
+           "D175",
+           "D180",
+           "D185",
+           "D190",
+           "D195",
+           "D200",
+           "D205",
+           "D210",
+           "D215",
+           "D220",
+           "D225",
+           "D230",
+           "D235",
+           "D240",
+           "D245",
+           "D250",
+           "D255",
+           "D260",
+           "D265",
+           "D270",
+           "D275",
+           "D280",
+           "D285",
+           "D290",
+           "D295",
+           "D300",
+           "D305",
+           "D310",
+           "D315",
+           "D320",
+           "D325",
+           "D330",
+           "D335",
+           "D340",
+           "D345",
+           "D350",
+           "D355",
+           "D360",
+           "D365",
+           "D370",
+           "D375",
+           "D380",
+           "D385",
+           "D390",
+           "D395",
+           "D400",
+           "D405",
+           "D410",
+           "D415",
+           "D420",
+           "D425",
+           "D430",
+           "D435",
+           "D440",
+           "D445",
+           "D450",
+           "D455",
+           "D460",
+           "D465",
+           "D470",
+           "D475",
+           "D480",
+           "D485",
+           "D490",
+           "D495",
+           "D500",
+           "D505",
+           "D510",
+           "D515"
+          ],
+          "gridIndex": 0,
+          "axisLabel": {
+           "show": false
+          },
+          "axisLine": {
+           "lineStyle": {
+            "color": "@grey4"
+           }
+          }
+         },
+         {
+          "type": "category",
+          "data": [
+           "D20",
+           "D25",
+           "D30",
+           "D35",
+           "D40",
+           "D45",
+           "D50",
+           "D55",
+           "D60",
+           "D65",
+           "D70",
+           "D75",
+           "D80",
+           "D85",
+           "D90",
+           "D95",
+           "D100",
+           "D105",
+           "D110",
+           "D115",
+           "D120",
+           "D125",
+           "D130",
+           "D135",
+           "D140",
+           "D145",
+           "D150",
+           "D155",
+           "D160",
+           "D165",
+           "D170",
+           "D175",
+           "D180",
+           "D185",
+           "D190",
+           "D195",
+           "D200",
+           "D205",
+           "D210",
+           "D215",
+           "D220",
+           "D225",
+           "D230",
+           "D235",
+           "D240",
+           "D245",
+           "D250",
+           "D255",
+           "D260",
+           "D265",
+           "D270",
+           "D275",
+           "D280",
+           "D285",
+           "D290",
+           "D295",
+           "D300",
+           "D305",
+           "D310",
+           "D315",
+           "D320",
+           "D325",
+           "D330",
+           "D335",
+           "D340",
+           "D345",
+           "D350",
+           "D355",
+           "D360",
+           "D365",
+           "D370",
+           "D375",
+           "D380",
+           "D385",
+           "D390",
+           "D395",
+           "D400",
+           "D405",
+           "D410",
+           "D415",
+           "D420",
+           "D425",
+           "D430",
+           "D435",
+           "D440",
+           "D445",
+           "D450",
+           "D455",
+           "D460",
+           "D465",
+           "D470",
+           "D475",
+           "D480",
+           "D485",
+           "D490",
+           "D495",
+           "D500",
+           "D505",
+           "D510",
+           "D515"
+          ],
+          "gridIndex": 1,
+          "axisLabel": {
+           "show": false
+          }
+         }
+        ],
+        "yAxis": [
+         {
+          "type": "value",
+          "scale": true,
+          "gridIndex": 0,
+          "axisLabel": {
+           "color": "@muted"
+          },
+          "splitLine": {
+           "lineStyle": {
+            "color": "@grid"
+           }
+          }
+         },
+         {
+          "type": "value",
+          "gridIndex": 1,
+          "axisLabel": {
+           "color": "@muted",
+           "formatter": "{value}M"
+          },
+          "splitLine": {
+           "show": false
+          }
+         }
+        ],
+        "series": [
+         {
+          "name": "Price",
+          "type": "line",
+          "xAxisIndex": 0,
+          "yAxisIndex": 0,
+          "symbol": "none",
+          "lineStyle": {
+           "color": "@accent",
+           "width": 2
+          },
+          "data": [
+           147.2,
+           148.9,
+           139.9,
+           143.5,
+           145.9,
+           140.2,
+           140.1,
+           127.5,
+           120.2,
+           131.3,
+           140.5,
+           136.8,
+           138.8,
+           148.6,
+           150.0,
+           142.0,
+           141.6,
+           145.3,
+           152.7,
+           152.1,
+           153.8,
+           155.9,
+           153.4,
+           151.3,
+           163.9,
+           171.0,
+           164.5,
+           165.8,
+           170.2,
+           169.8,
+           166.8,
+           170.6,
+           176.0,
+           179.3,
+           180.2,
+           185.3,
+           202.0,
+           206.7,
+           216.3,
+           208.4,
+           212.3,
+           204.7,
+           194.8,
+           188.5,
+           194.8,
+           188.8,
+           184.1,
+           178.8,
+           190.8,
+           187.2,
+           184.2,
+           197.3,
+           208.9,
+           210.5,
+           223.9,
+           238.1,
+           237.7,
+           255.9,
+           245.1,
+           242.7,
+           252.4,
+           254.4,
+           257.3,
+           277.7,
+           298.4,
+           300.3,
+           314.6,
+           313.4,
+           308.6,
+           291.3,
+           293.7,
+           278.8,
+           283.2,
+           274.6,
+           274.3,
+           261.7,
+           256.4,
+           254.0,
+           258.0,
+           253.2,
+           232.9,
+           234.8,
+           239.5,
+           253.7,
+           244.2,
+           230.0,
+           221.9,
+           216.0,
+           208.1,
+           208.6,
+           211.8,
+           215.8,
+           209.4,
+           207.5,
+           228.9,
+           242.2,
+           247.1,
+           232.9,
+           233.0,
+           241.2
+          ],
+          "markPoint": {
+           "symbol": "pin",
+           "symbolSize": 46,
+           "itemStyle": {
+            "color": "@accent"
+           },
+           "label": {
+            "color": "@bg",
+            "formatter": "249",
+            "fontSize": 10
+           },
+           "data": [
+            {
+             "coord": [
+              "D515",
+              249.0
+             ],
+             "tip": "Latest close Rs 249"
+            }
+           ]
+          }
+         },
+         {
+          "name": "50-day average",
+          "type": "line",
+          "xAxisIndex": 0,
+          "yAxisIndex": 0,
+          "symbol": "none",
+          "lineStyle": {
+           "color": "@grey1",
+           "width": 1.5
+          },
+          "data": [
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           143.6,
+           142.6,
+           140.5,
+           138.4,
+           137.4,
+           136.6,
+           136.0,
+           136.1,
+           136.5,
+           137.1,
+           137.2,
+           138.6,
+           141.5,
+           144.2,
+           145.8,
+           147.3,
+           149.1,
+           149.9,
+           151.1,
+           152.9,
+           155.6,
+           157.6,
+           159.4,
+           161.0,
+           162.4,
+           164.0,
+           166.0,
+           168.8,
+           170.5,
+           172.0,
+           174.6,
+           178.9,
+           183.5,
+           187.6,
+           191.9,
+           195.8,
+           198.5,
+           199.9,
+           201.9,
+           203.0,
+           201.7,
+           198.9,
+           196.1,
+           194.2,
+           191.7,
+           189.7,
+           190.2,
+           192.1,
+           194.4,
+           198.5,
+           204.3,
+           211.3,
+           217.3,
+           222.6,
+           228.8,
+           235.3,
+           240.4,
+           246.5,
+           253.5,
+           260.1,
+           267.2,
+           274.5,
+           280.2,
+           285.2,
+           289.7,
+           292.9,
+           295.5,
+           295.7,
+           293.8,
+           290.4,
+           285.3,
+           278.8,
+           274.1,
+           270.3,
+           265.2,
+           259.9,
+           255.4,
+           252.8,
+           250.2,
+           247.4,
+           243.7,
+           240.2,
+           235.7,
+           231.0,
+           227.6,
+           225.4,
+           222.7,
+           218.8,
+           215.9,
+           216.5,
+           218.2,
+           219.9,
+           221.3,
+           224.0
+          ],
+          "endLabel": {
+           "show": true,
+           "formatter": "50-day",
+           "color": "@grey1"
+          }
+         },
+         {
+          "name": "200-day average",
+          "type": "line",
+          "xAxisIndex": 0,
+          "yAxisIndex": 0,
+          "symbol": "none",
+          "lineStyle": {
+           "color": "@grey3",
+           "width": 1.5,
+           "type": "dashed"
+          },
+          "data": [
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           null,
+           152.7,
+           154.4,
+           156.2,
+           157.8,
+           159.4,
+           160.9,
+           162.4,
+           163.7,
+           165.0,
+           166.2,
+           167.3,
+           168.5,
+           170.1,
+           171.8,
+           173.0,
+           174.2,
+           175.9,
+           177.7,
+           179.5,
+           181.6,
+           184.1,
+           186.7,
+           189.1,
+           191.4,
+           193.7,
+           196.2,
+           198.8,
+           201.8,
+           205.1,
+           208.4,
+           212.0,
+           215.9,
+           219.3,
+           222.4,
+           225.5,
+           228.4,
+           231.2,
+           233.5,
+           235.9,
+           238.0,
+           239.6,
+           240.9,
+           241.9,
+           243.0,
+           243.8,
+           244.5,
+           245.4,
+           246.7,
+           248.0,
+           249.1,
+           250.1,
+           251.2,
+           251.8,
+           252.3,
+           252.8,
+           253.4,
+           253.5,
+           253.4,
+           253.4,
+           253.6,
+           253.6,
+           253.3,
+           252.8,
+           252.6
+          ],
+          "endLabel": {
+           "show": true,
+           "formatter": "200-day",
+           "color": "@grey3"
+          }
+         },
+         {
+          "name": "Volume",
+          "type": "bar",
+          "xAxisIndex": 1,
+          "yAxisIndex": 1,
+          "itemStyle": {
+           "color": "@grey4"
+          },
+          "data": [
+           1.69,
+           0.86,
+           1.01,
+           0.65,
+           1.39,
+           0.44,
+           1.23,
+           1.44,
+           1.56,
+           0.62,
+           1.44,
+           0.71,
+           0.7,
+           0.47,
+           1.46,
+           1.66,
+           0.76,
+           0.7,
+           0.86,
+           2.0,
+           1.4,
+           0.78,
+           0.28,
+           0.73,
+           1.47,
+           1.75,
+           0.89,
+           0.72,
+           0.8,
+           0.25,
+           1.36,
+           0.57,
+           1.43,
+           0.32,
+           0.49,
+           1.12,
+           0.69,
+           1.31,
+           1.0,
+           0.53,
+           1.25,
+           1.34,
+           0.23,
+           1.73,
+           1.2,
+           1.3,
+           0.26,
+           0.71,
+           0.86,
+           1.43,
+           0.42,
+           0.65,
+           0.19,
+           0.9,
+           1.14,
+           0.33,
+           0.76,
+           1.2,
+           1.63,
+           1.27,
+           0.88,
+           0.53,
+           0.63,
+           0.73,
+           1.06,
+           0.98,
+           1.67,
+           1.11,
+           0.57,
+           1.62,
+           1.38,
+           1.04,
+           0.71,
+           0.25,
+           0.59,
+           1.36,
+           0.68,
+           0.47,
+           1.08,
+           1.1,
+           1.24,
+           1.26,
+           1.56,
+           0.66,
+           1.39,
+           0.61,
+           1.28,
+           1.07,
+           1.1,
+           1.39,
+           0.99,
+           1.44,
+           1.35,
+           1.05,
+           0.77,
+           0.7,
+           0.79,
+           0.92,
+           0.99,
+           2.19
+          ]
+         }
+        ]
+       }
+      }
+     ],
+     "default_variant": "1y",
+     "static_note": "Shown: one year. Six-month and two-year views are in the on-screen report.",
+     "height": 320
+    },
+    {
+     "id": "macd",
+     "role": "small",
+     "title": "MACD histogram",
+     "subtitle": "Momentum is fading while price makes new highs",
+     "option": {
+      "grid": {
+       "left": 40,
+       "right": 16,
+       "top": 14,
+       "bottom": 22
+      },
+      "xAxis": {
+       "type": "category",
+       "data": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "19",
+        "20",
+        "21",
+        "22",
+        "23",
+        "24",
+        "25",
+        "26",
+        "27",
+        "28",
+        "29",
+        "30",
+        "31",
+        "32",
+        "33",
+        "34",
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47",
+        "48",
+        "49",
+        "50",
+        "51",
+        "52",
+        "53",
+        "54",
+        "55",
+        "56",
+        "57",
+        "58",
+        "59"
+       ],
+       "axisLabel": {
+        "show": false
+       },
+       "axisLine": {
+        "lineStyle": {
+         "color": "@grey4"
+        }
+       }
+      },
+      "yAxis": {
+       "type": "value",
+       "axisLabel": {
+        "color": "@muted"
+       },
+       "splitLine": {
+        "lineStyle": {
+         "color": "@grid"
+        }
+       }
+      },
+      "series": [
+       {
+        "type": "bar",
+        "data": [
+         {
+          "value": 0.0,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 1.36,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 2.57,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 3.52,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 4.09,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 4.23,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 3.94,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 3.24,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 2.23,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 1.01,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": -0.26,
+          "itemStyle": {
+           "color": "@grey4"
+          }
+         },
+         {
+          "value": -1.46,
+          "itemStyle": {
+           "color": "@grey4"
+          }
+         },
+         {
+          "value": -2.43,
+          "itemStyle": {
+           "color": "@grey4"
+          }
+         },
+         {
+          "value": -3.07,
+          "itemStyle": {
+           "color": "@grey4"
+          }
+         },
+         {
+          "value": -3.3,
+          "itemStyle": {
+           "color": "@grey4"
+          }
+         },
+         {
+          "value": -3.09,
+          "itemStyle": {
+           "color": "@grey4"
+          }
+         },
+         {
+          "value": -2.45,
+          "itemStyle": {
+           "color": "@grey4"
+          }
+         },
+         {
+          "value": -1.46,
+          "itemStyle": {
+           "color": "@grey4"
+          }
+         },
+         {
+          "value": -0.22,
+          "itemStyle": {
+           "color": "@grey4"
+          }
+         },
+         {
+          "value": 1.15,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 2.5,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 3.68,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 4.57,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 5.08,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 5.16,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 4.8,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 4.05,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 3.0,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 1.77,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 0.49,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": -0.68,
+          "itemStyle": {
+           "color": "@grey4"
+          }
+         },
+         {
+          "value": -1.6,
+          "itemStyle": {
+           "color": "@grey4"
+          }
+         },
+         {
+          "value": -2.19,
+          "itemStyle": {
+           "color": "@grey4"
+          }
+         },
+         {
+          "value": -2.35,
+          "itemStyle": {
+           "color": "@grey4"
+          }
+         },
+         {
+          "value": -2.07,
+          "itemStyle": {
+           "color": "@grey4"
+          }
+         },
+         {
+          "value": -1.38,
+          "itemStyle": {
+           "color": "@grey4"
+          }
+         },
+         {
+          "value": -0.35,
+          "itemStyle": {
+           "color": "@grey4"
+          }
+         },
+         {
+          "value": 0.93,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 2.3,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 3.63,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 4.78,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 5.62,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 6.06,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 6.07,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 5.65,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 4.85,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 3.76,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 2.52,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 1.25,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 0.11,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": -0.77,
+          "itemStyle": {
+           "color": "@grey4"
+          }
+         },
+         {
+          "value": -1.3,
+          "itemStyle": {
+           "color": "@grey4"
+          }
+         },
+         {
+          "value": -1.39,
+          "itemStyle": {
+           "color": "@grey4"
+          }
+         },
+         {
+          "value": -1.05,
+          "itemStyle": {
+           "color": "@grey4"
+          }
+         },
+         {
+          "value": -0.3,
+          "itemStyle": {
+           "color": "@grey4"
+          }
+         },
+         {
+          "value": 0.78,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 2.07,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 3.45,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 4.76,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         },
+         {
+          "value": 5.87,
+          "itemStyle": {
+           "color": "@grey3"
+          }
+         }
+        ],
+        "markLine": {
+         "silent": true,
+         "symbol": "none",
+         "lineStyle": {
+          "color": "@concern",
+          "type": "dashed"
+         },
+         "label": {
+          "formatter": "Lower high",
+          "color": "@muted"
+         },
+         "data": [
+          [
+           {
+            "coord": [
+             "24",
+             6.0
+            ]
+           },
+           {
+            "coord": [
+             "52",
+             4.6
+            ]
+           }
+          ]
+         ]
+        }
+       }
+      ]
+     },
+     "alt": "MACD histogram over 60 sessions. The latest peak is lower than the earlier one while price made a higher high, a bearish divergence.",
+     "datatable": {
+      "columns": [
+       "Window",
+       "Histogram high"
+      ],
+      "rows": [
+       [
+        "Earlier peak",
+        "11.77"
+       ],
+       [
+        "Latest peak",
+        "9.07"
+       ]
+      ]
+     },
+     "variants": null,
+     "default_variant": null,
+     "static_note": null,
+     "height": 200
+    }
+   ],
+   "chips": [
+    {
+     "id": "stretch",
+     "metric": "stretch",
+     "label": "Stretch above 200-day average",
+     "value": 52.4,
+     "value_text": "52.4%",
+     "unit": "%",
+     "period": "latest",
+     "verdict": "concern",
+     "icon": "alert",
+     "yardstick": "general_norm",
+     "yardstick_text": "General norm, not company-specific",
+     "scale": {
+      "min": 0,
+      "max": 40,
+      "peer_median": null,
+      "higher_is_better": false,
+      "value": 52.4
+     },
+     "so_what": "The price is far above its long-run average, which has often been followed by a pause.",
+     "source": "general_norm",
+     "calc": "Price / 200-day average - 1. General norm: above 30% is stretched."
+    }
+   ],
+   "extra": {
+    "tests": [
+     {
+      "key": "trend",
+      "label": "Trend",
+      "measures": "Price vs 50/200 averages, crossover",
+      "state": "Up",
+      "verdict": "good",
+      "evidence": "Price above both averages; golden cross on 1 June."
+     },
+     {
+      "key": "momentum",
+      "label": "Momentum",
+      "measures": "RSI and MACD combined, counted once",
+      "state": "Up, fading",
+      "verdict": "neutral",
+      "evidence": "RSI 58.9; MACD histogram below its earlier peak."
+     },
+     {
+      "key": "participation",
+      "label": "Participation",
+      "measures": "Volume in this trend vs the prior base",
+      "state": "Weak",
+      "verdict": "concern",
+      "evidence": "Median volume is 0.18x the prior base."
+     },
+     {
+      "key": "stretch",
+      "label": "Stretch",
+      "measures": "% above the 200-day average",
+      "state": "Very high",
+      "verdict": "concern",
+      "evidence": "52.4% above the 200-day average."
+     }
+    ],
+    "verdict_sentence": "Uptrend intact, but late, stretched and thinly traded.",
+    "divergence": {
+     "sentence": "Bearish divergence: price made a higher high while MACD made a lower high (11.77 to 9.07)."
+    },
+    "rsi_zone": "RSI 58.9 is in the neutral zone (30 to 60).",
+    "readings": [
+     [
+      "Price",
+      "Rs 249.00",
+      "close on the snapshot date"
+     ],
+     [
+      "52-week range",
+      "Rs 107.40 to Rs 267.40",
+      "88.5% of the range"
+     ],
+     [
+      "200-day average",
+      "Rs 163.43",
+      "price +52.4%"
+     ],
+     [
+      "RSI (14)",
+      "58.9",
+      "neutral"
+     ]
+    ]
+   },
+   "notes": []
+  },
+  {
+   "id": "watch",
+   "n": 7,
+   "nav": "Watch",
+   "question": "What would change the view?",
+   "headline": "Three signs the recovery is real.",
+   "charts": [
+    {
+     "id": "signposts",
+     "role": "main",
+     "title": "Where each signpost stands",
+     "subtitle": "Current value against the level that would confirm recovery",
+     "option": {
+      "grid": {
+       "left": 150,
+       "right": 50,
+       "top": 10,
+       "bottom": 24
+      },
+      "xAxis": {
+       "type": "value",
+       "axisLabel": {
+        "color": "@muted"
+       },
+       "splitLine": {
+        "lineStyle": {
+         "color": "@grid"
+        }
+       }
+      },
+      "yAxis": {
+       "type": "category",
+       "inverse": true,
+       "data": [
+        "SG&A, % of revenue (want below 34)",
+        "EBITDA margin, % (want above 12)",
+        "Interest cover, x (want above 4)"
+       ],
+       "axisLabel": {
+        "color": "@text",
+        "width": 140,
+        "overflow": "break"
+       }
+      },
+      "series": [
+       {
+        "name": "Now",
+        "type": "bar",
+        "barWidth": 14,
+        "data": [
+         {
+          "value": 37.8,
+          "tip": "SG&A 37.8% of revenue now; target below 34%",
+          "itemStyle": {
+           "color": "@accent"
+          },
+          "label": {
+           "show": true,
+           "position": "right",
+           "formatter": "37.8"
+          }
+         },
+         {
+          "value": 10.3,
+          "tip": "TTM EBITDA margin 10.3%; target above 12%",
+          "itemStyle": {
+           "color": "@accent"
+          },
+          "label": {
+           "show": true,
+           "position": "right",
+           "formatter": "10.3"
+          }
+         },
+         {
+          "value": 2.8,
+          "tip": "Interest cover 2.8x; target above 4x",
+          "itemStyle": {
+           "color": "@accent"
+          },
+          "label": {
+           "show": true,
+           "position": "right",
+           "formatter": "2.8"
+          }
+         }
+        ]
+       },
+       {
+        "name": "Target",
+        "type": "bar",
+        "barWidth": 14,
+        "data": [
+         {
+          "value": 34,
+          "tip": "Target: below 34%",
+          "itemStyle": {
+           "color": "@grey4"
+          },
+          "label": {
+           "show": true,
+           "position": "right",
+           "formatter": "34"
+          }
+         },
+         {
+          "value": 12,
+          "tip": "Target: above 12%",
+          "itemStyle": {
+           "color": "@grey4"
+          },
+          "label": {
+           "show": true,
+           "position": "right",
+           "formatter": "12"
+          }
+         },
+         {
+          "value": 4,
+          "tip": "Target: above 4x",
+          "itemStyle": {
+           "color": "@grey4"
+          },
+          "label": {
+           "show": true,
+           "position": "right",
+           "formatter": "4"
+          }
+         }
+        ]
+       }
+      ]
+     },
+     "alt": "Bar chart of three signposts against their targets: SG&A 37.8% against a target below 34%, EBITDA margin 10.3% against above 12%, and interest cover 2.8x against above 4x.",
+     "datatable": {
+      "columns": [
+       "Signpost",
+       "Now",
+       "Target"
+      ],
+      "rows": [
+       [
+        "SG&A, % of revenue",
+        "37.8",
+        "below 34"
+       ],
+       [
+        "EBITDA margin, %",
+        "10.3",
+        "above 12"
+       ],
+       [
+        "Interest cover, x",
+        "2.8",
+        "above 4"
+       ]
+      ]
+     },
+     "variants": null,
+     "default_variant": null,
+     "static_note": null,
+     "height": 210
+    }
+   ],
+   "chips": [
+    {
+     "id": "ttm_ebitda",
+     "metric": "ttm_ebitda",
+     "label": "TTM EBITDA against last full year",
+     "value": 1068,
+     "value_text": "Rs 1,068 cr",
+     "unit": "",
+     "period": "TTM",
+     "verdict": "good",
+     "icon": "check",
+     "yardstick": "own_history",
+     "yardstick_text": "vs own history",
+     "scale": {
+      "min": 753,
+      "max": 1369,
+      "peer_median": null,
+      "higher_is_better": true,
+      "value": 1068
+     },
+     "so_what": "Recent quarters are already earning more than the full year, which is the first sign of recovery.",
+     "source": "calculated",
+     "calc": "Sum of the last four reported quarters of EBITDA."
+    }
+   ],
+   "extra": {
+    "signposts": [
+     {
+      "metric": "SG&A as % of revenue",
+      "current": 37.8,
+      "current_text": "37.8%",
+      "threshold_text": "Below 34% of revenue",
+      "status": "concern",
+      "why": "Overheads must fall back for margins to recover."
+     },
+     {
+      "metric": "EBITDA margin",
+      "current": 10.3,
+      "current_text": "10.3% (TTM)",
+      "threshold_text": "Above 12% for two to three quarters",
+      "status": "neutral",
+      "why": "A sustained margin above 12% would confirm the forecast path."
+     },
+     {
+      "metric": "Interest coverage",
+      "current": 2.8,
+      "current_text": "2.8x",
+      "threshold_text": "Above 4x",
+      "status": "concern",
+      "why": "Thin cover leaves little room for another weak year."
+     },
+     {
+      "metric": "Operating cash flow / EBITDA",
+      "current": 100,
+      "current_text": "148% in FY26",
+      "threshold_text": "Near 80% while sales grow",
+      "status": "neutral",
+      "why": "Cash should hold up even when working capital absorbs it."
+     }
+    ],
+    "portfolio": {
+     "current_weight": null,
+     "target_weight": null,
+     "triggers": null
+    }
+   },
+   "notes": []
+  }
+ ],
+ "glossary": [
+  {
+   "id": "ev_ebitda",
+   "term": "EV/EBITDA",
+   "definition": "Enterprise value divided by operating profit before interest, tax, depreciation and amortisation. It shows what investors pay for each rupee of operating profit."
+  },
+  {
+   "id": "ttm",
+   "term": "TTM",
+   "definition": "Trailing twelve months: the last four reported quarters added together."
+  },
+  {
+   "id": "sga",
+   "term": "SG&A",
+   "definition": "Selling, general and administrative costs: overheads that do not change directly with each unit sold."
+  },
+  {
+   "id": "eps",
+   "term": "EPS",
+   "definition": "Earnings per share: profit after tax divided by the number of shares."
+  },
+  {
+   "id": "rsi",
+   "term": "RSI",
+   "definition": "Relative strength index, a 0 to 100 gauge of recent price momentum. Above 70 is overbought, below 30 oversold."
+  },
+  {
+   "id": "macd",
+   "term": "MACD",
+   "definition": "A momentum gauge built from two moving averages of price."
+  },
+  {
+   "id": "p_e",
+   "term": "P/E",
+   "definition": "Price divided by earnings per share."
+  }
+ ],
+ "sources": {
+  "provider": "FinEdge API",
+  "snapshot": "Price as of the 13 Nov 2026 close; market cap from the exchange quote.",
+  "definitions": [
+   "Net debt is borrowings less cash and current investments at the latest balance sheet.",
+   "Enterprise value is market cap plus net debt."
+  ],
+  "validation": {
+   "errors": [],
+   "warnings": [
+    "news_summary: per-share figure Rs 261.95 comes from a news item"
+   ],
+   "passed": [
+    "32 reconciliation checks",
+    "No factor-of-10 unit slips"
+   ]
+  }
+ },
+ "disclaimer": "This report is for information only and is not investment advice. Figures come from company filings and the data provider and may contain errors."
+}

@@ -357,6 +357,10 @@ class AnalysisRequest(BaseModel):
     margin_improvement: float = 0.01
     generate_text: bool = True
     generate_pdf: bool = True
+    # 'text'   = the existing reports (default, unchanged)
+    # 'visual' = the new visual HTML + PDF only (skips the AI text sections, so no LLM cost)
+    # 'all'    = both
+    report_format: Literal["text", "visual", "all"] = "text"
     fmp_api_key: Optional[str] = None
     openai_api_key: Optional[str] = None
     # 新增增强功能选项
@@ -443,7 +447,9 @@ def execute_analysis_pipeline(task_id: str, req: AnalysisRequest):
         cmd_analysis.append("--peer-tickers")
         cmd_analysis.extend(req.peers)
         
-    if req.generate_text:
+    want_text = req.report_format in ("text", "all")
+    want_visual = req.report_format in ("visual", "all")
+    if req.generate_text and want_text:
         cmd_analysis.append("--generate-text-sections")
         cmd_analysis.extend(["--llm-provider", req.llm_provider])
         if req.llm_model:
@@ -469,87 +475,114 @@ def execute_analysis_pipeline(task_id: str, req: AnalysisRequest):
             logger.warning(f"Failed to update report status: {e}")
         return
 
-    # Step 2: Create Equity Report
     base_output_dir = analysis_output_dir
-    
-    cmd_report = [
-        python_exe,
-        os.path.join(src_dir, "create_equity_report.py"),
-        "--company-ticker", req.ticker,
-        "--company-name", req.company_name,
-        "--analysis-csv", os.path.join(base_output_dir, "financial_metrics_and_forecasts.csv"),
-        "--ratios-csv", os.path.join(base_output_dir, "ratios_raw_data.csv"),
-        "--tagline-file", os.path.join(base_output_dir, "tagline.txt"),
-        "--company-overview-file", os.path.join(base_output_dir, "company_overview.txt"),
-        "--investment-overview-file", os.path.join(base_output_dir, "investment_overview.txt"),
-        "--valuation-overview-file", os.path.join(base_output_dir, "valuation_overview.txt"),
-        "--risks-file", os.path.join(base_output_dir, "risks.txt"),
-        "--competitor-analysis-file", os.path.join(base_output_dir, "competitor_analysis.txt"),
-        "--major-takeaways-file", os.path.join(base_output_dir, "major_takeaways.txt"),
-        "--news-summary-file", os.path.join(base_output_dir, "news_summary.txt"),
-        "--output-dir", report_output_dir,
-        "--config-file", config_file,
-        "--data-provider", req.data_provider,
-        "--llm-provider", req.llm_provider,
-    ]
-    if req.llm_model:
-        cmd_report.extend(["--llm-model", req.llm_model])
-    
-    # 新增增强功能选项
-    if req.enable_enhanced_charts:
-        cmd_report.append("--enable-enhanced-charts")
-    if req.enable_valuation_analysis:
-        cmd_report.append("--enable-valuation-analysis")
-    
-    # 添加增强分析文件路径
-    if req.enable_sensitivity_analysis:
-        sensitivity_file = os.path.join(base_output_dir, "sensitivity_analysis.json")
-        if os.path.exists(sensitivity_file):
-            cmd_report.extend(["--sensitivity-analysis-file", sensitivity_file])
-    
-    if req.enable_catalyst_analysis:
-        catalyst_file = os.path.join(base_output_dir, "catalyst_analysis.json")
-        if os.path.exists(catalyst_file):
-            cmd_report.extend(["--catalyst-analysis-file", catalyst_file])
-    
-    if req.enable_enhanced_news:
-        enhanced_news_file = os.path.join(base_output_dir, "enhanced_news.json")
-        if os.path.exists(enhanced_news_file):
-            cmd_report.extend(["--enhanced-news-file", enhanced_news_file])
-    
-    # Peer files exist only when step 1 found peer data (FinEdge also auto-discovers peers)
-    for flag, name in (("--peer-ebitda-csv", "peer_ebitda_comparison.csv"),
-                       ("--peer-ev-ebitda-csv", "peer_ev_ebitda_comparison.csv")):
-        peer_csv = os.path.join(base_output_dir, name)
-        if os.path.exists(peer_csv):
-            cmd_report.extend([flag, peer_csv])
 
-    if not run_process(cmd_report, task_id, cwd=SRC_ROOT):
-        # Update report status to failed
-        try:
-            db = SessionLocal()
-            crud.update_report_request(db, task_id, "failed", "Report creation failed")
-            db.close()
-        except Exception as e:
-            logger.warning(f"Failed to update report status: {e}")
-        return
-
-    # Step 3: Generate PDF Report
-    if req.generate_pdf:
-        append_task_log(task_id, "Generating PDF report...")  # 修改：使用新函数
-        cmd_pdf = [
+    # Step 2 (text reports) is skipped for the visual-only format
+    if not want_text:
+        append_task_log(task_id, "Visual-only format: skipping the text reports and AI text sections.")
+    if want_text:
+        # Step 2: Create Equity Report
+    
+        cmd_report = [
             python_exe,
-            os.path.join(src_dir, "generate_pdf_report.py"),
+            os.path.join(src_dir, "create_equity_report.py"),
             "--company-ticker", req.ticker,
             "--company-name", req.company_name,
-            "--analysis-dir", base_output_dir,
+            "--analysis-csv", os.path.join(base_output_dir, "financial_metrics_and_forecasts.csv"),
+            "--ratios-csv", os.path.join(base_output_dir, "ratios_raw_data.csv"),
+            "--tagline-file", os.path.join(base_output_dir, "tagline.txt"),
+            "--company-overview-file", os.path.join(base_output_dir, "company_overview.txt"),
+            "--investment-overview-file", os.path.join(base_output_dir, "investment_overview.txt"),
+            "--valuation-overview-file", os.path.join(base_output_dir, "valuation_overview.txt"),
+            "--risks-file", os.path.join(base_output_dir, "risks.txt"),
+            "--competitor-analysis-file", os.path.join(base_output_dir, "competitor_analysis.txt"),
+            "--major-takeaways-file", os.path.join(base_output_dir, "major_takeaways.txt"),
+            "--news-summary-file", os.path.join(base_output_dir, "news_summary.txt"),
             "--output-dir", report_output_dir,
             "--config-file", config_file,
             "--data-provider", req.data_provider,
+            "--llm-provider", req.llm_provider,
         ]
+        if req.llm_model:
+            cmd_report.extend(["--llm-model", req.llm_model])
+    
+        # 新增增强功能选项
+        if req.enable_enhanced_charts:
+            cmd_report.append("--enable-enhanced-charts")
+        if req.enable_valuation_analysis:
+            cmd_report.append("--enable-valuation-analysis")
+    
+        # 添加增强分析文件路径
+        if req.enable_sensitivity_analysis:
+            sensitivity_file = os.path.join(base_output_dir, "sensitivity_analysis.json")
+            if os.path.exists(sensitivity_file):
+                cmd_report.extend(["--sensitivity-analysis-file", sensitivity_file])
+    
+        if req.enable_catalyst_analysis:
+            catalyst_file = os.path.join(base_output_dir, "catalyst_analysis.json")
+            if os.path.exists(catalyst_file):
+                cmd_report.extend(["--catalyst-analysis-file", catalyst_file])
+    
+        if req.enable_enhanced_news:
+            enhanced_news_file = os.path.join(base_output_dir, "enhanced_news.json")
+            if os.path.exists(enhanced_news_file):
+                cmd_report.extend(["--enhanced-news-file", enhanced_news_file])
+    
+        # Peer files exist only when step 1 found peer data (FinEdge also auto-discovers peers)
+        for flag, name in (("--peer-ebitda-csv", "peer_ebitda_comparison.csv"),
+                           ("--peer-ev-ebitda-csv", "peer_ev_ebitda_comparison.csv")):
+            peer_csv = os.path.join(base_output_dir, name)
+            if os.path.exists(peer_csv):
+                cmd_report.extend([flag, peer_csv])
+
+        if not run_process(cmd_report, task_id, cwd=SRC_ROOT):
+            # Update report status to failed
+            try:
+                db = SessionLocal()
+                crud.update_report_request(db, task_id, "failed", "Report creation failed")
+                db.close()
+            except Exception as e:
+                logger.warning(f"Failed to update report status: {e}")
+            return
+
+        # Step 3: Generate PDF Report
+        if req.generate_pdf:
+            append_task_log(task_id, "Generating PDF report...")  # 修改：使用新函数
+            cmd_pdf = [
+                python_exe,
+                os.path.join(src_dir, "generate_pdf_report.py"),
+                "--company-ticker", req.ticker,
+                "--company-name", req.company_name,
+                "--analysis-dir", base_output_dir,
+                "--output-dir", report_output_dir,
+                "--config-file", config_file,
+                "--data-provider", req.data_provider,
+            ]
         
-        if not run_process(cmd_pdf, task_id, cwd=SRC_ROOT):
-            append_task_log(task_id, "Warning: PDF generation failed, but HTML reports are available.")  # 修改：使用新函数
+            if not run_process(cmd_pdf, task_id, cwd=SRC_ROOT):
+                append_task_log(task_id, "Warning: PDF generation failed, but HTML reports are available.")  # 修改：使用新函数
+
+
+    # Step 4: Visual reports (new formats: self-contained HTML and A4 PDF built from one validated report model)
+    if want_visual:
+        append_task_log(task_id, "Generating visual HTML and PDF reports...")
+        cmd_visual = [
+            python_exe,
+            os.path.join(src_dir, "create_visual_report.py"),
+            "--analysis-dir", base_output_dir,
+            "--output-dir", report_output_dir,
+            "--format", "visual",
+        ]
+        if not run_process(cmd_visual, task_id, cwd=SRC_ROOT):
+            if not want_text:
+                try:
+                    db = SessionLocal()
+                    crud.update_report_request(db, task_id, "failed", "Visual report failed")
+                    db.close()
+                except Exception as e:
+                    logger.warning(f"Failed to update report status: {e}")
+                return
+            append_task_log(task_id, "Warning: visual report failed, but the text reports are available.")
 
     tasks[task_id]["status"] = "completed"
     append_task_log(task_id, "Pipeline completed successfully!")  # 修改：使用新函数
@@ -581,11 +614,15 @@ def execute_analysis_pipeline(task_id: str, req: AnalysisRequest):
         prof_pdfs = [f for f in pdf_files if 'Equity_Report' in f]
     sorted_pdfs = prof_pdfs
     
+    visual_htmls = sorted(f for f in report_files if "_Visual_Report_" in f and f.endswith(".html"))
+    visual_pdfs = sorted(f for f in report_files if "_Visual_Report_" in f and f.endswith(".pdf"))
     tasks[task_id]["result"] = {
         "report_dir": report_output_dir,
         "ticker": req.ticker,
         "html": sorted_htmls,
-        "pdf": sorted_pdfs
+        "pdf": sorted_pdfs,
+        "visual_html": visual_htmls,
+        "visual_pdf": visual_pdfs,
     }
 
 @app.post("/api/run")
@@ -602,12 +639,15 @@ async def run_analysis(req: AnalysisRequest, request: Request, background_tasks:
                 req.ticker = req.ticker[: -len(suffix)]
         req.peers = [p.strip().upper().removesuffix(".NS").removesuffix(".BO") for p in req.peers if p.strip()]
 
+    if req.report_format != "text" and req.data_provider != "finedge":
+        raise HTTPException(status_code=400, detail="The visual report formats need the FinEdge data provider (Indian stocks).")
+
     task_id = str(uuid.uuid4())
     tasks[task_id] = {"status": "pending", "logs": [], "result": None, "user": user["email"]}
     
     # 初始化日志文件
     write_log_to_file(task_id, f"Task created by user: {user['email']}")
-    write_log_to_file(task_id, f"Ticker: {req.ticker}, Company: {req.company_name}, Data provider: {req.data_provider}")
+    write_log_to_file(task_id, f"Ticker: {req.ticker}, Company: {req.company_name}, Data provider: {req.data_provider}, Format: {req.report_format}")
     
     # Record report request in database
     try:
@@ -794,6 +834,7 @@ async def get_history(request: Request):
             report_dir = os.path.join(OUTPUT_DIR, r.ticker, "report")
             html_files = []
             pdf_files = []
+            visual_html, visual_pdf = [], []
             if os.path.exists(report_dir):
                 all_files = os.listdir(report_dir)
                 # 只要 Professional 报告，排除 Combined
@@ -804,6 +845,8 @@ async def get_history(request: Request):
                 prof_pdf = [f for f in all_files if f.endswith('.pdf') and 'Professional_Equity_Report' in f]
                 other_pdf = [f for f in all_files if f.endswith('.pdf') and 'Equity_Report' in f and f not in prof_pdf] if not prof_pdf else []
                 pdf_files = prof_pdf + other_pdf
+                visual_html = sorted(f for f in all_files if "_Visual_Report_" in f and f.endswith(".html"))
+                visual_pdf = sorted(f for f in all_files if "_Visual_Report_" in f and f.endswith(".pdf"))
             result.append({
                 "task_id": r.task_id,
                 "ticker": r.ticker,
@@ -812,6 +855,8 @@ async def get_history(request: Request):
                 "created_at": r.created_at.isoformat() if r.created_at else None,
                 "html": html_files,
                 "pdf": pdf_files,
+                "visual_html": visual_html,
+                "visual_pdf": visual_pdf,
             })
         db.close()
         return result

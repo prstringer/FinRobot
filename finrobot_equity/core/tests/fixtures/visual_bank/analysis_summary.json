@@ -1,0 +1,71 @@
+{
+  "company_ticker": "HDFCBANK",
+  "company_name": "HDFC Bank Ltd",
+  "analysis_date": "2026-11-15 13:51:04",
+  "data_source": "FinEdge API",
+  "data_provider": "finedge",
+  "currency": "INR",
+  "statement_type": "standalone",
+  "template": "bank",
+  "llm_provider": null,
+  "llm_model": null,
+  "llm_tiered": false,
+  "data_warnings": [
+    "Advances grew 55% in FY2024, which points to a merger or acquisition; growth rates for that year are not like-for-like.",
+    "Bank figures use standalone statements: FinEdge reports GNPA, NNPA and CET1 only in standalone."
+  ],
+  "data_period": "annual",
+  "years_analyzed": 5,
+  "available_years": [
+    2026,
+    2025,
+    2024,
+    2023,
+    2022
+  ],
+  "latest_year": "2026A",
+  "forecast_years": [
+    "2027E",
+    "2028E",
+    "2029E"
+  ],
+  "peer_tickers": [
+    "ICICIBANK",
+    "KOTAKBANK",
+    "AXISBANK",
+    "FEDERALBNK",
+    "IDBI"
+  ],
+  "news_days_back": 30,
+  "news_articles_fetched": 33,
+  "enhanced_news_enabled": false,
+  "sensitivity_analysis_enabled": false,
+  "catalyst_analysis_enabled": false,
+  "forecast_config": {
+    "revenue_base_year": "2026A",
+    "revenue_growth_assumptions": {
+      "2027E": 0.05,
+      "2028E": 0.06,
+      "2029E": 0.04
+    },
+    "ebitda_growth_factor": 1.05,
+    "margin_improvement": {},
+    "sga_margin_change": 0
+  },
+  "llm_failed_sections": [],
+  "consistency_failures": null,
+  "narrative_unit_warnings": [],
+  "llm_usage": [],
+  "llm_cost_usd": 0,
+  "files_generated": {
+    "main_analysis": "financial_metrics_and_forecasts.csv",
+    "peer_ebitda": null,
+    "peer_ev_ebitda": null,
+    "peer_bank": "peer_bank_comparison.csv",
+    "company_news": "company_news.json",
+    "enhanced_news": null,
+    "sensitivity_analysis": null,
+    "catalyst_analysis": null,
+    "text_sections": []
+  }
+}

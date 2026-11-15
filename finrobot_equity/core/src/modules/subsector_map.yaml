@@ -1,0 +1,41 @@
+# Sub-sector taxonomy used by peer_selection.py.
+#
+# FinEdge only exposes sector / industry / sub_industry lists, and they are coarse: the 'Iron & Steel Products' list puts a
+# Rs 2,500 Cr TMT re-roller next to Rs 60,000 Cr tube makers. This file adds the finer split by hand.
+#
+# Rules
+#   * A ticker belongs to at most one sub-sector tag. Two tickers are comparable only if they share a tag.
+#   * If the SUBJECT has a tag, candidates are that tag's members (plus any tagged members FinEdge lists); everything
+#     else FinEdge returns is rejected with the reason "different sub-sector".
+#   * If the subject has NO tag, peer_selection falls back to the FinEdge sub_industry list as-is. That list is still
+#     market-cap banded, and the selection log says so (basis: "FinEdge sub_industry list, no sub-sector tag").
+#   * Extend this file freely: it is data, not code. Keep tags to businesses with the same cost structure and customers.
+
+subsectors:
+  steel_long_sponge:
+    label: "Steel - Long Products / Sponge Iron"
+    tickers: [MAHASTEEL, GALLANTT, GPIL, SHYAMMETL, KAMDHENU, SARDAEN, SUNFLAG, VISASTEEL]
+  steel_pipes:
+    label: "Steel - Pipes and Tubes"
+    tickers: [APLAPOLLO, WELCORP, JINDALSAW, RATNAMANI, MAHSEAMLES, MANINDS, SURYAROSNI, SAMBHV, GOODLUCK, HITECHCORP]
+  steel_flat:
+    label: "Steel - Flat Products / Integrated"
+    tickers: [TATASTEEL, JSWSTEEL, SAIL, JINDALSTEL, JSL, JSLHISAR]
+  steel_wire_special:
+    label: "Steel - Wire Ropes and Special Steel"
+    tickers: [USHAMART]
+  textiles_home_yarn:
+    label: "Textiles - Home, Yarn and Integrated"
+    tickers: [WELSPUNLIV, TRIDENT, ICIL, KPRMILL, VTL, GARFIBRES, SPENTEX]
+  banks_private:
+    label: "Banks - Private Sector"
+    tickers: [HDFCBANK, ICICIBANK, KOTAKBANK, AXISBANK, INDUSINDBK, FEDERALBNK, IDFCFIRSTB, BANDHANBNK, RBLBANK, YESBANK, CSBBANK, KARURVYSYA]
+  banks_psu:
+    label: "Banks - Public Sector"
+    tickers: [SBIN, PNB, BANKBARODA, CANBK, UNIONBANK, INDIANB, BANKINDIA, CENTRALBK, IOB, UCOBANK, MAHABANK]
+  cement:
+    label: "Cement"
+    tickers: [ULTRACEMCO, AMBUJACEM, ACC, SHREECEM, DALBHARAT, RAMCOCEM, JKCEMENT, NUVOCO, HEIDELBERG, STARCEMENT]
+
+# FinEdge sector names that map wholly onto one tag (used when the subject has no ticker tag)
+sector_tags: {}
