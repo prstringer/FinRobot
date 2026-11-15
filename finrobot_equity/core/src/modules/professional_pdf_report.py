@@ -28,13 +28,23 @@ from reportlab.platypus import (
 )
 
 from . import currency as _cur
+from . import report_extras as _rx
 from .retail_sentiment_client import has_coverage
 from reportlab.platypus import Paragraph as _RLParagraph
 
 
+import re as _re_amp
+_KNOWN_ENTITY = _re_amp.compile(r"&(?!(?:amp|lt|gt|quot|apos|nbsp|middot|#\d+|#x[0-9A-Fa-f]+);)")
+
+
+def escape_ampersands(text):
+    """Escape bare '&' (as in 'SG&A') so markup parsers cannot read it as an entity such as '&A;'."""
+    return _KNOWN_ENTITY.sub("&amp;", text) if isinstance(text, str) else text
+
+
 def _pdf_safe(text):
-    """Built-in PDF fonts (Helvetica) have no rupee glyph: write 'Rs ' instead of '₹'."""
-    return text.replace("₹", "Rs ") if isinstance(text, str) else text
+    """Built-in PDF fonts (Helvetica) have no rupee glyph: write 'Rs ' instead of '₹'; escape bare ampersands."""
+    return escape_ampersands(text.replace("₹", "Rs ")) if isinstance(text, str) else text
 
 
 class Paragraph(_RLParagraph):
@@ -538,8 +548,8 @@ class ProfessionalEquityReport:
             ['Market Cap', self.data.get('market_cap', 'N/A')],
             [self.data.get('pe_label', 'P/E (Fwd)'), format_metric(self.data.get('fwd_pe', 'N/A'))],
             ['P/B Ratio', format_metric(self.data.get('pb_ratio', 'N/A'))],
-            ['ROE', format_metric(self.data.get('roe', 'N/A'), is_percentage=True)],
-            ['Dividend Yield', format_metric(self.data.get('dividend_yield', 'N/A'), is_percentage=True)],
+            [self.data.get('roe_label', 'ROE'), format_metric(self.data.get('roe', 'N/A'), is_percentage=True)],
+            [self.data.get('dividend_label', 'Dividend Yield'), format_metric(self.data.get('dividend_yield', 'N/A'), is_percentage=True)],
             ['52W Range', self.data.get('52w_range', 'N/A')],
         ]
         
@@ -739,8 +749,52 @@ class ProfessionalEquityReport:
                     self.elements.append(Paragraph(para, self.styles['Body']))
                     self.elements.append(Spacer(1, 2*mm))
         
-        self.elements.append(Spacer(1, 6*mm))
-        
+        self.elements.append(Spacer(1, 4*mm))
+
+        # Current valuation at report date (separate from the fiscal-year-average-price history)
+        cv_rows = self.data.get('current_valuation_rows')
+        if cv_rows:
+            self.elements.append(Paragraph("Current Valuation (at report date)", self.styles['Heading2']))
+            self.elements.append(Spacer(1, 2*mm))
+            cell = self.styles['Caption']
+            cv_data = [["Metric", "Value", "Basis"]] + [
+                [Paragraph(str(a), cell), Paragraph(f"<b>{b}</b>", cell), Paragraph(str(c), cell)] for a, b, c in cv_rows]
+            cv_table = Table(cv_data, colWidths=[50*mm, 28*mm, Layout.CONTENT_WIDTH - 78*mm], repeatRows=1)
+            cv_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a365d')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('FONTSIZE', (0, 0), (-1, 0), 8),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f1f5f9')]),
+                ('LINEBELOW', (0, 0), (-1, -1), 0.25, colors.HexColor('#cbd5e1')),
+                ('TOPPADDING', (0, 0), (-1, -1), 2), ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+            ]))
+            self.elements.append(cv_table)
+            self.elements.append(Spacer(1, 4*mm))
+
+        # Peer EV/EBITDA on both price bases: fiscal-year average (historical) and current snapshot
+        pm = self.data.get('peer_multiples_table')
+        if pm:
+            header, pm_rows = pm
+            cell = self.styles['Caption']
+            n = len(header)
+            pm_data = [[Paragraph("<b>%s</b>" % h.replace("\n", "<br/>"), cell) for h in header]] + [
+                [Paragraph(str(c), cell) for c in r] for r in pm_rows]
+            first = 48*mm
+            pm_table = Table(pm_data, colWidths=[first] + [(Layout.CONTENT_WIDTH - first) / (n - 1)] * (n - 1), repeatRows=1)
+            pm_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e2e8f0')),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('ALIGN', (1, 1), (-1, -1), 'RIGHT'),
+                ('LINEBELOW', (0, 0), (-1, -1), 0.25, colors.HexColor('#cbd5e1')),
+                ('BACKGROUND', (0, len(pm_data) - 2), (-1, -1), colors.HexColor('#f1f5f9')),
+                ('TOPPADDING', (0, 0), (-1, -1), 2), ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+            ]))
+            self.elements.append(Paragraph("Peer EV/EBITDA: fiscal-year-average price vs current price", self.styles['Heading2']))
+            self.elements.append(Spacer(1, 2*mm))
+            self.elements.append(pm_table)
+            self.elements.append(Spacer(1, 4*mm))
+
         # 同行对比
         self.elements.append(Paragraph("Peer Comparison", self.styles['Heading2']))
         self.elements.append(Spacer(1, 3*mm))
@@ -1048,8 +1102,47 @@ class ProfessionalEquityReport:
     # =========================================================================
     # 高级图表分析部分
     # =========================================================================
+    def _extras(self, kind: str):
+        pack = self.data.get('interpretation_pack')
+        if not pack:
+            return []
+        return _rx.pdf_flowables(pack, kind, self.styles, Layout.CONTENT_WIDTH, Paragraph, mm, load_image_from_base64)
+
+    def build_summary_panel(self):
+        """At a Glance: four questions with traffic lights (right after the cover)."""
+        banner = self.data.get('validation_banner')
+        flow = self._extras('summary')
+        if not flow and not banner:
+            return
+        self.elements.append(PageBreak())
+        if banner:
+            self.elements.append(Paragraph(f"<font color='#991b1b'><b>{banner}</b></font>", self.styles['Body']))
+            self.elements.append(Spacer(1, 3*mm))
+        self.elements.extend(flow)
+
+    def build_verdict_section(self):
+        """Key-metric verdict chips and the last-full-year versus TTM table."""
+        flow = self._extras('verdicts') + self._extras('ttm')
+        if flow:
+            self.elements.append(Spacer(1, 6*mm))
+            self.elements.extend(flow)
+
+    def build_interpretation_sections(self) -> bool:
+        """Technical, cash flow and ratio-bar sections. Returns True when they replace the legacy chart section."""
+        pack = self.data.get('interpretation_pack') or {}
+        if not (pack.get('technical') or pack.get('cashflow') or pack.get('ratio_bars')):
+            return False
+        self.elements.append(Spacer(1, 8*mm))
+        self.elements.append(Paragraph("Technical & Advanced Analysis", self.styles['SectionTitle']))
+        self.elements.append(create_separator())
+        for kind in ('technical', 'cashflow', 'ratios'):
+            self.elements.extend(self._extras(kind))
+        return True
+
     def build_advanced_charts_section(self):
         """构建高级图表分析部分 - 包含配文说明"""
+        if self.build_interpretation_sections():
+            return
         # 检查是否有高级图表
         stock_price_chart = self.data.get('stock_price_chart_path', '')
         technical_chart = self.data.get('technical_indicators_path', '')
@@ -1378,7 +1471,7 @@ class ProfessionalEquityReport:
         
         try:
             eps_row = analysis_df[analysis_df['metrics'] == 'EPS']
-            pe_row = analysis_df[analysis_df['metrics'] == 'PE Ratio']
+            pe_row = analysis_df[analysis_df['metrics'].astype(str).str.startswith('PE Ratio')]
             
             text = f"{self.company_name}'s earnings trajectory reflects "
             
@@ -1411,10 +1504,11 @@ class ProfessionalEquityReport:
             
             if latest_year:
                 for metric in metrics:
-                    row = df[df['metrics'] == metric]
+                    row = df[(df['metrics'] == metric) | df['metrics'].astype(str).str.startswith(metric + ' (')]
                     if not row.empty:
                         value = row[latest_year].values[0]
-                        result[f"{metric} ({latest_year})"] = format_number(value)
+                        label = f"{metric} ({latest_year}, FY-avg price)" if metric == 'PE Ratio' else f"{metric} ({latest_year})"
+                        result[label] = format_number(value)
         except:
             pass
         return result
@@ -1506,8 +1600,31 @@ class ProfessionalEquityReport:
         canvas_obj.setKeywords(f"{self.ticker}, {self.company_name}, Equity Research, Investment Analysis")
         canvas_obj.setCreator('FinRobot Equity Research Platform')
     
+    def _report_date_text(self) -> str:
+        return str(self.data.get('report_date_full') or self.data.get('report_date')
+                   or datetime.now(EASTERN_TZ).strftime('%d %B %Y'))
+
+    def _draw_date_footer(self, canvas_obj, doc, with_page_number: bool = True):
+        """Report date in the footer; called for every page, the cover included."""
+        canvas_obj.saveState()
+        canvas_obj.setFont('Helvetica', 8)
+        canvas_obj.setFillColor(Colors.MEDIUM_GRAY)
+        canvas_obj.drawString(Layout.MARGIN_LEFT, 10*mm, f"Report date: {self._report_date_text()}")
+        if with_page_number:
+            canvas_obj.drawCentredString(Layout.PAGE_WIDTH / 2, 10*mm, f"Page {doc.page}")
+        canvas_obj.drawRightString(Layout.PAGE_WIDTH - Layout.MARGIN_RIGHT, 10*mm, f"{self.company_name} ({self.ticker})")
+        if self.data.get('validation_banner'):
+            canvas_obj.setFillColorRGB(0.6, 0.1, 0.1)
+            canvas_obj.setFont('Helvetica-Bold', 7)
+            canvas_obj.drawCentredString(Layout.PAGE_WIDTH / 2, 6*mm, "VALIDATION WARNING: see validation_report.md")
+        canvas_obj.restoreState()
+
+    def _first_page(self, canvas_obj, doc):
+        self._add_pdf_metadata(canvas_obj, doc)
+        self._draw_date_footer(canvas_obj, doc, with_page_number=False)
+
     def add_page_header_footer(self, canvas_obj, doc):
-        """添加页眉页脚"""
+        """Header (company, report date) and footer (report date, page number) on every page after the cover."""
         canvas_obj.saveState()
         
         # 页眉
@@ -1516,7 +1633,7 @@ class ProfessionalEquityReport:
         canvas_obj.drawString(Layout.MARGIN_LEFT, Layout.PAGE_HEIGHT - 12*mm, 
                              f"{self.company_name} ({self.ticker})")
         canvas_obj.drawRightString(Layout.PAGE_WIDTH - Layout.MARGIN_RIGHT, 
-                                   Layout.PAGE_HEIGHT - 12*mm, "Equity Research")
+                                   Layout.PAGE_HEIGHT - 12*mm, f"Equity Research | {self._report_date_text()}")
         
         # 页眉线
         canvas_obj.setStrokeColor(Colors.LIGHT_GRAY)
@@ -1524,11 +1641,8 @@ class ProfessionalEquityReport:
         canvas_obj.line(Layout.MARGIN_LEFT, Layout.PAGE_HEIGHT - 14*mm,
                        Layout.PAGE_WIDTH - Layout.MARGIN_RIGHT, Layout.PAGE_HEIGHT - 14*mm)
         
-        # 页脚
-        canvas_obj.drawCentredString(Layout.PAGE_WIDTH / 2, 10*mm, 
-                                     f"Page {doc.page}")
-        
         canvas_obj.restoreState()
+        self._draw_date_footer(canvas_obj, doc)
     
     # =========================================================================
     # 构建完整报告
@@ -1539,8 +1653,10 @@ class ProfessionalEquityReport:
         
         # 按顺序构建各部分 - 内容自然流动，减少强制分页
         self.build_cover_page()
+        self.build_summary_panel()
         self.build_company_overview_section()    # 封面后分页
         self.build_financial_analysis_section()  # 自然流动
+        self.build_verdict_section()
         self.build_valuation_section()           # 自然流动
         self.build_news_section()                # 新闻分析 (只显示 News Summary，不显示 Recent Headlines)
         self.build_sensitivity_section()         # 敏感性分析 (新增)
@@ -1553,7 +1669,7 @@ class ProfessionalEquityReport:
         # 生成PDF
         self.doc.build(
             self.elements,
-            onFirstPage=self._add_pdf_metadata,
+            onFirstPage=self._first_page,
             onLaterPages=self.add_page_header_footer
         )
         

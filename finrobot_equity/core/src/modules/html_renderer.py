@@ -261,7 +261,7 @@ HTML_TEMPLATE_PAGE_1 = """
           <td class="text-right" style="color: #1a1a1a; font-weight: 500;">{free_float}</td>
         </tr>
         <tr>
-          <td style="color: #555555;">Dividend yield (%)</td>
+          <td style="color: #555555;">{dividend_label}</td>
           <td class="text-right" style="color: #1a1a1a; font-weight: 500;">{dividend_yield}</td>
         </tr>
         <tr>
@@ -277,7 +277,7 @@ HTML_TEMPLATE_PAGE_1 = """
           <td class="text-right" style="color: #1a1a1a; font-weight: 500;">{pb_ratio}</td>
         </tr>
         <tr>
-          <td style="color: #555555;">ROE (%)</td>
+          <td style="color: #555555;">{roe_label}</td>
           <td class="text-right" style="color: #1a1a1a; font-weight: 500;">{roe}</td>
         </tr>
        </table>
@@ -627,6 +627,29 @@ def _derive_rating(share_price, target_price, api_rating: str) -> str:
         return api_rating or 'N/A'
 
 
+def format_current_valuation_html(rows) -> str:
+    """'Current valuation (at report date)' table: separate from the fiscal-year-average-price history."""
+    if not rows:
+        return ""
+    body = "".join(f"<tr><td>{a}</td><td style=\"text-align:right; font-weight:600;\">{b}</td><td>{c}</td></tr>" for a, b, c in rows)
+    return ('<h3 class="heading-2">Current Valuation (at report date)</h3>'
+            '<div style="overflow-x:auto; margin-bottom:1rem;"><table class="data-table">'
+            '<thead><tr><th>Metric</th><th>Value</th><th>Basis</th></tr></thead><tbody>' + body + '</tbody></table></div>')
+
+
+def format_peer_multiples_html(table) -> str:
+    """Peer EV/EBITDA on both price bases (fiscal-year average and current), from report_context.peer_multiples_table."""
+    if not table:
+        return ""
+    header, rows = table
+    th = "".join(f"<th>{h.replace(chr(10), '<br>')}</th>" for h in header)
+    body = "".join("<tr>" + "".join(f"<td{'' if i == 0 else ' style=\"text-align:right;\"'}>{c}</td>" for i, c in enumerate(r)) + "</tr>"
+                   for r in rows)
+    return ('<h3 class="heading-2">Peer EV/EBITDA: fiscal-year-average price vs current price</h3>'
+            '<div style="overflow-x:auto; margin-bottom:1rem;"><table class="data-table">'
+            f'<thead><tr>{th}</tr></thead><tbody>{body}</tbody></table></div>')
+
+
 def format_valuation_breakdown_html(valuation_data: dict) -> str:
     """格式化目标价推导过程为 HTML 表格 + 综合卡片（投行风格）。"""
     if not valuation_data or not valuation_data.get('methods'):
@@ -943,6 +966,8 @@ REPORT_LABEL_DEFAULTS = {
     "peer_valuation_title": "Peer Valuation Metrics (EV/EBITDA, x)",
     "peer_ebitda_title": "Peer EBITDA Comparison",
     "peer_ev_ebitda_title": "Peer EV/EBITDA Comparison",
+    "roe_label": "ROE (%)",
+    "dividend_label": "Dividend yield (%)",
 }
 
 
@@ -953,6 +978,10 @@ def _set_currency_labels(data: dict) -> None:
     data.setdefault("large_label", _cur.large_label())
     data.setdefault("currency_code", _cur.get_currency())
     data.setdefault("pe_label", "Fwd. P/E")
+    import datetime as _dt
+    _today = _dt.date.today()
+    data.setdefault("report_date_full", f"{_today.day} {_today.strftime('%B %Y')}")
+    data.setdefault("company_name_ticker", f"{data.get('company_name_full', '')} ({data.get('company_ticker', '')})".strip())
 
 
 def render_html_report(template_str: str, data: dict) -> str:
@@ -1175,11 +1204,11 @@ HTML_TEMPLATE_COMBINED = """
               <tr><td style="color: #555555;">52-Week Range</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{week_52_range}</td></tr>
               <tr><td style="color: #555555;">Volume (m shares)</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{volume}</td></tr>
               <tr><td style="color: #555555;">Free float (%)</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{free_float}</td></tr>
-              <tr><td style="color: #555555;">Dividend yield (%)</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{dividend_yield}</td></tr>
+              <tr><td style="color: #555555;">{dividend_label}</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{dividend_yield}</td></tr>
               <tr><td style="color: #555555;">Net Debt to Equity (%)</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{net_debt_to_equity}</td></tr>
               <tr><td style="color: #555555;">{pe_label} (x)</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{fwd_pe}</td></tr>
               <tr><td style="color: #555555;">P/Book (x)</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{pb_ratio}</td></tr>
-              <tr><td style="color: #555555;">ROE (%)</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{roe}</td></tr>
+              <tr><td style="color: #555555;">{roe_label}</td><td class="text-right" style="color: #1a1a1a; font-weight: 500;">{roe}</td></tr>
             </table>
           </div>
           <p style="font-size: 10px; color: #555555; font-style: italic;" class="mb-2">Closing Price as of {closing_price_date}</p>
@@ -1321,7 +1350,8 @@ def render_combined_html_report(data: dict) -> str:
 
         # Valuation breakdown
         try:
-            data["valuation_breakdown_html"] = format_valuation_breakdown_html(data.get("valuation_analysis", {}))
+            data["valuation_breakdown_html"] = (format_current_valuation_html(data.get("current_valuation_rows"))
+                                                + format_valuation_breakdown_html(data.get("valuation_analysis", {})))
         except Exception as e:
             print(f"Warning: Error formatting valuation breakdown: {e}")
             data["valuation_breakdown_html"] = ""
@@ -1370,3 +1400,22 @@ def render_combined_html_report(data: dict) -> str:
         import traceback
         traceback.print_exc()
         return f"<html><body><h1>Error rendering report</h1><p>Unexpected error: {e}</p></body></html>"
+
+
+# --- Report date on every page -------------------------------------------------------------------------------
+# On screen the line sits at the end of the page; when printed (or saved to PDF) it is fixed to the bottom edge,
+# so it repeats on every printed page. Braces are doubled because the templates are filled with str.format.
+REPORT_DATE_FOOTER = """
+<style>
+  .report-date-footer {{ text-align: center; font-size: 10px; color: #64748b; border-top: 1px solid #e2e8f0; padding: 6px 0; margin-top: 14px; }}
+  @media print {{
+    .report-date-footer {{ position: fixed; left: 0; right: 0; bottom: 0; background: #ffffff; margin: 0; }}
+    body {{ padding-bottom: 10mm; }}
+  }}
+</style>
+<div class="report-date-footer">{company_name_ticker} &middot; Report date: {report_date_full}</div>
+"""
+
+for _name in [n for n in list(globals()) if n.startswith("HTML_TEMPLATE_") and isinstance(globals()[n], str)]:
+    if "report-date-footer" not in globals()[_name]:
+        globals()[_name] = globals()[_name].replace("</body>", REPORT_DATE_FOOTER + "</body>", 1)

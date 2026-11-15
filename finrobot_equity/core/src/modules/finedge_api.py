@@ -431,6 +431,11 @@ def normalize_cash_flow(rows: list[dict], period: str = "annual") -> pd.DataFram
             "netCashUsedForInvestingActivites": _num(r.get("cashFlowsFromInvestingActivities")),
             "netCashUsedProvidedByFinancingActivities": _num(r.get("cashFlowsFromFinancingActivities")),
             "dividendsPaid": _num(r.get("dividendsPaidClassifiedAsFinancing")),
+            "buybacks": -abs(_num(r.get("paymentsToAcquireOrRedeemSharesClassifiedAsFinancing")))
+                        if pd.notna(_num(r.get("paymentsToAcquireOrRedeemSharesClassifiedAsFinancing"))) else np.nan,
+            "debtProceeds": _num(r.get("proceedsFromBorrowingsClassifiedAsFinancing")),
+            "debtRepayment": -abs(_num(r.get("repaymentsOfBorrowingsClassifiedAsFinancing")))
+                             if pd.notna(_num(r.get("repaymentsOfBorrowingsClassifiedAsFinancing"))) else np.nan,
             "netChangeInCash": _num(r.get("netCashFlow")),
         })
         out.append(rec)
@@ -526,6 +531,9 @@ def build_ratios_frames(ratio_rows: dict[str, list[dict]], price_rows: list[dict
         key_metrics.append({
             "date": date, "year": year, "calendarYear": year,
             "averagePrice": avg_price,
+            "priceBasis": "fiscal-year average price",
+            "shares": shares,
+            "netDebt": (debt if pd.notna(debt) else 0) - (cash_st if pd.notna(cash_st) else 0) if not is_bank else np.nan,
             "marketCap": market_cap,
             "enterpriseValue": ev,
             "enterpriseValueOverEBITDA": _div(ev, ebitda) if pd.notna(ebitda) and ebitda > 0 else np.nan,
@@ -713,6 +721,123 @@ def _free_float(pattern: dict) -> float | None:
     return round(100.0 - promoter, 2)
 
 
+def get_finedge_ttm_and_latest_balance(symbol: str, client: FinEdgeClient, statement_type: str = "c") -> dict:
+    """Trailing-four-quarter P&L and the latest balance sheet (annual, half-yearly or quarterly).
+
+    Returns ``{"ttm": {...} | None, "latest_balance": {...} | None}`` in absolute rupees. TTM needs four
+    consecutive quarters (about 91 days apart); otherwise it is None and callers must say so. Banks have
+    no EBITDA, so only the balance sheet is returned for them.
+    """
+    symbol = normalize_symbol(symbol)
+    out = {"ttm": None, "latest_balance": None}
+    try:
+        q_rows = client.financials(symbol, "pl", "quarterly", statement_type)
+    except FinEdgeError as e:
+        print(f"Warning: FinEdge quarterly P&L unavailable: {e}")
+        q_rows = []
+    if q_rows and not is_bank_statement(q_rows):
+        q = normalize_income_statement(q_rows, "quarterly").sort_values("date", ascending=False)
+        q = q[q["date"].notna()].head(4).reset_index(drop=True)
+        gaps = [(q.loc[i, "date"] - q.loc[i + 1, "date"]).days for i in range(len(q) - 1)] if len(q) == 4 else []
+        if len(q) == 4 and all(80 <= g <= 100 for g in gaps):
+            shares = _nonzero(q.loc[0, "weightedAverageShsOutDil"])
+            eps_q = [e if pd.notna(e) else (n / s if pd.notna(n) and pd.notna(s) and s else np.nan)
+                     for e, n, s in zip(q["eps"], q["netIncome"], q["weightedAverageShsOutDil"])]
+            out["ttm"] = {
+                "period_end": q.loc[0, "date"].strftime("%Y-%m-%d"),
+                "quarters": [d.strftime("%Y-%m-%d") for d in q["date"]],
+                "revenue": float(q["revenue"].sum()),
+                "ebitda": float(q["ebitda"].sum()),
+                "depreciation": float(q["depreciationAndAmortization"].sum()),
+                "interest": float(q["interestExpense"].sum()),
+                "pretax_income": float(q["incomeBeforeTax"].sum()),
+                "net_income": float(q["netIncome"].sum()),
+                "eps": float(np.nansum(eps_q)),
+                "shares": float(shares) if pd.notna(shares) else np.nan,
+            }
+        else:
+            print(f"Warning: quarterly P&L is not four consecutive quarters (gaps {gaps}); TTM unavailable")
+
+    best = None
+    for period in ("annual", "halfyearly", "quarterly"):
+        try:
+            bs = normalize_balance_sheet(client.financials(symbol, "bs", period, statement_type), period)
+        except FinEdgeError:
+            continue
+        if bs.empty or bs["date"].isna().all():
+            continue
+        row = bs.sort_values("date", ascending=False).iloc[0]
+        if best is None or row["date"] > best["date"]:
+            best = row
+    if best is not None:
+        out["latest_balance"] = {
+            "date": best["date"].strftime("%Y-%m-%d"),
+            "total_debt": float(best.get("totalDebt", np.nan)),
+            "cash_and_st_investments": float(best.get("cashAndShortTermInvestments", np.nan)),
+            "net_debt": float(best.get("netDebt", np.nan)),
+            "equity": float(best.get("totalStockholdersEquity", np.nan)),
+            "minority_interest": float(best.get("minorityInterest", np.nan)) if "minorityInterest" in best else np.nan,
+        }
+    return out
+
+
+def get_finedge_peer_frames(tickers: list[str], client: FinEdgeClient) -> tuple[dict, dict]:
+    """Ratios and income-statement frames per peer ({ticker: DataFrame}); reuses the client's request cache."""
+    ratios, income = {}, {}
+    for t in tickers:
+        sym = normalize_symbol(t)
+        try:
+            data = get_finedge_comprehensive_financial_data(sym, client)
+        except FinEdgeError:
+            continue
+        if data["meta"].get("is_bank"):
+            continue
+        ratios[sym], income[sym] = data.get("ratios"), data.get("income_statement")
+    return ratios, income
+
+
+def get_finedge_peer_current_multiples(tickers: list[str], client: FinEdgeClient) -> pd.DataFrame:
+    """Current-price EV/EBITDA for each company (index = ticker), alongside the fiscal-year-average-price series.
+
+    EV = current market cap + latest net debt (latest annual, half-yearly or quarterly balance sheet).
+    EV/EBITDA is computed on the latest fiscal-year EBITDA and on trailing-four-quarter EBITDA (when four
+    consecutive quarters exist). Banks and symbols outside the FinEdge plan are skipped. Money in rupee crore.
+    """
+    rows = []
+    for t in tickers:
+        sym = normalize_symbol(t)
+        try:
+            q = client.quote(sym)
+            price, mcap_cr = _nonzero(q.get("current_price")), _nonzero(q.get("market_cap"))
+            data = get_finedge_comprehensive_financial_data(sym, client)
+            if data["meta"].get("is_bank"):
+                print(f"Skipping {sym} for current multiples: bank layout (EBITDA not meaningful)")
+                continue
+            st = "s" if data["meta"].get("statement_type") == "standalone" else "c"
+            inc = data["income_statement"].sort_values("year", ascending=False).iloc[0]
+            tb = get_finedge_ttm_and_latest_balance(sym, client, st)
+        except FinEdgeError as e:
+            print(f"Skipping {sym} for current multiples: {e}")
+            continue
+        lb = tb.get("latest_balance") or {}
+        net_debt = _num(lb.get("net_debt"))
+        if pd.isna(price) or pd.isna(mcap_cr) or pd.isna(net_debt):
+            print(f"Skipping {sym} for current multiples: price, market cap or net debt unavailable")
+            continue
+        ev_cr = mcap_cr + net_debt / CRORE
+        ebitda_fy = _num(inc.get("ebitda")) / CRORE
+        ttm = tb.get("ttm") or {}
+        ebitda_ttm = _num(ttm.get("ebitda")) / CRORE if ttm else np.nan
+        rows.append({
+            "ticker": sym, "price": price, "market_cap_cr": mcap_cr, "net_debt_cr": net_debt / CRORE,
+            "net_debt_date": lb.get("date"), "ev_cr": ev_cr, "fy_label": f"{int(inc['year'])}A",
+            "ebitda_fy_cr": ebitda_fy, "ev_ebitda_fy": ev_cr / ebitda_fy if ebitda_fy > 0 else np.nan,
+            "ebitda_ttm_cr": ebitda_ttm, "ttm_period_end": ttm.get("period_end"),
+            "ev_ebitda_ttm": ev_cr / ebitda_ttm if pd.notna(ebitda_ttm) and ebitda_ttm > 0 else np.nan,
+        })
+    return pd.DataFrame(rows).set_index("ticker") if rows else pd.DataFrame()
+
+
 def get_finedge_company_metrics(symbol: str, client: FinEdgeClient, financial_data: dict | None = None) -> dict:
     """FinEdge equivalent of ``get_comprehensive_company_metrics``.
 
@@ -731,6 +856,7 @@ def get_finedge_company_metrics(symbol: str, client: FinEdgeClient, financial_da
         q = client.quote(symbol)
         metrics["share_price"] = _nonzero(q.get("current_price")) if q else None
         metrics["market_cap"] = _nonzero(q.get("market_cap"))  # ₹ crore
+        metrics["price_time"] = q.get("tradetime")
         # /quote 'shares' is unreliable (pre-bonus counts for RELIANCE/HDFCBANK); derive from market cap
         price, mcap = metrics["share_price"], metrics["market_cap"]
         if pd.notna(price) and pd.notna(mcap) and price:
@@ -761,6 +887,7 @@ def get_finedge_company_metrics(symbol: str, client: FinEdgeClient, financial_da
                        key=lambda d: d["quote_date"])
         if daily:
             metrics["fwd_pe"] = _nonzero(daily[-1].get("pe"))   # trailing P/E (FinEdge has no forward P/E)
+            metrics["pe_basis"] = f"price on {daily[-1]['quote_date']} / TTM EPS (FinEdge daily ratio)"
             metrics["pb_ratio"] = _nonzero(daily[-1].get("pb"))
     except FinEdgeError as e:
         print(f"Warning: FinEdge daily price ratios unavailable: {e}")
@@ -789,6 +916,7 @@ def get_finedge_company_metrics(symbol: str, client: FinEdgeClient, financial_da
                 total += _num(d.get("adj_amount") or d.get("amount")) or 0
         if price and total:
             metrics["dividend_yield"] = total / price * 100
+            metrics["dividend_basis"] = "dividends with ex-date in the last 365 days / current price"
     except FinEdgeError as e:
         print(f"Warning: FinEdge dividends unavailable: {e}")
 
@@ -802,6 +930,7 @@ def get_finedge_company_metrics(symbol: str, client: FinEdgeClient, financial_da
         ttm = meta.get("ttm_ratios", {}).get("pr", {})
         if ttm.get("returnOnEquity") is not None:
             metrics["roe"] = float(ttm["returnOnEquity"]) * 100
+            metrics["roe_basis"] = "TTM net income / latest closing equity (FinEdge TTM ratio)"
         bal = financial_data.get("balance_sheet")
         if bal is not None and not bal.empty and not meta.get("is_bank"):
             latest = bal.iloc[0]

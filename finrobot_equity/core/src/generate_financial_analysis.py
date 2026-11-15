@@ -16,7 +16,11 @@ from modules.market_data_api import (
     get_company_news,
     get_fmp_peers,
 )
-from modules.text_generator_agents import generate_text_section
+from modules.text_generator_agents import generate_text_section, _prepare_user_prompt
+from modules import report_context as rctx
+from modules import technical_analysis as tech_an
+from modules import cashflow_analysis as cf_an
+from modules import ratio_bars as rbars
 from modules.llm_providers import PROVIDERS, resolve_llm_settings
 
 # 新增模块导入
@@ -37,6 +41,12 @@ from modules.finedge_api import (
     get_finedge_peers,
     filter_valid_peers,
     get_finedge_price_history,
+    get_finedge_company_metrics,
+    get_finedge_ttm_and_latest_balance,
+    get_finedge_peer_current_multiples,
+    get_finedge_peer_frames,
+    normalize_cash_flow,
+    get_finedge_technical_indicators,
     combine_peer_financial_data_finedge,
     combine_peer_bank_data_finedge,
     build_bank_metrics_table,
@@ -269,7 +279,25 @@ def main():
     print(f"  Margin Improvement: {args.margin_improvement*100:.1f}% annually")
     print(f"  SG&A Efficiency: {args.sga_margin_improvement*100:.1f}% annually")
     
-    final_data_df = calculate_growth_and_forecasts(historical_metrics_df, forecast_config)
+    # Current market data (price, market cap, 52w range, TTM ratios) is fetched once here: the forecast P/E, the
+    # current-valuation block and every text section all use these same values.
+    company_metrics = {}
+    if use_finedge:
+        try:
+            company_metrics = get_finedge_company_metrics(args.company_ticker, finedge_client, {**financial_data, "meta": data_meta}) or {}
+        except Exception as e:
+            print(f"Warning: could not fetch current market data for the forecast P/E and valuation context: {e}")
+    current_price = company_metrics.get("share_price")
+    bridge_income_df = income_df if (use_finedge and not is_bank) else None
+    final_data_df = calculate_growth_and_forecasts(historical_metrics_df, forecast_config,
+                                                   income_df=bridge_income_df, current_price=current_price)
+    if final_data_df.attrs.get("forecast_bridge") is not None:
+        print("\nForecast P&L bridge (INR crore; EPS in rupees):")
+        _bridge = final_data_df.attrs["forecast_bridge"].drop(columns=["shares"]).copy()
+        for _c in _bridge.columns:
+            if _c != "eps":
+                _bridge[_c] = _bridge[_c] / rctx.CRORE
+        print(_bridge.round(2).T.to_string())
     print("\nFinal Metrics with Forecasts:")
     print(final_data_df.to_string())
 
@@ -280,7 +308,9 @@ def main():
 
     # 4. Peer Comparison Analysis
     projected_peer_ebitda = None
+    df_ebitda_peers = None
     df_ev_ebitda_peers = None
+    df_peer_current = None
     df_bank_peers = None
     if use_finedge:
         peer_list = [normalize_symbol(t) for t in args.peer_tickers]
@@ -318,6 +348,14 @@ def main():
                 peer_ebitda_path = os.path.join(output_dir, "peer_ebitda_comparison.csv")
                 projected_peer_ebitda.to_csv(peer_ebitda_path)
                 print(f"Saved peer EBITDA comparison to: {peer_ebitda_path}")
+            if covered:
+                # Same peers on today's prices: current market cap + latest net debt over FY and TTM EBITDA
+                df_peer_current = get_finedge_peer_current_multiples(all_tickers, finedge_client)
+                if df_peer_current is not None and not df_peer_current.empty:
+                    df_peer_current.to_csv(os.path.join(output_dir, "peer_current_multiples.csv"))
+                    print(f"Saved peer current-price multiples to: {os.path.join(output_dir, 'peer_current_multiples.csv')}")
+                else:
+                    df_peer_current = None
             if covered and not df_ev_ebitda_peers.empty:
                 peer_ev_ebitda_path = os.path.join(output_dir, "peer_ev_ebitda_comparison.csv")
                 df_ev_ebitda_peers.to_csv(peer_ev_ebitda_path)
@@ -559,6 +597,66 @@ def main():
             print("Continuing without catalyst analysis...")
 
     # 5. Text Generation (Unified Logic)
+    narrative_unit_warnings = []
+    report_ctx = None
+    # Canonical context: one unit, one set of facts, checks and reconciliation inputs for the whole report
+    if use_finedge and not is_bank:
+        try:
+            ttm_balance = get_finedge_ttm_and_latest_balance(args.company_ticker, finedge_client,
+                                                             "s" if data_meta.get("statement_type") == "standalone" else "c")
+            technicals = get_finedge_technical_indicators(args.company_ticker, finedge_client)
+            extras = {"fact_blocks": []}
+            try:
+                st_code = "s" if data_meta.get("statement_type") == "standalone" else "c"
+                price_df = get_finedge_price_history(args.company_ticker, finedge_client, years=2)
+                lf_eps = [rctx._f(final_data_df.loc[final_data_df["metrics"] == "EPS", c].iloc[0]) for c in sorted(
+                    c for c in final_data_df.columns if isinstance(c, str) and c.endswith("A"))]
+                eps_info = {"eps_fy_now": lf_eps[-1], "eps_fy_prev": lf_eps[-2] if len(lf_eps) > 1 else None,
+                            "eps_ttm": (ttm_balance.get("ttm") or {}).get("eps")}
+                tf = tech_an.compute_technical_facts(price_df, eps_info)
+                tf_json = {k: v for k, v in tf.items() if not k.startswith("_")}
+                extras["technical"] = tf_json
+                if tf.get("available", True):
+                    extras["fact_blocks"].append(rctx.technical_block(tf_json))
+            except Exception as e:
+                print(f"Warning: technical analysis skipped: {e}")
+            try:
+                half_cf = normalize_cash_flow(finedge_client.financials(args.company_ticker, "cf", "halfyearly", st_code), "halfyearly")
+                ttm_cf = cf_an.derive_ttm_cashflow(financial_data.get("cash_flow"), half_cf)
+                cfacts = cf_an.compute_cashflow_facts(financial_data.get("income_statement"), financial_data.get("balance_sheet"),
+                                                      financial_data.get("cash_flow"), ttm=ttm_balance.get("ttm"), ttm_cashflow=ttm_cf)
+                extras["cashflow"] = cfacts
+                extras["fact_blocks"].append("CASH FLOW DIAGNOSTICS (Cr, computed):\n  " + "\n  ".join(cf_an.cashflow_text_lines(cfacts)))
+            except Exception as e:
+                print(f"Warning: cash-flow analysis skipped: {e}")
+            try:
+                peer_medians = {}
+                if args.peer_tickers:
+                    pr, pi = get_finedge_peer_frames(args.peer_tickers, finedge_client)
+                    peer_medians = rbars.peer_medians_from_ratios(pr, normalize_symbol(args.company_ticker), pi)
+                rb = rbars.compute_ratio_bar_facts(financial_data.get("ratios"), financial_data.get("key_metrics"),
+                                                   peer_medians=peer_medians, income_df=financial_data.get("income_statement"))
+                extras["ratio_bars"] = rb
+                extras["fact_blocks"].append("RATIO YARDSTICKS (computed):\n  " + "\n  ".join(rbars.ratio_bar_text_lines(rb)))
+            except Exception as e:
+                print(f"Warning: ratio bars skipped: {e}")
+            report_ctx = rctx.build_report_context(
+                ticker=normalize_symbol(args.company_ticker), company_name=args.company_name,
+                as_of=pd.Timestamp.now().strftime("%Y-%m-%d"), final_df=final_data_df,
+                financial_data=financial_data, company_metrics=company_metrics, ttm_balance=ttm_balance,
+                peer_ev_df=df_ev_ebitda_peers, peer_ebitda_actual=df_ebitda_peers,
+                peer_ebitda_projected=projected_peer_ebitda, peer_current_df=df_peer_current,
+                technicals=technicals, extras=extras)
+            rctx.save_context(report_ctx, os.path.join(output_dir, "report_context.json"))
+            bad = rctx.failed_checks(report_ctx)
+            for c in bad:
+                print(f"⚠️  Consistency check FAILED: {c['name']} (expected {c['expected']}, got {c['actual']})")
+            print(f"Consistency checks: {sum(1 for c in report_ctx['checks'] if c['ok'])} passed, {len(bad)} failed, "
+                  f"{sum(1 for c in report_ctx['checks'] if c['ok'] is None)} skipped")
+        except Exception as e:
+            print(f"Warning: could not build the canonical report context ({e}); sections will use raw tables")
+            report_ctx = None
+
     if args.generate_text_sections:
         print("\nGenerating AI-powered text sections...")
         
@@ -573,6 +671,7 @@ def main():
                 data_notes.insert(0, "Amounts are in Indian rupees (absolute rupees; 1 crore = 10,000,000). "
                                      "Fiscal years end in March: 2026A is FY2025-26.")
             data_for_text_gen = {
+                "company_description": (company_metrics or {}).get("description"),
                 "data_notes": data_notes,
                 "is_bank": is_bank,
                 "financial_metrics": final_data_df,
@@ -591,6 +690,15 @@ def main():
                 "valuation_overview", "risks", "competitor_analysis", 
                 "major_takeaways", "news_summary"  # NEW
             ]
+
+            if report_ctx is not None:
+                # One canonical unit and one set of facts for every section, proven before any model call
+                data_for_text_gen = rctx.build_text_data(report_ctx, final_data_df, df_ebitda_peers,
+                                                         df_ev_ebitda_peers, base=data_for_text_gen)
+                rctx.assert_section_contexts_identical({
+                    t: _prepare_user_prompt(data_for_text_gen, t, args.company_name, args.company_ticker)
+                    for t in all_text_types})
+                print("Section contexts verified identical (same facts block and crore table in every prompt)")
             
             # A single loop calling the unified generation function
             for text_type in all_text_types:
@@ -643,6 +751,11 @@ def main():
                         failed_text_sections.append(text_type)  # shipping placeholder text: report it
                         generated_text = f"Recent news coverage for {args.company_name} reflects ongoing market interest and developments in the company's operations and strategic initiatives."
 
+                    if report_ctx is not None:
+                        for w in rctx.lint_narrative_units(generated_text, report_ctx):
+                            narrative_unit_warnings.append(f"{text_type}: {w}")
+                            print(f"⚠️  Unit check ({text_type}): {w}")
+
                     file_path = os.path.join(text_output_dir, f"{text_type}.txt")
                     with open(file_path, "w", encoding="utf-8") as f:
                         f.write(generated_text)
@@ -688,6 +801,15 @@ def main():
         except FinEdgeError as e:
             print(f"Warning: could not save price history: {e}")
 
+    # 6.6 Reconciliation log (price, date, shares, net debt and EPS basis behind every multiple)
+    if report_ctx is not None:
+        try:
+            rctx.write_reconciliation_log(report_ctx, os.path.join(output_dir, "reconciliation_log.md"),
+                                          extra_notes=[f"Narrative unit check: {w}" for w in narrative_unit_warnings] or None)
+            print(f"Saved reconciliation log to: {os.path.join(output_dir, 'reconciliation_log.md')}")
+        except Exception as e:
+            print(f"Warning: could not write the reconciliation log: {e}")
+
     # 7. Create summary report
     all_text_types = ["tagline", "company_overview", "investment_overview", "valuation_overview", "risks", "competitor_analysis", "major_takeaways", "news_summary"]
     
@@ -717,6 +839,8 @@ def main():
         "catalyst_analysis_enabled": args.enable_catalyst_analysis,
         "forecast_config": forecast_config,
         "llm_failed_sections": failed_text_sections,
+        "consistency_failures": [c["name"] for c in rctx.failed_checks(report_ctx)] if report_ctx is not None else None,
+        "narrative_unit_warnings": narrative_unit_warnings,
         "llm_usage": llm_usage,
         "llm_cost_usd": round(sum(u["cost_usd"] or 0 for u in llm_usage), 4),
         "files_generated": {

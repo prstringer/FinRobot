@@ -160,33 +160,51 @@ def generate_revenue_ebitda_chart(analysis_df: pd.DataFrame, output_path: str, c
         x = np.arange(len(years))
         width = 0.6
         
-        # 柱状图 - Revenue (深蓝色)
-        bars = ax1.bar(x, revenue_billions, width, color=ChartColors.PRIMARY, 
+        # Revenue bars: actual years solid, forecast ("E") years hatched and lighter
+        is_fc = np.array([str(y).endswith('E') for y in years])
+        bars = ax1.bar(x, revenue_billions, width, color=ChartColors.PRIMARY,
                        alpha=0.85, label=revenue_label, edgecolor='white', linewidth=0.5)
-        
-        ax1.set_xlabel('Year', fontsize=9, color=ChartColors.TEXT)
+        for bar, fc in zip(bars, is_fc):
+            if fc:
+                bar.set_alpha(0.45)
+                bar.set_hatch('//')
+                bar.set_edgecolor(ChartColors.PRIMARY)
+
+        ax1.set_xlabel('Year (A = actual, E = forecast)', fontsize=9, color=ChartColors.TEXT)
         ax1.set_ylabel(f'{revenue_label} ({_unit})', fontsize=9, color=ChartColors.PRIMARY)
         ax1.tick_params(axis='y', labelcolor=ChartColors.PRIMARY)
         ax1.set_xticks(x)
         ax1.set_xticklabels(years, rotation=45, ha='right')
-        
-        # 折线图 - EBITDA (金色)
+
+        # EBITDA line: solid through the actuals, dashed from the last actual into the forecast
         ax2 = ax1.twinx()
-        line = ax2.plot(x, ebitda_billions, color=ChartColors.ACCENT, marker='o', 
-                        markersize=6, linewidth=2.5, label=ebitda_label)
+        last_a = int(np.max(np.where(~is_fc))) if (~is_fc).any() else -1
+        if is_fc.any() and last_a >= 0:
+            ax2.plot(x[:last_a + 1], ebitda_billions.values[:last_a + 1], color=ChartColors.ACCENT, marker='o',
+                     markersize=6, linewidth=2.5)
+            ax2.plot(x[last_a:], ebitda_billions.values[last_a:], color=ChartColors.ACCENT, marker='o',
+                     markersize=6, linewidth=2.0, linestyle='--', markerfacecolor='white')
+            # A | E divider between the last actual and the first forecast year
+            ax1.axvline(last_a + 0.5, color=ChartColors.TEXT, linestyle=':', linewidth=1.2, alpha=0.8)
+            ymax = ax1.get_ylim()[1]
+            ax1.text(last_a + 0.45, ymax * 0.97, 'Actual', ha='right', va='top', fontsize=7, color=ChartColors.TEXT)
+            ax1.text(last_a + 0.55, ymax * 0.97, 'Forecast', ha='left', va='top', fontsize=7, color=ChartColors.TEXT)
+        else:
+            ax2.plot(x, ebitda_billions, color=ChartColors.ACCENT, marker='o', markersize=6, linewidth=2.5)
         ax2.set_ylabel(f'{ebitda_label} ({_unit})', fontsize=9, color=ChartColors.ACCENT)
         ax2.tick_params(axis='y', labelcolor=ChartColors.ACCENT)
-        
-        # 标题
-        ax1.set_title(f"{company_ticker} - {revenue_label} & {ebitda_label} Trend", 
-                     fontsize=11, fontweight='bold', color=ChartColors.TEXT, pad=15)
-        
-        # 图例
-        bar_patch = mpatches.Patch(color=ChartColors.PRIMARY, label=revenue_label)
-        line_patch = mpatches.Patch(color=ChartColors.ACCENT, label=ebitda_label)
-        ax1.legend(handles=[bar_patch, line_patch], loc='upper left', 
-                   framealpha=0.9, fontsize=8)
-        
+
+        ax1.set_title(f"{company_ticker} - {revenue_label} & {ebitda_label} Trend",
+                     fontsize=11, fontweight='bold', color=ChartColors.TEXT, pad=30)
+
+        handles = [mpatches.Patch(color=ChartColors.PRIMARY, label=f"{revenue_label} (actual)"),
+                   mpatches.Patch(facecolor=ChartColors.PRIMARY, alpha=0.45, hatch='//',
+                                  edgecolor=ChartColors.PRIMARY, label=f"{revenue_label} (forecast)"),
+                   mpatches.Patch(color=ChartColors.ACCENT, label=ebitda_label)]
+        legend_handles = handles if is_fc.any() else [handles[0], handles[2]]
+        ax1.legend(handles=legend_handles, loc='lower center', bbox_to_anchor=(0.5, 1.0),
+                   ncol=len(legend_handles), framealpha=0.9, fontsize=7.5, frameon=False)
+
         # 网格只在主轴
         ax1.grid(True, axis='y', linestyle='--', alpha=0.5)
         ax1.set_axisbelow(True)
@@ -308,7 +326,7 @@ def generate_eps_pe_chart(analysis_df: pd.DataFrame, output_path: str,
             return None
 
         eps_row = analysis_df[analysis_df["metrics"] == "EPS"]
-        pe_row = analysis_df[analysis_df["metrics"] == "PE Ratio"]
+        pe_row = analysis_df[analysis_df["metrics"].astype(str).str.startswith("PE Ratio")]
         
         if eps_row.empty or pe_row.empty:
             print("Warning: EPS or PE Ratio data not found.")
@@ -338,7 +356,7 @@ def generate_eps_pe_chart(analysis_df: pd.DataFrame, output_path: str,
         ax2 = ax1.twinx()
         line2 = ax2.plot(x, pe_data, color=ChartColors.ACCENT, marker='s', 
                         markersize=6, linewidth=2.5, linestyle='--', label='PE Ratio (x)')
-        ax2.set_ylabel('PE Ratio (x)', fontsize=9, color=ChartColors.ACCENT)
+        ax2.set_ylabel('PE Ratio (x)  [A: FY-avg price, E: current price]', fontsize=7, color=ChartColors.ACCENT)
         ax2.tick_params(axis='y', labelcolor=ChartColors.ACCENT)
         
         # 标题
