@@ -1,0 +1,208 @@
+# Verdict configuration: ONE place for thresholds, direction, yardstick order and the so-what sentences.
+# Verdict = good | neutral | concern. A verdict is never shown without a yardstick and a scale.
+# yardsticks (tried in order): peers | own_history | general_norm
+#   peers:        value / peer_median compared with tol_good / tol_bad (direction aware)
+#   own_history:  position of the value inside its own five-year range (0 = worst end, 1 = best end, direction aware)
+#   general_norm: fixed cut-offs, always labelled "General norm, not company-specific"
+# so_what: one sentence of about 25 words or fewer; it explains what the figure means. Fields in {braces} are computed facts.
+defaults:
+  own_history: {good_pos: 0.65, concern_pos: 0.35, min_points: 3}
+  peer: {tol_good: 0.10, tol_bad: 0.10}
+
+metrics:
+  contribution_margin:
+    source: report_data
+    label: Contribution margin
+    unit: "%"
+    higher_is_better: true
+    yardsticks: [own_history]
+    so_what:
+      good: "Revenue swung {growth_range:.0f} points but this margin moved {cm_range:.0f}. Pricing is holding; any profit squeeze is further down."
+      neutral: "Pricing power is roughly intact, but there is little cushion if input costs rise."
+      concern: "The business earns less on each sale before overheads, which points to price or mix pressure."
+    calc: "(Revenue - cost of operations) / revenue, latest full year, against its own five-year range."
+  sga_pct:
+    label: SG&A as % of revenue
+    unit: "%"
+    higher_is_better: false
+    yardsticks: [own_history, peers]
+    so_what:
+      good: "Overheads are low against the company's own record, which leaves more of each sale as profit."
+      neutral: "Overheads sit in their usual range, so profit mostly follows sales."
+      concern: "Overheads took {sga_change:+.1f} points more of each sale over the window, which is what squeezes profit when sales fall."
+    calc: "(Employee costs + other expenses) / revenue, latest full year, against its own five-year range (peer median shown for context)."
+  ebitda_margin:
+    label: EBITDA margin
+    unit: "%"
+    higher_is_better: true
+    yardsticks: [peers, own_history]
+    so_what:
+      good: "Operating profit per rupee of sales is strong, so the business can absorb shocks."
+      neutral: "Operating profitability is typical, so earnings depend on sales growth."
+      concern: "Operating profit per rupee of sales is low, so each fall in sales hurts earnings sharply."
+    calc: "EBITDA / revenue, latest full year, against peers where available, else its own range."
+  operating_leverage:
+    source: calculated
+    thresholds: {good_ratio: 1.2, concern_ratio: 2.0}
+    label: Operating leverage
+    unit: "Rs per Rs 100"
+    higher_is_better: false
+    yardsticks: [own_history]
+    custom: operating_leverage
+    so_what:
+      good: "Profit moves less than sales, so earnings are not very sensitive to demand."
+      neutral: "Profit moves roughly in line with sales."
+      concern: "About Rs {per100:.0f} of every Rs 100 of lost sales came out of profit, far more than the margin suggests."
+    calc: "Change in EBITDA divided by change in revenue between the last two full years, against the average EBITDA margin (the proportional move)."
+  revenue_growth:
+    label: Revenue growth
+    unit: "%"
+    higher_is_better: true
+    yardsticks: [own_history]
+    so_what:
+      good: "Sales are growing faster than the company's usual pace."
+      neutral: "Sales growth is within its normal range."
+      concern: "Sales are shrinking or growing well below the usual pace, which exposes fixed costs."
+    calc: "Latest full-year revenue growth against its own five-year range."
+  ebitda_volatility:
+    source: calculated
+    label: Earnings volatility
+    unit: "%"
+    higher_is_better: false
+    yardsticks: [peers]
+    peer: {tol_good: 0.15, tol_bad: 0.15}
+    so_what:
+      good: "Earnings swing less than peers', which makes them easier to rely on."
+      neutral: "Earnings swing about as much as peers'."
+      concern: "Earnings swing far more than peers', so any single year is a poor guide."
+    calc: "Coefficient of variation (standard deviation / mean) of EBITDA over five years, against the peer median."
+  cash_conversion:
+    source: calculated
+    thresholds: {flatter_ratio: 1.2}
+    label: Cash conversion
+    unit: "%"
+    higher_is_better: true
+    yardsticks: [general_norm, own_history]
+    custom: cash_conversion
+    general_norm: {good: 80.0, concern: 50.0}
+    so_what:
+      good: "Profit turns into cash reliably."
+      neutral: "Cash comes in when sales fall and goes out when they rise. Latest-year cash is flattered."
+      concern: "Cash comes in when sales fall and goes out when they rise. The latest year's cash is flattered."
+    calc: "Operating cash flow / EBITDA, latest full year, against its own five-year aggregate."
+  debt_equity:
+    label: Debt to equity
+    unit: "x"
+    higher_is_better: false
+    yardsticks: [own_history, peers, general_norm]
+    general_norm: {good: 0.5, concern: 1.0}
+    so_what:
+      good: "Borrowing is modest against owners' funds, which gives financial flexibility."
+      neutral: "Borrowing is moderate against owners' funds."
+      concern: "Borrowing relative to owners' funds is above the benchmark, which adds risk if earnings fall."
+    calc: "Total debt / shareholders' equity, latest balance sheet."
+  interest_coverage:
+    label: Interest coverage
+    unit: "x"
+    higher_is_better: true
+    yardsticks: [own_history, peers, general_norm]
+    general_norm: {good: 4.0, concern: 2.0}
+    so_what:
+      good: "Profit covers interest comfortably, so debt is not a near-term worry."
+      neutral: "Interest is covered, but a profit dip would quickly tighten the margin of safety."
+      concern: "Profit covers interest more thinly than before, so a further earnings dip would strain debt service."
+    calc: "EBIT / interest expense, latest full year."
+  roe:
+    label: Return on equity
+    unit: "%"
+    higher_is_better: true
+    yardsticks: [peers, own_history, general_norm]
+    general_norm: {good: 15.0, concern: 8.0}
+    so_what:
+      good: "Owners' money earns a strong return."
+      neutral: "Owners' money earns a middling return."
+      concern: "Owners' money earns a weak return, which does not justify a premium price."
+    calc: "Net income to owners / closing equity, latest full year."
+  pe:
+    source: calculated
+    label: P/E (TTM, at today's price)
+    unit: "x"
+    higher_is_better: false
+    yardsticks: [own_history]
+    so_what:
+      good: "Earnings are cheap against the company's own history."
+      neutral: "The price is in line with where the company has usually traded on earnings."
+      concern: "The price is high against its own history, so it relies on profits recovering fast."
+    calc: "Snapshot price / trailing four-quarter EPS, against the fiscal-year-average-price P/E range of the last five years."
+  ev_ebitda:
+    source: calculated
+    label: EV/EBITDA (TTM, at today's price)
+    unit: "x"
+    higher_is_better: false
+    yardsticks: [peers, own_history]
+    peer: {tol_good: 0.10, tol_bad: 0.15}
+    so_what:
+      good: "The market pays less for each rupee of operating profit than it does for peers."
+      neutral: "The market pays about the same for operating profit as it does for peers."
+      concern: "The market pays a premium for each rupee of operating profit, so the price already assumes a recovery."
+    calc: "(Snapshot market cap + latest net debt) / trailing four-quarter EBITDA, against the peer median at current prices."
+  fair_value:
+    source: calculated
+    label: Price against fair value
+    unit: "Rs"
+    higher_is_better: false
+    yardsticks: [peers]
+    custom: fair_value
+    so_what:
+      good: "The price sits below the fair-value range, which leaves a margin of safety."
+      neutral: "The price sits inside the fair-value range."
+      concern: "The price sits above every fair-value case, so it already assumes more than the forecasts deliver."
+    calc: "Fair value per share = (multiple x EBITDA - net debt) / shares, for each forecast case, against the snapshot price."
+  gross_margin:
+    label: Gross margin
+    unit: "%"
+    higher_is_better: true
+    yardsticks: [peers, own_history]
+    so_what:
+      good: "Pricing power is better than peers."
+      neutral: "Pricing power is neither improving nor eroding, so profit depends on cost control."
+      concern: "Pricing power is weaker than peers."
+    calc: "Gross profit / revenue, latest full year."
+  net_margin:
+    label: Net margin
+    unit: "%"
+    higher_is_better: true
+    yardsticks: [peers, own_history]
+    so_what:
+      good: "A healthy share of each sale reaches owners."
+      neutral: "Owners keep a typical share of each sale."
+      concern: "Very little of each sale reaches owners, so small shocks can erase profit."
+    calc: "Net income / revenue, latest full year."
+  roa:
+    label: Return on assets
+    unit: "%"
+    higher_is_better: true
+    yardsticks: [peers, own_history]
+    so_what:
+      good: "The asset base earns well."
+      neutral: "Asset productivity is typical."
+      concern: "Assets earn little, so the business is capital heavy for its profit."
+    calc: "Net income / total assets, latest full year."
+  current_ratio:
+    label: Current ratio
+    unit: "x"
+    higher_is_better: true
+    yardsticks: [peers, own_history, general_norm]
+    general_norm: {good: 1.5, concern: 1.0}
+    so_what:
+      good: "Short-term assets comfortably cover short-term bills."
+      neutral: "Short-term liquidity is adequate but not generous."
+      concern: "Short-term assets cover short-term bills less comfortably than peers, so liquidity is tighter."
+    calc: "Current assets / current liabilities, latest balance sheet."
+
+# Technical tests: map the computed state text to a verdict (first keyword that matches wins)
+technical_tests:
+  trend:         {good: ["up"], concern: ["down"], default: neutral}
+  momentum:      {good: ["up"], concern: ["down"], neutral: ["fading", "mixed", "neutral"], default: neutral}
+  participation: {good: ["strong", "healthy"], concern: ["weak"], default: neutral}
+  stretch:       {good: ["low", "modest"], concern: ["high", "very high"], default: neutral}

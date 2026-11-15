@@ -657,6 +657,37 @@ def main():
             print(f"Warning: could not build the canonical report context ({e}); sections will use raw tables")
             report_ctx = None
 
+    # Bank context for the visual report formats (a separate, bank-shaped report_context.json; the text pipeline does not use it)
+    if use_finedge and is_bank:
+        try:
+            from report_visual.bank import context as bank_ctx
+            st_code = "s" if data_meta.get("statement_type") == "standalone" else "c"
+            ttm_b = bank_ctx.fetch_bank_ttm(finedge_client, args.company_ticker, st_code)
+            eq_b = bank_ctx.fetch_latest_equity(finedge_client, args.company_ticker, st_code)
+            peer_cur = {}
+            if df_bank_peers is not None and args.peer_tickers:
+                peer_cur = bank_ctx.fetch_peer_current_pb(
+                    finedge_client, [normalize_symbol(args.company_ticker)] + [normalize_symbol(t) for t in args.peer_tickers], st_code)
+            tech_b = None
+            try:
+                price_b = get_finedge_price_history(args.company_ticker, finedge_client, years=2)
+                eps_cols = sorted(c for c in final_data_df.columns if isinstance(c, str) and c.endswith("A"))
+                eps_vals = [rctx._f(final_data_df.loc[final_data_df["metrics"] == "EPS", c].iloc[0]) for c in eps_cols]
+                tf_b = tech_an.compute_technical_facts(price_b, {"eps_fy_now": eps_vals[-1], "eps_fy_prev": eps_vals[-2] if len(eps_vals) > 1 else None,
+                                                                 "eps_ttm": ttm_b["eps"] if ttm_b else None})
+                tech_b = {k: v for k, v in tf_b.items() if not k.startswith("_")}
+            except Exception as e:
+                print(f"Warning: technical analysis skipped for the bank context: {e}")
+            bctx = bank_ctx.build_bank_context(
+                ticker=normalize_symbol(args.company_ticker), company_name=args.company_name,
+                as_of=pd.Timestamp.now().strftime("%Y-%m-%d"), final_df=final_data_df, financial_data=financial_data,
+                company_metrics=company_metrics, ttm=ttm_b, latest_equity=eq_b, peer_bank_df=df_bank_peers, peer_current=peer_cur,
+                technical_facts=tech_b, warnings=data_meta.get("warnings", []))
+            rctx.save_context(bctx, os.path.join(output_dir, "report_context.json"))
+            print("Saved the bank report context for the visual formats")
+        except Exception as e:
+            print(f"Warning: could not build the bank report context ({e}); the visual formats are unavailable for this run")
+
     if args.generate_text_sections:
         print("\nGenerating AI-powered text sections...")
         

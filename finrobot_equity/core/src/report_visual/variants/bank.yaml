@@ -1,0 +1,86 @@
+# Bank panel variant: same seven panels as the non-financial report, with bank measures.
+# Everything that differs from the non-financial report is in this file: which chips and charts each panel carries, how the
+# metrics bind to the analysis table, how the lights are decided, the fair-value cases and the signposts.
+# Verdict thresholds and directions live in verdicts_bank.yaml (and verdicts.yaml for `pe` and `fair_value`).
+kind: bank
+panels:
+  summary:       {question: "Should I worry, and about what?", headline_rule: summary, chips: [], charts: [price_vs_earnings]}
+  profit_engine: {question: "How does the bank earn, and what does it keep?", headline_rule: profit_engine,
+                  chips: [nim, cost_to_income, credit_cost], charts: [income_split, nim_trend]}
+  cyclicality:   {question: "How steadily is the bank growing?", headline_rule: cycle,
+                  chips: [advances_growth, profit_growth, credit_deposit_ratio], charts: [growth_cycle, credit_deposit]}
+  strength:      {question: "Are the loans clean and the capital strong?", headline_rule: strength,
+                  chips: [gnpa, cet1, bank_roe], charts: [asset_quality, capital_returns]}
+  valuation:     {question: "Is the price justified?", headline_rule: valuation,
+                  chips: [pb, pe, fair_value], charts: [pb_peer_strip, fair_value_ruler, pb_vs_roe]}
+  price:         {question: "What is the share price telling us?", headline_rule: price, chips: [], charts: [price_trend, momentum]}
+  watch:         {question: "What should I watch next?", headline_rule: watch, chips: [], charts: []}
+
+# bindings from a metric id to the bank analysis table (financial_metrics_and_forecasts.csv) and the peer table
+metrics:
+  nim:                  {series: NIM, peer: nim, decimals: 2}
+  cost_to_income:       {series: Cost-to-Income, decimals: 1}
+  credit_cost:          {series: Credit Cost, decimals: 2}
+  advances_growth:      {series: Advances Growth, decimals: 1, merger_cap_pct: 40}
+  profit_growth:        {series: Net Profit Growth, decimals: 1}
+  credit_deposit_ratio: {series: Credit-Deposit Ratio, decimals: 1}
+  gnpa:                 {series: Gross NPA, peer: gnpa, decimals: 2}
+  nnpa:                 {series: Net NPA, peer: nnpa, decimals: 2}
+  cet1:                 {series: CET1 Ratio, peer: cet1, decimals: 1}
+  bank_roa:             {series: ROA, peer: roa, decimals: 2}
+  bank_roe:             {series: ROE, peer: roe, decimals: 1}
+
+# traffic lights: concern if any listed chip is a concern, or if at least `concern_count` chips are concerns;
+# good if there is no concern and at least `good_min` chips are good; otherwise neutral.
+lights:
+  business: {chips: [nim, cost_to_income, gnpa, cet1], concern_if_any: [gnpa, cet1], concern_count: 2, good_min: 3,
+             reason: "Margin {nim}; cost efficiency {cost_to_income}; loan quality {gnpa}; capital {cet1}."}
+  profit:   {chips: [bank_roe, nim, profit_growth], concern_if_any: [], concern_count: 2, good_min: 2,
+             reason: "Return on equity {bank_roe}; margin {nim}; profit growth {profit_growth}."}
+  price:    {chips: [fair_value, pb], concern_if_any: [fair_value], concern_count: 2, good_min: 1,
+             reason: "Fair value {fair_value} and P/B {pb} at the snapshot price."}
+
+# fair-value cases per share. base: bvps | eps_ttm | eps_next. low/high: {source, stat} with source in pb_history | pe_history | peer_pb
+# and stat in min | q1 | median | q3 | max. price per share = multiple x base.
+fair_value_cases:
+  - {key: pb_own_history, label: "P/B at own-history range", base: bvps, low: {source: pb_history, stat: min}, high: {source: pb_history, stat: max},
+     basis: "latest book value per share x own fiscal-year-average P/B range"}
+  - {key: pb_peer_range, label: "P/B at the peer range", base: bvps, low: {source: peer_pb, stat: q1}, high: {source: peer_pb, stat: q3},
+     basis: "latest book value per share x peer inter-quartile P/B range"}
+  - {key: pe_ttm_eps, label: "P/E range on TTM earnings", base: eps_ttm, low: {source: pe_history, stat: min}, high: {source: pe_history, stat: max},
+     basis: "TTM EPS x own fiscal-year-average P/E range"}
+  - {key: pe_next_eps, label: "P/E range on forecast earnings", base: eps_next, low: {source: pe_history, stat: min}, high: {source: pe_history, stat: max},
+     basis: "next-year EPS forecast (last EPS grown at the revenue growth assumption) x own P/E range"}
+
+# signposts: thresholds come from the bank's own history (median of the actual years, rounded), never generic advice
+signposts:
+  - {metric: "Net interest margin", series: NIM, direction: floor, round: 0.1, unit: "%", decimals: 2,
+     why: "A margin back above its own median would show lending spreads are no longer shrinking."}
+  - {metric: "Gross NPA", series: Gross NPA, direction: ceiling, round: 0.1, unit: "%", decimals: 2,
+     why: "Bad loans staying below their own median keep future provisions low."}
+  - {metric: "Credit cost", series: Credit Cost, direction: ceiling, round: 0.1, unit: "%", decimals: 2,
+     why: "Provisions at or below their own median would show credit losses are under control."}
+  - {metric: "Return on equity", series: ROE, direction: floor, round: 1.0, unit: "%", decimals: 1,
+     why: "Returns at their own median would support the multiple the market pays."}
+  - {metric: "Cost to income", series: Cost-to-Income, direction: ceiling, round: 1.0, unit: "%", decimals: 1,
+     why: "Costs below their own median would show efficiency is not slipping as the bank grows."}
+
+headline_rules:
+  profit_engine: "NIM verdict x cost-to-income verdict, then credit cost"
+  cycle: "number of years with falling profit, and whether the latest profit growth is below the median of earlier years"
+  strength: "gross NPA verdict (loan quality) and CET1 verdict (capital)"
+  valuation: "P/B against own history and against the peer median"
+  price: "trend and momentum tests, then stretch (shared with the non-financial report)"
+  watch: "number of signposts"
+
+glossary_add:
+  - {id: nim, term: Net interest margin, definition: "What the bank earns on lending minus what it pays on deposits, as a share of its earning assets."}
+  - {id: cost_to_income, term: Cost to income, definition: "Operating costs divided by total income. Lower means the bank is more efficient."}
+  - {id: credit_cost, term: Credit cost, definition: "Provisions for bad loans divided by average loans. It is the yearly charge for loans that may not be repaid."}
+  - {id: gnpa, term: Gross NPA, definition: "Loans that have stopped paying interest or principal, as a share of all loans."}
+  - {id: nnpa, term: Net NPA, definition: "Bad loans after the bank has set aside provisions against them, as a share of net loans."}
+  - {id: cet1, term: CET1 ratio, definition: "The bank's core equity capital as a share of its risk-weighted assets. It is the main cushion against losses."}
+  - {id: roa, term: Return on assets, definition: "Net profit divided by total assets."}
+  - {id: roe, term: Return on equity, definition: "Net profit divided by shareholders' equity."}
+  - {id: pb, term: P/B, definition: "Share price divided by book value per share. Banks with higher returns on equity usually trade at higher P/B."}
+  - {id: credit_deposit, term: Credit-deposit ratio, definition: "Loans divided by deposits. Close to 100% means little spare funding for growth."}

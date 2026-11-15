@@ -47,5 +47,10 @@ bcrypt>=4.0.0
 # PostgreSQL driver (for Cloud SQL deployment)
 pg8000>=1.30.0
 
+# Visual report PDF output (optional: without it the PDF step falls back to Chrome's own print command).
+# pypdf (optional) stamps title/author/subject metadata on the PDF.
+playwright>=1.40.0
+pypdf>=4.0.0
+
 # Note: configparser, argparse, datetime, json, os, subprocess, 
 # base64, io, and re are part of Python's standard library

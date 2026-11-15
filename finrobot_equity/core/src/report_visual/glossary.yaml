@@ -1,0 +1,24 @@
+- {id: contribution_margin, term: Contribution margin, definition: "The share of each sale left after the direct costs of making the product. It shows pricing power and product mix."}
+- {id: sga, term: SG&A, definition: "Selling, general and administrative costs: staff, marketing and other overheads. In this report it is employee costs plus other expenses."}
+- {id: ebitda, term: EBITDA, definition: "Operating profit before interest, tax, depreciation and amortisation. A rough measure of what the business earns from operations."}
+- {id: operating_leverage, term: Operating leverage, definition: "How much profit moves when sales move. High fixed costs mean a small fall in sales causes a big fall in profit."}
+- {id: margin_bridge, term: Margin bridge, definition: "A split of the change in EBITDA margin into the part from contribution margin and the part from overheads."}
+- {id: cash_conversion, term: Cash conversion, definition: "Operating cash flow divided by EBITDA. Near or above 100% means profit is turning into cash."}
+- {id: working_capital, term: Working capital days, definition: "How many days of sales or costs are tied up in stock and unpaid bills, net of what the company owes suppliers."}
+- {id: capex, term: Capex, definition: "Money spent on factories, machines and other long-lived assets."}
+- {id: fcf, term: Free cash flow, definition: "Operating cash flow minus capex: cash left for shareholders and lenders."}
+- {id: interest_coverage, term: Interest coverage, definition: "Operating profit (EBIT) divided by interest. The higher it is, the safer the debt."}
+- {id: debt_equity, term: Debt to equity, definition: "Borrowings divided by owners' funds. Lower means less reliance on lenders."}
+- {id: ev, term: Enterprise value, definition: "Market value of the company plus its net debt: what it would cost to buy the whole business."}
+- {id: ev_ebitda, term: EV/EBITDA, definition: "Enterprise value divided by EBITDA: how many years of operating profit the market is paying for."}
+- {id: pe, term: P/E, definition: "Share price divided by earnings per share: how many years of earnings the price pays for."}
+- {id: ttm, term: TTM, definition: "Trailing twelve months: the last four reported quarters added together."}
+- {id: fair_value, term: Fair value, definition: "A per-share value implied by a stated earnings forecast and a stated multiple. It is an estimate, not a price target."}
+- {id: moving_average, term: Moving average, definition: "The average closing price over the last 50 or 200 trading days. It smooths out daily noise to show the trend."}
+- {id: rsi, term: RSI, definition: "A 0 to 100 gauge of how fast price has risen or fallen recently. Above 70 is overbought; below 30 is oversold."}
+- {id: macd, term: MACD, definition: "A momentum line built from two moving averages. When it falls while price rises, the rise is losing force."}
+- {id: divergence, term: Divergence, definition: "Price makes a new high but an indicator such as MACD does not. It often means the move is tiring."}
+- {id: stretch, term: Stretch, definition: "How far price sits above its 200-day average. A large gap makes a pullback more likely."}
+- {id: week52, term: 52-week range, definition: "The lowest and highest price in the last year."}
+- {id: net_debt, term: Net debt, definition: "Borrowings minus cash and liquid investments. Negative means net cash."}
+- {id: consensus, term: Consensus, definition: "The average forecast of professional analysts. Not available from this data source, so cases use the company model and peer multiples."}
