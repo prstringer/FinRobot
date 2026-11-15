@@ -216,6 +216,12 @@ def prepare_financial_summary_df(analysis_df: pd.DataFrame, is_bank: bool = Fals
         "EPS", "PE Ratio"
     ]
     
+    # The P/E row carries its price basis in its label; match it by prefix. This table shows actual years only,
+    # so it is relabelled with the fiscal-year-average-price basis those years use.
+    analysis_df = analysis_df.copy()
+    pe_mask = analysis_df['metrics'].astype(str).str.startswith('PE Ratio (')
+    analysis_df.loc[pe_mask, 'metrics'] = 'PE Ratio'
+
     # 过滤存在的指标
     available_metrics = [m for m in summary_metrics if m in analysis_df['metrics'].values]
     
@@ -224,6 +230,7 @@ def prepare_financial_summary_df(analysis_df: pd.DataFrame, is_bank: bool = Fals
     
     # 筛选数据
     df = analysis_df[analysis_df['metrics'].isin(available_metrics)].copy()
+    df.loc[df['metrics'] == 'PE Ratio', 'metrics'] = 'PE Ratio (FY-avg price)'
     df.set_index('metrics', inplace=True)
     
     # 只保留实际年份列 (以A结尾)
@@ -482,6 +489,8 @@ def main():
     parser.add_argument("--sector", type=str, default=None)
     
     # 其他选项
+    parser.add_argument("--strict-validation", action="store_true",
+                        help="Stop before building the PDF if validation finds errors (default: build with a visible warning).")
     parser.add_argument("--skip-market-fetch", action="store_true",
                        help="Skip fetching market data from API")
     parser.add_argument("--analyst-names", type=str, nargs="*", 
@@ -771,8 +780,41 @@ def main():
         ),
     }
     
+    from modules import report_context as _rc0
+    report_data['report_date_full'] = _rc0.format_report_date(
+        _rc0.load_context(os.path.join(args.analysis_dir, 'report_context.json'), ticker))
     if use_finedge:
         report_data['pe_label'] = 'P/E (TTM)'
+        report_data['roe_label'] = 'ROE (TTM)'
+        report_data['dividend_label'] = 'Div. Yield (12m)'
+    from modules import report_context as _rctx
+    _ctx = _rctx.load_context(os.path.join(args.analysis_dir, 'report_context.json'), ticker)
+    if _ctx is not None:
+        report_data['current_valuation_rows'] = _rctx.current_valuation_rows(_ctx)
+        from modules import report_extras as _rx, report_validation as _rv
+        _pack = _rx.build_pack(_ctx, args.analysis_dir, output_dir, ticker)
+        report_data['interpretation_pack'] = _pack
+        _rx.drop_superseded_charts(report_data, _pack, output_dir, ticker)   # radar, old cash-flow and technical charts
+        _texts = {k: loaded_data.get(k) for k in ('tagline', 'company_overview', 'investment_overview', 'valuation_overview',
+                                                  'risks', 'competitor_analysis', 'major_takeaways', 'news_summary')
+                  if isinstance(loaded_data.get(k), str)}
+        _val = _rv.validate_report(_ctx, _texts)
+        _rv.write_validation_report(_val, os.path.join(output_dir, 'validation_report.md'))
+        print(f"Validation: {len(_val['errors'])} error(s), {len(_val['warnings'])} warning(s), {len(_val['passed'])} check group(s) passed")
+        for _m in _val['errors'][:10]:
+            print(f"  ERROR: {_m}")
+        for _m in _val['warnings'][:10]:
+            print(f"  warning: {_m}")
+        report_data['validation_banner'] = _rv.banner_text(_val)
+        if _val['errors'] and args.strict_validation:
+            print("Strict validation is on and errors were found: stopping before the PDF is built.")
+            return 2
+        if not is_bank:
+            report_data['peer_multiples_table'] = _rctx.peer_multiples_table(_ctx)
+        _log_src = os.path.join(args.analysis_dir, 'reconciliation_log.md')
+        if os.path.exists(_log_src):
+            import shutil
+            shutil.copy(_log_src, os.path.join(output_dir, 'reconciliation_log.md'))
     if is_bank:
         report_data.update(BANK_REPORT_LABELS)
 

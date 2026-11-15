@@ -7,6 +7,8 @@ import re as _re
 
 from . import currency as _cur
 from .retail_sentiment_client import has_coverage
+from .html_renderer import format_current_valuation_html, REPORT_DATE_FOOTER
+from . import report_extras as _rx
 
 
 def _auto_bold_key_data(text: str) -> str:
@@ -55,8 +57,9 @@ def _markdown_to_html(text: str) -> str:
     lines = text.split('\n')
     html_lines = []
     in_list = False
+    from .professional_pdf_report import escape_ampersands
     for line in lines:
-        stripped = line.strip()
+        stripped = escape_ampersands(line.strip())
         if not stripped:
             if in_list:
                 html_lines.append('</ul>')
@@ -295,6 +298,7 @@ HTML_PROFESSIONAL_TEMPLATE = """
     </style>
 </head>
 <body>
+    {validation_banner_html}
     <!-- Hero Header -->
     <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); padding: 2.5rem 2rem 2rem;">
         <div class="max-w-4xl mx-auto">
@@ -341,11 +345,11 @@ HTML_PROFESSIONAL_TEMPLATE = """
                     <p style="color: #0f172a; font-size: 1rem; font-weight: 600;">{pb_ratio}</p>
                 </div>
                 <div class="metric-card">
-                    <p style="color: #94a3b8; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">ROE</p>
+                    <p style="color: #94a3b8; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">{roe_label}</p>
                     <p style="color: #0f172a; font-size: 1rem; font-weight: 600;">{roe}</p>
                 </div>
                 <div class="metric-card">
-                    <p style="color: #94a3b8; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Div. Yield</p>
+                    <p style="color: #94a3b8; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">{dividend_label}</p>
                     <p style="color: #0f172a; font-size: 1rem; font-weight: 600;">{dividend_yield}</p>
                 </div>
                 <div class="metric-card">
@@ -354,6 +358,8 @@ HTML_PROFESSIONAL_TEMPLATE = """
                 </div>
             </div>
         </section>
+
+        {summary_panel_html}
 
         <!-- Investment Thesis -->
         <section class="mb-10" id="investment-thesis">
@@ -405,6 +411,8 @@ HTML_PROFESSIONAL_TEMPLATE = """
                     <p class="caption mt-2">Source: Company Filings</p>
                 </div>
             </div>
+            {verdict_table_html}
+            {ttm_table_html}
         </section>
 
         <!-- Valuation Analysis -->
@@ -832,6 +840,10 @@ def format_valuation_breakdown_html(valuation_data: dict) -> str:
 
 def format_advanced_charts_html_professional(data: dict) -> str:
     """格式化高级图表章节为专业 HTML - 2x2 card grid，无图时生成文字版技术分析。"""
+    pack = data.get('interpretation_pack')
+    if pack and (pack.get('technical') or pack.get('cashflow') or pack.get('ratio_bars')):
+        from .report_extras import analysis_sections_html
+        return analysis_sections_html(pack)
     stock_price_chart = data.get('stock_price_chart_path', '')
     technical_chart = data.get('technical_indicators_path', '')
     radar_chart = data.get('financial_radar_path', '')
@@ -1036,7 +1048,17 @@ def render_professional_html_report(data: dict) -> str:
         'eps_key_figures_html': format_key_figures_html(data.get('eps_key_figures', {})),
         'eps_pe_chart_path': data.get('eps_pe_chart_path', ''),
         'valuation_overview': _markdown_to_html(data.get('valuation_overview', 'Valuation analysis not available.')),
-        'valuation_breakdown_html': format_valuation_breakdown_html(data.get('valuation_analysis', {})),
+        'valuation_breakdown_html': (format_current_valuation_html(data.get('current_valuation_rows'))
+                                     + format_valuation_breakdown_html(data.get('valuation_analysis', {}))),
+        'summary_panel_html': (_rx.summary_panel_html(data['interpretation_pack'])
+                               if data.get('interpretation_pack') else ''),
+        'verdict_table_html': (_rx.verdict_table_html(data['interpretation_pack'])
+                               if data.get('interpretation_pack') else ''),
+        'ttm_table_html': (_rx.ttm_table_html(data['interpretation_pack'])
+                           if data.get('interpretation_pack') else ''),
+        'validation_banner_html': data.get('validation_banner_html', ''),
+        'roe_label': data.get('roe_label', 'ROE'),
+        'dividend_label': data.get('dividend_label', 'Div. Yield'),
         'peer_ev_ebitda_table_html': data.get('peer_ev_ebitda_table_html', '<p class="body-text" style="color:#94a3b8; font-style:italic;">Peer comparison data not available.</p>'),
         'ev_ebitda_chart_path': data.get('ev_ebitda_chart_path', ''),
         'news_summary': _markdown_to_html(data.get('news_summary', 'Recent news coverage not available.')),
@@ -1057,6 +1079,8 @@ def render_professional_html_report(data: dict) -> str:
         'research_source': data.get('research_source', 'AI4Finance FinRobot'),
         'report_generated_time': datetime.now().strftime('%Y-%m-%d %H:%M'),
         'pe_label': data.get('pe_label', 'P/E (Fwd)'),
+        'report_date_full': data.get('report_date_full') or datetime.now().strftime('%d %B %Y').lstrip('0'),
+        'company_name_ticker': data.get('company_name_ticker') or f"{data.get('company_name_full', '')} ({data.get('company_ticker', '')})",
     }
     from .html_renderer import REPORT_LABEL_DEFAULTS
     for _k, _v in REPORT_LABEL_DEFAULTS.items():
@@ -1070,3 +1094,8 @@ def render_professional_html_report(data: dict) -> str:
     except Exception as e:
         print(f"Error rendering professional HTML: {e}")
         return f"<html><body><h1>Error rendering report</h1><p>Error: {e}</p></body></html>"
+
+
+# Report date on every page (fixed to the bottom edge when printed; see html_renderer.REPORT_DATE_FOOTER)
+if "report-date-footer" not in HTML_PROFESSIONAL_TEMPLATE:
+    HTML_PROFESSIONAL_TEMPLATE = HTML_PROFESSIONAL_TEMPLATE.replace("</body>", REPORT_DATE_FOOTER + "</body>", 1)

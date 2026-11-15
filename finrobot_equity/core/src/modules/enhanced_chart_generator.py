@@ -654,7 +654,7 @@ class EnhancedChartGenerator:
                 return None
             
             eps_row = analysis_df[analysis_df['metrics'] == 'EPS']
-            pe_row = analysis_df[analysis_df['metrics'] == 'PE Ratio']
+            pe_row = analysis_df[analysis_df['metrics'].astype(str).str.startswith('PE Ratio')]
             
             if eps_row.empty or pe_row.empty:
                 logger.warning("EPS or PE Ratio data not found")
@@ -677,7 +677,7 @@ class EnhancedChartGenerator:
             ax2 = ax1.twinx()
             ax2.plot(x, pe_data, color=ChartColors.ACCENT, marker='s',
                     markersize=8, linewidth=2.5, linestyle='--', label='PE Ratio (x)')
-            ax2.set_ylabel('PE Ratio (x)', fontweight='bold', color=ChartColors.ACCENT)
+            ax2.set_ylabel('PE Ratio (x)  [A: FY-avg price, E: current price]', fontweight='bold', fontsize=8, color=ChartColors.ACCENT)
             ax2.tick_params(axis='y', labelcolor=ChartColors.ACCENT)
             
             ax1.set_xticks(x)
